@@ -1,0 +1,23 @@
+{
+  "name": "CrewBookingEmailTemplate",
+  "type": "object",
+  "properties": {
+    "subject": {
+      "type": "string",
+      "description": "Email subject line"
+    },
+    "html_body": {
+      "type": "string",
+      "description": "HTML email body with {{placeholders}} for crew_name, show_name, start_date, end_date, rate, accommodation, company_name, company_logo_url, company_phone, company_email"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this template is currently in use"
+    }
+  },
+  "required": [
+    "subject",
+    "html_body"
+  ]
+}

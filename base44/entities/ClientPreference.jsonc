@@ -1,0 +1,143 @@
+{
+  "name": "ClientPreference",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client (null = venue-level preference)"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "venue_id": {
+      "type": "string",
+      "description": "Reference to Venue (null = client-level)"
+    },
+    "venue_name": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Preference set name, e.g. 'Standard Annual Conference'"
+    },
+    "preference_type": {
+      "type": "string",
+      "enum": [
+        "production",
+        "billing",
+        "quote_layout",
+        "crew",
+        "venue_logistics",
+        "equipment",
+        "show_style"
+      ],
+      "default": "production"
+    },
+    "production_notes": {
+      "type": "string"
+    },
+    "preferred_start_time": {
+      "type": "string"
+    },
+    "preferred_end_time": {
+      "type": "string"
+    },
+    "setup_lead_time_hours": {
+      "type": "number"
+    },
+    "strike_time_hours": {
+      "type": "number"
+    },
+    "billing_notes": {
+      "type": "string"
+    },
+    "preferred_payment_terms": {
+      "type": "string"
+    },
+    "invoice_delivery_preference": {
+      "type": "string"
+    },
+    "billing_contact_preference": {
+      "type": "string"
+    },
+    "quote_layout_notes": {
+      "type": "string"
+    },
+    "preferred_quote_format": {
+      "type": "string",
+      "enum": [
+        "detailed",
+        "summary",
+        "rooms_only",
+        "single_page"
+      ]
+    },
+    "include_crew_on_quote": {
+      "type": "boolean",
+      "default": false
+    },
+    "include_travel_on_quote": {
+      "type": "boolean",
+      "default": true
+    },
+    "crew_preferences": {
+      "type": "string",
+      "description": "Specific crew requests, certifications, dress code, etc."
+    },
+    "preferred_crew_size": {
+      "type": "number"
+    },
+    "crew_dress_code": {
+      "type": "string"
+    },
+    "venue_logistics_notes": {
+      "type": "string"
+    },
+    "preferred_load_in_time": {
+      "type": "string"
+    },
+    "requires_union": {
+      "type": "boolean",
+      "default": false
+    },
+    "equipment_notes": {
+      "type": "string",
+      "description": "Brand preferences, specific models, avoid list"
+    },
+    "preferred_brands": {
+      "type": "string"
+    },
+    "avoid_equipment": {
+      "type": "string"
+    },
+    "preferred_audio_setup": {
+      "type": "string"
+    },
+    "preferred_video_setup": {
+      "type": "string"
+    },
+    "preferred_lighting_setup": {
+      "type": "string"
+    },
+    "show_style_notes": {
+      "type": "string"
+    },
+    "atmosphere_preferences": {
+      "type": "string"
+    },
+    "music_preferences": {
+      "type": "string"
+    },
+    "branding_notes": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "preference_type"
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "name": "ClientContact",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "description": "Job title"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "phone_mobile": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "billing",
+        "technical",
+        "executive",
+        "venue",
+        "other"
+      ],
+      "default": "primary"
+    },
+    "is_primary": {
+      "type": "boolean",
+      "default": false
+    },
+    "communication_preference": {
+      "type": "string",
+      "enum": [
+        "email",
+        "phone",
+        "text",
+        "any"
+      ],
+      "default": "email"
+    },
+    "best_time_to_contact": {
+      "type": "string"
+    },
+    "do_not_contact": {
+      "type": "boolean",
+      "default": false
+    },
+    "service_preferences": {
+      "type": "string",
+      "description": "Personal preferences and notes for servicing this contact"
+    },
+    "birthday": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_portal_user": {
+      "type": "boolean",
+      "default": false,
+      "description": "Has access to client portal"
+    },
+    "portal_user_id": {
+      "type": "string",
+      "description": "Linked User.id for portal access"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "client_id",
+    "first_name",
+    "last_name"
+  ]
+}

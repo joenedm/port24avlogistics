@@ -1,0 +1,124 @@
+{
+  "name": "RoundtableSubrent",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string",
+      "description": "Reference to Show"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "room_id": {
+      "type": "string",
+      "description": "Sub-location/room ID this item is assigned to"
+    },
+    "room_name": {
+      "type": "string"
+    },
+    "partner_id": {
+      "type": "string",
+      "description": "Reference to RoundtablePartner"
+    },
+    "partner_name": {
+      "type": "string"
+    },
+    "item_id": {
+      "type": "string",
+      "description": "Reference to RoundtableItem (optional \u2014 null for company-fulfilled)"
+    },
+    "item_name": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "from_inventory",
+        "company_fulfilled"
+      ],
+      "default": "company_fulfilled",
+      "description": "from_inventory = selected from partner's listed items; company_fulfilled = manual request"
+    },
+    "category": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "daily_rate": {
+      "type": "number",
+      "description": "Internal cost per unit per day"
+    },
+    "days": {
+      "type": "number",
+      "default": 1
+    },
+    "internal_cost": {
+      "type": "number",
+      "description": "Total internal cost (what we pay the partner)"
+    },
+    "billable_amount": {
+      "type": "number",
+      "description": "Amount billed to the client"
+    },
+    "total_cost": {
+      "type": "number",
+      "description": "Alias for internal_cost \u2014 kept for backward compat"
+    },
+    "vendor_reference": {
+      "type": "string",
+      "description": "Vendor PO / quote / reference number"
+    },
+    "availability_notes": {
+      "type": "string"
+    },
+    "delivery_notes": {
+      "type": "string"
+    },
+    "fulfillment_method": {
+      "type": "string",
+      "enum": [
+        "delivery",
+        "pickup"
+      ],
+      "default": "delivery",
+      "description": "Delivered to us or we pick it up"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "awaiting_delivery",
+        "delivered",
+        "picked_up",
+        "in_use",
+        "awaiting_return",
+        "awaiting_vendor_pickup",
+        "returned",
+        "damaged"
+      ],
+      "default": "requested"
+    },
+    "delivery_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "return_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "added_by": {
+      "type": "string",
+      "description": "Email of user who added this subrent"
+    }
+  },
+  "required": [
+    "show_id",
+    "partner_id",
+    "item_name"
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "name": "QuickBooksConnection",
+  "type": "object",
+  "properties": {
+    "realm_id": {
+      "type": "string",
+      "description": "QuickBooks company/realm ID"
+    },
+    "company_name": {
+      "type": "string",
+      "description": "QuickBooks company name"
+    },
+    "is_connected": {
+      "type": "boolean",
+      "default": false
+    },
+    "connected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "connected_by": {
+      "type": "string"
+    },
+    "access_token_enc": {
+      "type": "string",
+      "description": "Encrypted access token"
+    },
+    "refresh_token_enc": {
+      "type": "string",
+      "description": "Encrypted refresh token"
+    },
+    "token_expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "refresh_expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_sync_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_sync_status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "error",
+        "partial"
+      ],
+      "default": "success"
+    },
+    "last_sync_error": {
+      "type": "string"
+    },
+    "billing_flow": {
+      "type": "string",
+      "enum": [
+        "port24_primary",
+        "quickbooks_primary",
+        "manual"
+      ],
+      "default": "port24_primary",
+      "description": "port24_primary = Port24 client-facing, QB accounting-only; quickbooks_primary = QB invoice client-facing; manual = manual sync only"
+    },
+    "income_account_equipment": {
+      "type": "string",
+      "description": "QB account name/id for equipment rentals"
+    },
+    "income_account_labor": {
+      "type": "string",
+      "description": "QB account name/id for labor/crew"
+    },
+    "income_account_logistics": {
+      "type": "string",
+      "description": "QB account name/id for logistics/transport"
+    },
+    "income_account_consumables": {
+      "type": "string",
+      "description": "QB account name/id for consumables"
+    },
+    "income_account_discounts": {
+      "type": "string",
+      "description": "QB account name/id for discounts/adjustments"
+    },
+    "deposit_account": {
+      "type": "string",
+      "description": "QB payment deposit account"
+    },
+    "default_terms": {
+      "type": "string",
+      "description": "QB default payment terms"
+    },
+    "sales_tax_code": {
+      "type": "string",
+      "description": "QB sales tax code"
+    },
+    "default_service_item": {
+      "type": "string",
+      "description": "Default QB item/service for line items"
+    },
+    "webhook_verifier_token": {
+      "type": "string",
+      "description": "Token used to verify incoming QB webhooks"
+    },
+    "auto_sync_on_invoice_send": {
+      "type": "boolean",
+      "default": true,
+      "description": "Auto-push to QB when invoice is sent"
+    },
+    "sync_customers": {
+      "type": "boolean",
+      "default": true
+    },
+    "sync_invoices": {
+      "type": "boolean",
+      "default": true
+    },
+    "sync_payments": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,105 @@
+{
+  "name": "CrewRole",
+  "type": "object",
+  "properties": {
+    "role_name": {
+      "type": "string",
+      "description": "Role title (A1, Camera Op, TD, etc.)"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "Audio",
+        "Video",
+        "Lighting",
+        "Grip",
+        "Electric",
+        "Stage",
+        "Production",
+        "Direction",
+        "Post-Production",
+        "Other"
+      ],
+      "description": "Department this role belongs to"
+    },
+    "pricing_method": {
+      "type": "string",
+      "enum": [
+        "hourly",
+        "fixed",
+        "days"
+      ],
+      "default": "hourly",
+      "description": "How this role is priced"
+    },
+    "hourly_rate_internal": {
+      "type": "number",
+      "description": "Internal cost per hour (for Hourly pricing)"
+    },
+    "hourly_rate_billable": {
+      "type": "number",
+      "description": "Billable rate per hour (for Hourly pricing)"
+    },
+    "fixed_cost_internal": {
+      "type": "number",
+      "description": "Internal cost flat amount (for Fixed pricing)"
+    },
+    "fixed_cost_billable": {
+      "type": "number",
+      "description": "Billable rate flat amount (for Fixed pricing)"
+    },
+    "days_count": {
+      "type": "number",
+      "description": "Number of days (for Days @ Price pricing)"
+    },
+    "daily_rate_internal": {
+      "type": "number",
+      "description": "Internal cost per day (for Days @ Price pricing)"
+    },
+    "daily_rate_billable": {
+      "type": "number",
+      "description": "Billable rate per day (for Days @ Price pricing)"
+    },
+    "per_diem_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this role has a Per Diem attached"
+    },
+    "per_diem_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Per Diem daily amount \u2014 shown as a separate line item linked to this role"
+    },
+    "description": {
+      "type": "string",
+      "description": "Role description and responsibilities"
+    },
+    "required_skills": {
+      "type": "string",
+      "description": "Comma-separated list of required skills"
+    },
+    "certifications": {
+      "type": "string",
+      "description": "Required certifications or credentials"
+    },
+    "planner_notes": {
+      "type": "string",
+      "description": "Internal notes for planners"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this role is available for use"
+    },
+    "show_in_crew_booking": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show as option when booking crew"
+    }
+  },
+  "required": [
+    "role_name",
+    "department",
+    "pricing_method"
+  ]
+}

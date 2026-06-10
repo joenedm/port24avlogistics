@@ -1,0 +1,29 @@
+{
+  "name": "UserDashboard",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Reference to User"
+    },
+    "user_role": {
+      "type": "string",
+      "description": "User's role at time of save"
+    },
+    "widgets": {
+      "type": "array",
+      "description": "Ordered list of widget IDs enabled for this user",
+      "items": {
+        "type": "string"
+      }
+    },
+    "saved_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "widgets"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "EmailFieldControl",
+  "type": "object",
+  "properties": {
+    "field_name": {
+      "type": "string",
+      "enum": [
+        "project_name",
+        "crew_name",
+        "role",
+        "date",
+        "start_time",
+        "end_time",
+        "location",
+        "cost"
+      ],
+      "description": "Field identifier"
+    },
+    "display_label": {
+      "type": "string",
+      "description": "How it appears in emails"
+    },
+    "is_visible": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show in crew assignment emails"
+    }
+  },
+  "required": [
+    "field_name",
+    "display_label"
+  ]
+}

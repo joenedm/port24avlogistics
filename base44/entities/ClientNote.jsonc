@@ -1,0 +1,59 @@
+{
+  "name": "ClientNote",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "show_id": {
+      "type": "string",
+      "description": "Optional \u2014 if note is tied to a specific project"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "client_visible"
+      ],
+      "default": "internal",
+      "description": "internal = staff only; client_visible = shown in client portal"
+    },
+    "note_type": {
+      "type": "string",
+      "enum": [
+        "general",
+        "billing",
+        "technical",
+        "service",
+        "follow_up",
+        "complaint",
+        "compliment"
+      ],
+      "default": "general"
+    },
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "pinned": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "client_id",
+    "content",
+    "visibility"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "name": "CrewMember",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Reference to User entity"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email address for notifications"
+    },
+    "phone_number": {
+      "type": "string",
+      "description": "Mobile number for SMS notifications"
+    },
+    "job_title": {
+      "type": "string",
+      "description": "Employee job title / position"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department (e.g. Audio, Video, Lighting)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Employment start date"
+    },
+    "profile_photo_url": {
+      "type": "string",
+      "description": "Profile photo URL"
+    },
+    "is_available": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether crew member is available for bookings"
+    },
+    "skills": {
+      "type": "string",
+      "description": "Comma-separated skills (e.g. Audio, Lighting, Rigging)"
+    },
+    "hourly_rate": {
+      "type": "number",
+      "description": "Default hourly rate for this crew member"
+    },
+    "daily_rate": {
+      "type": "number",
+      "description": "Default daily rate"
+    },
+    "emergency_contact": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "employee_checkout_asset_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Asset IDs currently checked out to this employee (personal hold)"
+    }
+  },
+  "required": [
+    "user_id",
+    "phone_number"
+  ]
+}

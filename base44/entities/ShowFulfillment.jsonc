@@ -1,0 +1,89 @@
+{
+  "name": "ShowFulfillment",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string",
+      "description": "Reference to Show"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "requirement_id": {
+      "type": "string",
+      "description": "Reference to ShowRequirement this fulfills"
+    },
+    "asset_id": {
+      "type": "string",
+      "description": "The specific Asset record scanned/assigned"
+    },
+    "asset_name": {
+      "type": "string"
+    },
+    "asset_barcode": {
+      "type": "string"
+    },
+    "asset_serial": {
+      "type": "string",
+      "description": "Serial number of the specific unit"
+    },
+    "room_id": {
+      "type": "string"
+    },
+    "room_name": {
+      "type": "string"
+    },
+    "movement_state": {
+      "type": "string",
+      "enum": [
+        "picked",
+        "packed",
+        "on_truck",
+        "on_location",
+        "returning",
+        "returned"
+      ],
+      "default": "picked",
+      "description": "Current physical state: picked=in warehouse staged, packed=in container/truck ready, on_truck=left warehouse (LOCKED), on_location=at venue (LOCKED), returning=being returned, returned=back in stock"
+    },
+    "scanned_by": {
+      "type": "string",
+      "description": "Email of person who scanned"
+    },
+    "scanned_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this item was scanned/assigned"
+    },
+    "packed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "packed_by": {
+      "type": "string"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When item left the warehouse (on_truck)"
+    },
+    "sent_by": {
+      "type": "string"
+    },
+    "returned_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this item was scanned back in"
+    },
+    "returned_by": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "show_id",
+    "asset_id"
+  ]
+}

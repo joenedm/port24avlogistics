@@ -1,0 +1,57 @@
+{
+  "name": "ShowRequirement",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string",
+      "description": "Reference to Show"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "room_id": {
+      "type": "string",
+      "description": "Sub-location/room ID this requirement belongs to"
+    },
+    "room_name": {
+      "type": "string"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Name of the required product/equipment type"
+    },
+    "category": {
+      "type": "string",
+      "description": "Equipment category"
+    },
+    "asset_id": {
+      "type": "string",
+      "description": "Optional reference to a specific Asset template/product record"
+    },
+    "kit_id": {
+      "type": "string",
+      "description": "Optional reference to a Kit (if this requirement is a full kit)"
+    },
+    "quantity_needed": {
+      "type": "number",
+      "default": 1,
+      "description": "How many units of this product are required"
+    },
+    "daily_rate": {
+      "type": "number",
+      "description": "Planned daily rate for quoting purposes"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "show_id",
+    "product_name",
+    "quantity_needed"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "Vehicle",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Vehicle name or nickname"
+    },
+    "vehicle_type": {
+      "type": "string",
+      "enum": [
+        "cargo_van",
+        "sprinter_van",
+        "box_truck_12",
+        "box_truck_16",
+        "box_truck_24",
+        "trailer",
+        "custom"
+      ],
+      "default": "sprinter_van"
+    },
+    "interior_length_in": {
+      "type": "number"
+    },
+    "interior_width_in": {
+      "type": "number"
+    },
+    "interior_height_in": {
+      "type": "number"
+    },
+    "door_opening_width_in": {
+      "type": "number"
+    },
+    "door_opening_height_in": {
+      "type": "number"
+    },
+    "weight_capacity_lbs": {
+      "type": "number"
+    },
+    "has_ramp": {
+      "type": "boolean",
+      "default": false
+    },
+    "has_liftgate": {
+      "type": "boolean",
+      "default": false
+    },
+    "tie_down_points": {
+      "type": "number"
+    },
+    "license_plate": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "vehicle_type"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "CodeSettings",
+  "type": "object",
+  "properties": {
+    "record_type": {
+      "type": "string",
+      "description": "Identifier for the record type this setting applies to",
+      "enum": [
+        "physical_item",
+        "physical_kit",
+        "container",
+        "consumable",
+        "bulk",
+        "show_container",
+        "warehouse_location",
+        "project_code",
+        "pick_bin",
+        "cart",
+        "rack",
+        "road_case",
+        "pelican",
+        "custom_container"
+      ]
+    },
+    "label": {
+      "type": "string",
+      "description": "Human-readable label for this record type"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "Code prefix (e.g. NEDM, NEDMKIT, NEDMCASE)"
+    },
+    "separator": {
+      "type": "string",
+      "default": "-",
+      "description": "Separator between prefix and number (e.g. -)"
+    },
+    "padding": {
+      "type": "number",
+      "default": 5,
+      "description": "Zero-padding width for the number portion"
+    },
+    "next_number": {
+      "type": "number",
+      "default": 1,
+      "description": "Next number to assign"
+    },
+    "auto_generate": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to auto-generate codes for new records"
+    },
+    "qr_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether QR labels are enabled for this type"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "record_type",
+    "prefix"
+  ]
+}

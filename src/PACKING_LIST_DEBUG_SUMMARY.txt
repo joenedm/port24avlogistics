@@ -1,0 +1,142 @@
+═══════════════════════════════════════════════════════════════════════════════
+                        PACKING LIST BUG FIX SUMMARY
+═══════════════════════════════════════════════════════════════════════════════
+
+WHAT FILE WAS WRONG?
+────────────────────
+pages/Scan — The Scan In/Out page with Session Mode (packing/bulk scanning)
+
+WHAT DATA SOURCE WAS INCORRECTLY USED?
+──────────────────────────────────────
+1. Assets were being cached indefinitely (staleTime not set)
+2. No real-time subscription meant changes weren't detected
+3. No refresh on tab/window focus meant stale data persisted
+4. Sub-location filtering was missing from the packing list
+
+WHAT FILTER LOGIC WAS CHANGED?
+───────────────────────────────
+BEFORE:
+  showAssets = assets.filter(a => a.current_show_id === selectedShowId)
+  (This was correct, but assets were stale)
+
+AFTER:
+  1. Real-time subscription invalidates cache on any asset change
+  2. Assets query marked as stale (staleTime: 0)
+  3. Refetch on window focus enabled
+  4. Sub-location filtering added:
+     if (selectedSubLocationId) {
+       showAssets = showAssets.filter(a => a.current_sub_location_id === selectedSubLocationId)
+     }
+  5. Debug logs added to show filtering at each stage
+
+SPECIFIC FIXES APPLIED:
+───────────────────────
+✓ Added Asset.subscribe() to invalidate cache on changes
+✓ Set staleTime: 0 to prevent cache persistence
+✓ Added refetchOnWindowFocus: true for tab switching
+✓ Enhanced filter to include optional sub-location
+✓ Added detailed console.log() for debugging
+✓ Expanded filterlogic to show 3 stages: DB total → assigned to show → assigned to sublocation
+
+HOW TO TEST THAT ONLY ASSIGNED SHOW ITEMS APPEAR:
+──────────────────────────────────────────────────
+
+TEST 1 — Verify Correct Count
+──────────────────────────────
+1. Open ShowDetail for a show
+2. In Room Planning: Note it shows only 1 assigned item
+3. Open Scan page (new browser window)
+4. Switch to "Session Mode (Bulk)"
+5. Select the same show
+6. EXPECTED RESULT: "Total on Show" shows 1 (matches Room Planning)
+7. VERIFY: "Missing Items" list shows only that 1 item
+8. OPEN BROWSER CONSOLE (F12):
+   - Look for: [Scan Packing List Debug]
+   - Should show: assignedToShow: 1, stillNeeded: 1
+   - Should list only that 1 item name
+
+TEST 2 — Sub-Location Filtering
+────────────────────────────────
+1. Show has Room A (3 items) + Room B (2 items)
+2. Open Scan page → Session Mode → Select show
+3. WITHOUT selecting a room: "Missing" should show all 5
+4. SELECT Room A from the dropdown: "Missing" should recalculate
+5. EXPECTED: Now shows 3 (only Room A items)
+6. SELECT Room B: Now should show 2
+7. CONSOLE CHECK: Logs should update showing different sub_loc filters
+
+TEST 3 — Room Planning ↔ Scan Page Match
+─────────────────────────────────────────
+1. ShowDetail: Room Planning shows equipment
+2. Count the items: e.g., "Big Room" has 1 item
+3. Switch to Scan page → Session Mode → Select same show
+4. Select same room if available
+5. CRITICAL: "Total on Show" MUST exactly match Room Planning count
+6. FAIL INDICATOR: If numbers don't match, caching is still broken
+
+TEST 4 — Real-Time Sync
+───────────────────────
+1. Tab 1: Scan page in Session Mode
+2. Tab 2: ShowDetail page
+3. In Tab 2: Use InventoryPanel to add a new asset
+4. EXPECTED: Tab 1 packing list updates automatically within 2 seconds
+5. NO refresh needed on Tab 1
+6. FAIL: If Tab 1 still shows old count, subscription isn't working
+
+TEST 5 — CRITICAL: Cross-Show Contamination
+─────────────────────────────────────────────
+1. Show A: TV Sock, Light Tree (2 items assigned)
+2. Show B: DJ Kit (1 item assigned)
+3. Scan page → Select Show A → See TV Sock + Light Tree ✓
+4. CHANGE show dropdown to Show B
+5. EXPECTED: Packing list NOW shows ONLY DJ Kit
+6. FAIL INDICATOR: If you still see TV Sock + Light Tree, filtering is broken
+7. This is the PRIMARY BUG that was occurring (9 items appearing for 1-item show)
+
+CONSOLE DEBUG OUTPUT REFERENCE:
+───────────────────────────────
+
+Example for show with 1 item:
+{
+  selectedShowId: "show_abc123",
+  selectedSubLocationId: "none",
+  totalAssetsInDb: 1847,              ← All assets in warehouse
+  assignedToShow: 1,                  ← Only 1 assigned to this show
+  filteredBySubLocation: 1,           ← Still 1 (no room filter)
+  scanned: 0,                         ← Haven't scanned yet
+  stillNeeded: 1,                     ← Missing 1 item
+  stillNeededItems: [{name, barcode, show_id, sub_loc}]
+}
+
+The CRITICAL number is: assignedToShow vs stillNeeded
+- If assignedToShow is correct (1), but still needed shows 9 → BUG
+- If assignedToShow is 1 and stillNeeded is 1 → FIXED ✓
+
+═══════════════════════════════════════════════════════════════════════════════
+                              BOTTOM LINE
+═══════════════════════════════════════════════════════════════════════════════
+
+WRONG DATA WAS BEING SHOWN BECAUSE:
+  • Assets cache wasn't refreshing when shows changed
+  • Subscription wasn't invalidating cache on changes
+  • No window focus refresh meant stale data persisted
+  • Sub-location filtering wasn't available
+
+FIXES APPLIED:
+  • Asset real-time subscription with cache invalidation
+  • Stale time = 0 (always treat as expired)
+  • Refetch on window focus enabled
+  • Added sub-location filtering logic
+  • Added comprehensive debug logging
+
+HOW YOU KNOW IT'S FIXED:
+  • Packing list count matches Room Planning count
+  • Switching shows instantly refreshes the list
+  • Only items assigned to selected show appear
+  • Adding items in Room Planning auto-updates packing list
+  • Console logs show correct filtering stages
+
+VERIFICATION: Run Test 5 (Cross-Show Contamination)
+If you can switch between Show A and Show B and the packing list updates
+correctly with ONLY that show's items, the bug is FIXED.
+═══════════════════════════════════════════════════════════════════════════════

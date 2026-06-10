@@ -1,0 +1,86 @@
+{
+  "name": "EmailTemplate",
+  "type": "object",
+  "properties": {
+    "template_name": {
+      "type": "string",
+      "description": "Display name for this template"
+    },
+    "subject_line": {
+      "type": "string",
+      "description": "Email subject line with {{variable}} support"
+    },
+    "template_type": {
+      "type": "string",
+      "enum": [
+        "crew_assignment",
+        "crew_booking",
+        "notification",
+        "custom"
+      ],
+      "default": "custom",
+      "description": "Template category"
+    },
+    "header_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "footer_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "sections": {
+      "type": "array",
+      "description": "Email body sections/blocks",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "heading",
+              "paragraph",
+              "button",
+              "divider",
+              "spacer",
+              "image"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "alignment": {
+            "type": "string",
+            "enum": [
+              "left",
+              "center",
+              "right"
+            ],
+            "default": "left"
+          },
+          "styling": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "preview_html": {
+      "type": "string",
+      "description": "Compiled HTML for preview/sending"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "template_name",
+    "subject_line"
+  ]
+}

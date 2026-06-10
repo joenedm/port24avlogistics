@@ -1,0 +1,76 @@
+{
+  "name": "PrintTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template name"
+    },
+    "template_type": {
+      "type": "string",
+      "enum": [
+        "qr_label",
+        "pick_list",
+        "quote",
+        "invoice",
+        "other"
+      ],
+      "default": "qr_label",
+      "description": "What this template is used for"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional notes about this template"
+    },
+    "label_width_mm": {
+      "type": "number",
+      "description": "QR label width in millimeters"
+    },
+    "label_height_mm": {
+      "type": "number",
+      "description": "QR label height in millimeters"
+    },
+    "label_size_id": {
+      "type": "string",
+      "description": "Reference to LABEL_SIZES id (e.g. dymo_30336)"
+    },
+    "block_config": {
+      "type": "array",
+      "description": "Visual block configuration for the no-code builder (quote templates)",
+      "items": {
+        "type": "object"
+      }
+    },
+    "body_html": {
+      "type": "string",
+      "description": "Compiled HTML output (auto-generated from block_config or custom HTML for non-quote types)"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is the default template for its type"
+    },
+    "qr_data_config": {
+      "type": "object",
+      "description": "Configuration for QR code data encoding (QR Label Builder)",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "description": "Ordered list of asset fields to encode in QR",
+          "items": {
+            "type": "string"
+          }
+        },
+        "separator": {
+          "type": "string",
+          "default": "|",
+          "description": "Separator between fields (|, -, comma, /, newline, or custom)"
+        }
+      }
+    }
+  },
+  "required": [
+    "name",
+    "template_type"
+  ]
+}

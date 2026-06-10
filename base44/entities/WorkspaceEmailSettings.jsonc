@@ -1,0 +1,52 @@
+{
+  "name": "WorkspaceEmailSettings",
+  "type": "object",
+  "properties": {
+    "smtp_host": {
+      "type": "string",
+      "description": "SMTP server hostname (e.g. smtp.gmail.com, smtp.office365.com)"
+    },
+    "smtp_port": {
+      "type": "number",
+      "description": "SMTP port (usually 587 for TLS, 465 for SSL, 25 for plain)",
+      "default": 587
+    },
+    "smtp_username": {
+      "type": "string",
+      "description": "SMTP login username (usually the email address)"
+    },
+    "smtp_password": {
+      "type": "string",
+      "description": "SMTP login password or app password"
+    },
+    "from_email": {
+      "type": "string",
+      "description": "The 'From' email address (e.g. info@yourcompany.com)"
+    },
+    "from_name": {
+      "type": "string",
+      "description": "The 'From' display name (e.g. Acme Productions)"
+    },
+    "use_tls": {
+      "type": "boolean",
+      "default": true,
+      "description": "Use STARTTLS (recommended for port 587)"
+    },
+    "is_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set to true after a successful test send"
+    },
+    "last_tested_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "smtp_host",
+    "smtp_port",
+    "smtp_username",
+    "smtp_password",
+    "from_email"
+  ]
+}

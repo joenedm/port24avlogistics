@@ -1,0 +1,93 @@
+{
+  "name": "LogisticsBank",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Record name (e.g., 'UPS Freight NYC', 'Marriott Hotels', 'Tom's Moving Co')"
+    },
+    "logistics_type": {
+      "type": "string",
+      "enum": [
+        "crew_flight",
+        "crew_hotel",
+        "crew_rental_car",
+        "crew_rideshare",
+        "crew_mileage",
+        "crew_perdiem",
+        "trucking",
+        "freight",
+        "transport",
+        "general"
+      ],
+      "default": "general",
+      "description": "Type of logistics"
+    },
+    "vendor": {
+      "type": "string",
+      "description": "Vendor or company name"
+    },
+    "contact_name": {
+      "type": "string",
+      "description": "Primary contact person"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "contact_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email address"
+    },
+    "description": {
+      "type": "string",
+      "description": "Service description or route summary"
+    },
+    "vehicle_type": {
+      "type": "string",
+      "description": "Vehicle type if applicable (truck, van, car, plane, etc.)"
+    },
+    "origin": {
+      "type": "string",
+      "description": "Default origin/from location"
+    },
+    "destination": {
+      "type": "string",
+      "description": "Default destination/to location"
+    },
+    "base_address": {
+      "type": "string",
+      "description": "Base / origin address for transport records \u2014 used to calculate mileage to project delivery address"
+    },
+    "rate_per_mile": {
+      "type": "number",
+      "description": "Internal cost rate per mile (Transport types only)"
+    },
+    "billable_rate_per_mile": {
+      "type": "number",
+      "description": "Billable rate per mile charged to client (Transport types only)"
+    },
+    "default_cost": {
+      "type": "number",
+      "description": "Flat cost fallback if not using mileage calculation"
+    },
+    "default_billable_amount": {
+      "type": "number",
+      "description": "Flat billable amount fallback if not using mileage calculation"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Master notes, terms, or standard details"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this bank record is available for use"
+    }
+  },
+  "required": [
+    "name",
+    "logistics_type"
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "name": "InvoiceSettings",
+  "type": "object",
+  "properties": {
+    "default_payment_terms": {
+      "type": "string",
+      "enum": [
+        "due_on_receipt",
+        "due_before_loadin",
+        "due_before_event",
+        "net_7",
+        "net_15",
+        "net_30",
+        "net_45",
+        "net_60",
+        "custom"
+      ],
+      "default": "net_30",
+      "description": "Default payment terms for new invoices"
+    },
+    "custom_due_days": {
+      "type": "number",
+      "description": "Days until due for custom terms"
+    },
+    "default_deposit_percentage": {
+      "type": "number",
+      "description": "Default deposit as percentage (e.g. 50 for 50%)"
+    },
+    "default_deposit_flat_amount": {
+      "type": "number",
+      "description": "Default deposit as flat amount (if set, overrides percentage)"
+    },
+    "allow_partial_payments": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to allow partial/installment payments"
+    },
+    "require_deposit_before_picking": {
+      "type": "boolean",
+      "default": false,
+      "description": "Prevent picking/scanning until deposit is paid"
+    },
+    "require_final_payment_before_loadin": {
+      "type": "boolean",
+      "default": false,
+      "description": "Prevent load-in until final balance is paid"
+    },
+    "billing_flow": {
+      "type": "string",
+      "enum": [
+        "port24_stripe_primary",
+        "quickbooks_primary",
+        "manual_with_optional_qb"
+      ],
+      "default": "port24_stripe_primary",
+      "description": "Which system handles client-facing invoicing"
+    },
+    "stripe_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Stripe payment collection enabled"
+    },
+    "quickbooks_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "QuickBooks sync enabled"
+    },
+    "manual_payments_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Manual payment recording enabled"
+    },
+    "auto_send_on_confirm": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatically send deposit invoice when quote is confirmed"
+    },
+    "roles_can_create_invoice": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "admin",
+        "managing_director",
+        "project_manager"
+      ],
+      "description": "Roles allowed to create invoices"
+    },
+    "roles_can_record_payment": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "admin",
+        "project_manager"
+      ],
+      "description": "Roles allowed to record manual payments"
+    },
+    "roles_can_void_or_refund": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "admin"
+      ],
+      "description": "Roles allowed to void invoices or issue refunds"
+    },
+    "client_can_download_pdf": {
+      "type": "boolean",
+      "default": true
+    },
+    "client_can_view_payment_history": {
+      "type": "boolean",
+      "default": true
+    },
+    "client_portal_pay_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show Pay Now button in client portal"
+    }
+  },
+  "required": []
+}

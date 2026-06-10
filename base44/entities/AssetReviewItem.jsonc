@@ -1,0 +1,63 @@
+{
+  "name": "AssetReviewItem",
+  "type": "object",
+  "properties": {
+    "review_id": {
+      "type": "string",
+      "description": "Reference to YearlyAssetReview"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "asset_name": {
+      "type": "string"
+    },
+    "asset_barcode": {
+      "type": "string"
+    },
+    "asset_category": {
+      "type": "string"
+    },
+    "asset_status": {
+      "type": "string",
+      "description": "Asset status at time of review snapshot"
+    },
+    "asset_location": {
+      "type": "string"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "not_reviewed",
+        "confirmed",
+        "missing_candidate",
+        "deleted",
+        "sent_to_hospital"
+      ],
+      "default": "not_reviewed"
+    },
+    "scanned_by": {
+      "type": "string"
+    },
+    "scanned_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decision_by": {
+      "type": "string",
+      "description": "Who made the final decision on a missing asset"
+    },
+    "decision_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decision_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "review_id",
+    "asset_id",
+    "asset_name"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "name": "ClientFile",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "show_id": {
+      "type": "string",
+      "description": "Optional \u2014 project-specific file"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "file_name": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "file_type": {
+      "type": "string",
+      "description": "MIME type or extension"
+    },
+    "file_size_kb": {
+      "type": "number"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "contract",
+        "coi",
+        "po",
+        "invoice",
+        "quote",
+        "site_plan",
+        "rider",
+        "branding",
+        "photo",
+        "other"
+      ],
+      "default": "other"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "client_visible"
+      ],
+      "default": "internal"
+    },
+    "uploaded_by": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "client_id",
+    "file_name",
+    "file_url"
+  ]
+}

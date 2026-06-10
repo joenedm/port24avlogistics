@@ -1,0 +1,109 @@
+{
+  "name": "FulfillmentCalibration",
+  "type": "object",
+  "properties": {
+    "scenario_key": {
+      "type": "string",
+      "description": "Unique key for this scenario, e.g. audio_basic_small_room"
+    },
+    "scenario_label": {
+      "type": "string",
+      "description": "Human-readable label for the scenario"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "audio",
+        "video",
+        "lighting",
+        "general"
+      ],
+      "description": "Production category"
+    },
+    "quality_level": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "standard",
+        "premium"
+      ],
+      "description": "Quality tier this mapping applies to"
+    },
+    "description": {
+      "type": "string",
+      "description": "What production need this mapping covers"
+    },
+    "preferred_items": {
+      "type": "array",
+      "description": "Ordered list of preferred owned inventory choices (first = most preferred)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "asset_id": {
+            "type": "string"
+          },
+          "asset_name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "daily_rate": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "alternate_items": {
+      "type": "array",
+      "description": "Acceptable substitutes if preferred items are unavailable",
+      "items": {
+        "type": "object",
+        "properties": {
+          "asset_id": {
+            "type": "string"
+          },
+          "asset_name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "daily_rate": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "roundtable_note": {
+      "type": "string",
+      "description": "Which Roundtable partner to use if owned inventory cannot fulfill this need"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional context for the AI about this scenario"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "scenario_key",
+    "scenario_label",
+    "category",
+    "quality_level"
+  ]
+}

@@ -1,0 +1,236 @@
+{
+  "name": "Quote",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "client": {
+      "type": "string"
+    },
+    "template_id": {
+      "type": "string",
+      "description": "Reference to PrintTemplate used for this quote"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "approved",
+        "declined",
+        "expired",
+        "confirmed"
+      ],
+      "default": "draft"
+    },
+    "is_locked": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, all pricing is frozen \u2014 set on confirmation"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when quote was confirmed and pricing locked"
+    },
+    "confirmed_by": {
+      "type": "string",
+      "description": "Email of the user who confirmed the quote"
+    },
+    "reverted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reverted_by": {
+      "type": "string"
+    },
+    "locked_snapshot": {
+      "type": "object",
+      "description": "Frozen pricing snapshot captured at confirmation time",
+      "properties": {
+        "line_items": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "travel_items": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "crew_snapshot": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "subtotal": {
+          "type": "number"
+        },
+        "discount_pct": {
+          "type": "number"
+        },
+        "discount_amount": {
+          "type": "number"
+        },
+        "tax_pct": {
+          "type": "number"
+        },
+        "tax_amount": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      }
+    },
+    "line_items": {
+      "type": "array",
+      "description": "Equipment line items (room-based)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "requirement_id": {
+            "type": "string"
+          },
+          "asset_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "days": {
+            "type": "number"
+          },
+          "daily_rate": {
+            "type": "number"
+          },
+          "override_price": {
+            "type": "number"
+          },
+          "discount_pct": {
+            "type": "number"
+          },
+          "group_name": {
+            "type": "string"
+          },
+          "room_id": {
+            "type": "string"
+          },
+          "is_hidden": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "travel_items": {
+      "type": "array",
+      "description": "Travel and transport line items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "travel_type": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_cost": {
+            "type": "number"
+          },
+          "billable_amount": {
+            "type": "number"
+          },
+          "vendor": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "is_hidden": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "crew_members": {
+      "type": "array",
+      "description": "Crew members assigned to this quote",
+      "items": {
+        "type": "object",
+        "properties": {
+          "crew_id": {
+            "type": "string"
+          },
+          "crew_name": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "crew_notes": {
+      "type": "string"
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "discount_pct": {
+      "type": "number",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "tax_pct": {
+      "type": "number",
+      "default": 0
+    },
+    "tax_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date"
+    },
+    "show_daily_breakdown": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "show_id",
+    "show_name"
+  ]
+}

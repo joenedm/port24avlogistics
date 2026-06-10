@@ -1,0 +1,149 @@
+{
+  "name": "TravelLogistic",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string",
+      "description": "Reference to Show"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "logistics_type": {
+      "type": "string",
+      "enum": [
+        "crew_flight",
+        "crew_hotel",
+        "crew_rental_car",
+        "crew_rideshare",
+        "crew_mileage",
+        "crew_perdiem",
+        "trucking",
+        "freight",
+        "transport",
+        "general"
+      ],
+      "default": "general",
+      "description": "Type of logistics/travel"
+    },
+    "description": {
+      "type": "string",
+      "description": "Item description (flight route, hotel name, truck vendor, etc.)"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "Number of units (e.g. number of people, trips, trucks)"
+    },
+    "assigned_person": {
+      "type": "string",
+      "description": "Person assigned (crew member name, driver, etc.)"
+    },
+    "vendor": {
+      "type": "string",
+      "description": "Vendor or service provider name"
+    },
+    "origin": {
+      "type": "string",
+      "description": "Starting point (city, address)"
+    },
+    "destination": {
+      "type": "string",
+      "description": "Ending point (city, address)"
+    },
+    "pickup_datetime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Pickup or departure date/time"
+    },
+    "delivery_datetime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Delivery or arrival date/time"
+    },
+    "load_in_datetime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Load-in date/time (for trucking)"
+    },
+    "load_out_datetime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Load-out date/time (for trucking)"
+    },
+    "confirmation_number": {
+      "type": "string",
+      "description": "Reservation or booking reference"
+    },
+    "unit_cost": {
+      "type": "number",
+      "description": "Internal cost per unit"
+    },
+    "unit_billable": {
+      "type": "number",
+      "description": "Billable amount per unit"
+    },
+    "cost": {
+      "type": "number",
+      "description": "Total internal cost (unit_cost \u00d7 quantity)"
+    },
+    "billable_amount": {
+      "type": "number",
+      "description": "Total billable amount (unit_billable \u00d7 quantity)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "in_transit",
+        "delivered",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Current status"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "route_notes": {
+      "type": "string",
+      "description": "Route-specific notes or instructions"
+    },
+    "per_diem_amount": {
+      "type": "number",
+      "description": "Per diem allowance amount"
+    },
+    "mileage": {
+      "type": "number",
+      "description": "Distance in miles"
+    },
+    "mileage_rate": {
+      "type": "number",
+      "description": "Internal cost rate per mile"
+    },
+    "billable_mileage_rate": {
+      "type": "number",
+      "description": "Billable rate per mile charged to client"
+    },
+    "mileage_calculated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether cost was calculated from mileage (vs flat rate)"
+    },
+    "vehicle_type": {
+      "type": "string",
+      "description": "Type of vehicle (truck, van, car, etc.)"
+    },
+    "driver_name": {
+      "type": "string",
+      "description": "Driver name"
+    }
+  },
+  "required": [
+    "show_id",
+    "logistics_type",
+    "description"
+  ]
+}

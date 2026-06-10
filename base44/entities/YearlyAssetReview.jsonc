@@ -1,0 +1,82 @@
+{
+  "name": "YearlyAssetReview",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Review session name (e.g. 2026 Annual Review, Q3 Audio Audit)"
+    },
+    "review_type": {
+      "type": "string",
+      "enum": [
+        "annual",
+        "spot_check",
+        "category_review",
+        "full_inventory",
+        "cycle_count",
+        "custom"
+      ],
+      "default": "annual",
+      "description": "Type of review"
+    },
+    "review_year": {
+      "type": "number",
+      "description": "Year for annual reviews (optional for other types)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_progress",
+        "completed",
+        "finalized"
+      ],
+      "default": "draft"
+    },
+    "started_by": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finalized_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finalized_by": {
+      "type": "string"
+    },
+    "category_filter": {
+      "type": "string",
+      "description": "Optional category scope filter"
+    },
+    "location_filter": {
+      "type": "string",
+      "description": "Optional location/warehouse scope filter"
+    },
+    "total_assets": {
+      "type": "number",
+      "default": 0
+    },
+    "scanned_count": {
+      "type": "number",
+      "default": 0
+    },
+    "missing_count": {
+      "type": "number",
+      "default": 0
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "review_type"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "name": "LaborRate",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "description": "Job role (e.g. A1, Camera Op, Stage Manager)"
+    },
+    "labor_type": {
+      "type": "string",
+      "enum": [
+        "crew",
+        "labor",
+        "freelance"
+      ],
+      "default": "crew",
+      "description": "Type of labor"
+    },
+    "union_type": {
+      "type": "string",
+      "enum": [
+        "union",
+        "non_union"
+      ],
+      "default": "non_union",
+      "description": "Union status"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "hourly_rate_internal": {
+      "type": "number",
+      "description": "Internal cost per hour"
+    },
+    "hourly_rate_billable": {
+      "type": "number",
+      "description": "Billable rate per hour to client"
+    },
+    "overtime_rate_internal": {
+      "type": "number",
+      "description": "Overtime internal cost per hour"
+    },
+    "overtime_rate_billable": {
+      "type": "number",
+      "description": "Overtime billable rate per hour"
+    },
+    "daily_rate_internal": {
+      "type": "number",
+      "description": "Internal cost for full day"
+    },
+    "daily_rate_billable": {
+      "type": "number",
+      "description": "Billable rate for full day"
+    },
+    "half_day_rate_internal": {
+      "type": "number",
+      "description": "Internal cost for half day"
+    },
+    "half_day_rate_billable": {
+      "type": "number",
+      "description": "Billable rate for half day"
+    },
+    "travel_rate_internal": {
+      "type": "number",
+      "description": "Internal travel cost"
+    },
+    "travel_rate_billable": {
+      "type": "number",
+      "description": "Billable travel cost"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "role",
+    "hourly_rate_internal",
+    "hourly_rate_billable"
+  ]
+}

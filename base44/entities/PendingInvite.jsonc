@@ -1,0 +1,79 @@
+{
+  "name": "PendingInvite",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Invited user email"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Full name set by admin"
+    },
+    "company": {
+      "type": "string",
+      "description": "Company set by admin"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "director",
+        "manager",
+        "coordinator",
+        "crew"
+      ],
+      "default": "crew",
+      "description": "Role assigned by admin"
+    },
+    "invited_by": {
+      "type": "string",
+      "description": "Admin email who sent the invite"
+    },
+    "invite_token": {
+      "type": "string",
+      "description": "Unique token embedded in the invite link"
+    },
+    "temp_password": {
+      "type": "string",
+      "description": "Hashed temporary one-time password"
+    },
+    "temp_password_plain": {
+      "type": "string",
+      "description": "Plaintext temp password (cleared after first use)"
+    },
+    "temp_password_used": {
+      "type": "boolean",
+      "default": false,
+      "description": "True after the temp password has been used once"
+    },
+    "must_reset_password": {
+      "type": "boolean",
+      "default": true,
+      "description": "Flag: user must set a new password on first login"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Invite expiry timestamp"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the invite was accepted"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "expired"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "email",
+    "role"
+  ]
+}

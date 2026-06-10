@@ -1,0 +1,384 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string",
+      "description": "Reference to Show"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "quote_id": {
+      "type": "string",
+      "description": "Reference to Quote"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client"
+    },
+    "client": {
+      "type": "string",
+      "description": "Client company name"
+    },
+    "client_email": {
+      "type": "string"
+    },
+    "client_address": {
+      "type": "string"
+    },
+    "billing_contact_id": {
+      "type": "string"
+    },
+    "billing_contact_name": {
+      "type": "string"
+    },
+    "invoice_number": {
+      "type": "string",
+      "description": "Human-readable invoice number"
+    },
+    "invoice_type": {
+      "type": "string",
+      "enum": [
+        "full",
+        "deposit",
+        "balance",
+        "milestone",
+        "post_show_final",
+        "manual_custom"
+      ],
+      "default": "full",
+      "description": "Type of invoice being created"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "partially_paid",
+        "paid",
+        "overdue",
+        "voided",
+        "needs_review"
+      ],
+      "default": "draft",
+      "description": "Main invoice lifecycle status"
+    },
+    "supporting_badges": {
+      "type": "array",
+      "description": "Additional status indicators (viewed, payment_failed, refund_issued, etc)",
+      "items": {
+        "type": "string",
+        "enum": [
+          "viewed",
+          "payment_failed",
+          "refund_issued",
+          "client_disputed",
+          "manual_payment_recorded",
+          "stripe_synced",
+          "stripe_sync_error",
+          "quickbooks_synced",
+          "quickbooks_sync_error",
+          "change_order_pending",
+          "payment_link_created",
+          "credit_applied",
+          "check_payment",
+          "ach_payment",
+          "wire_payment",
+          "cash_payment"
+        ]
+      }
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "days": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "group_name": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "discount_pct": {
+      "type": "number",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "tax_pct": {
+      "type": "number",
+      "default": 0
+    },
+    "tax_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "type": "number"
+    },
+    "deposit_required": {
+      "type": "number",
+      "default": 0
+    },
+    "deposit_paid": {
+      "type": "number",
+      "default": 0
+    },
+    "amount_paid": {
+      "type": "number",
+      "default": 0
+    },
+    "amount_due": {
+      "type": "number"
+    },
+    "credits_applied": {
+      "type": "number",
+      "default": 0
+    },
+    "adjustment_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Post-show adjustments (damages, extras, missing items, etc)"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "sent_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "viewed_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payment_terms": {
+      "type": "string",
+      "enum": [
+        "due_on_receipt",
+        "due_before_loadin",
+        "due_before_event",
+        "net_7",
+        "net_15",
+        "net_30",
+        "net_45",
+        "net_60",
+        "custom"
+      ]
+    },
+    "custom_due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Custom due date for custom terms"
+    },
+    "po_number": {
+      "type": "string"
+    },
+    "tax_exempt": {
+      "type": "boolean",
+      "default": false
+    },
+    "venue_name": {
+      "type": "string"
+    },
+    "project_date_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "project_date_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "stripe_customer_id": {
+      "type": "string"
+    },
+    "stripe_invoice_id": {
+      "type": "string"
+    },
+    "stripe_payment_intent_id": {
+      "type": "string"
+    },
+    "stripe_checkout_session_id": {
+      "type": "string"
+    },
+    "stripe_hosted_invoice_url": {
+      "type": "string"
+    },
+    "stripe_payment_link": {
+      "type": "string",
+      "description": "Stripe payment link for payment collection"
+    },
+    "stripe_payment_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "open",
+        "paid",
+        "void",
+        "uncollectible"
+      ]
+    },
+    "stripe_pdf_url": {
+      "type": "string"
+    },
+    "stripe_receipt_url": {
+      "type": "string"
+    },
+    "stripe_last_sync": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stripe_sync_error": {
+      "type": "string"
+    },
+    "quickbooks_customer_id": {
+      "type": "string",
+      "description": "QB Customer ID from external sync service"
+    },
+    "quickbooks_invoice_id": {
+      "type": "string",
+      "description": "QB Invoice ID from external sync service"
+    },
+    "quickbooks_invoice_number": {
+      "type": "string",
+      "description": "QB Invoice Number"
+    },
+    "quickbooks_sync_status": {
+      "type": "string",
+      "enum": [
+        "not_synced",
+        "pending",
+        "synced",
+        "error",
+        "manual"
+      ],
+      "default": "not_synced",
+      "description": "QB sync state\u2014independent of invoice status"
+    },
+    "quickbooks_sync_error": {
+      "type": "string",
+      "description": "Last QB sync error message"
+    },
+    "last_quickbooks_sync_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this invoice was last synced to QB"
+    },
+    "payment_history": {
+      "type": "array",
+      "description": "Normalized payment history from all sources",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "payment_id": {
+            "type": "string",
+            "description": "Reference to Payment entity"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "method": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "stripe",
+              "quickbooks",
+              "manual",
+              "other"
+            ]
+          },
+          "reference_number": {
+            "type": "string"
+          },
+          "receipt_url": {
+            "type": "string"
+          },
+          "recorded_by": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes (admin only)"
+    },
+    "client_visible_notes": {
+      "type": "string",
+      "description": "Notes shown to client"
+    },
+    "terms_and_conditions": {
+      "type": "string",
+      "description": "Payment terms and conditions shown on invoice"
+    },
+    "needs_review_reason": {
+      "type": "string",
+      "description": "Why this invoice needs review"
+    },
+    "revision_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of times this invoice has been revised"
+    },
+    "revised_from_invoice_id": {
+      "type": "string",
+      "description": "If this is a revision, reference to original invoice"
+    },
+    "is_paid_in_full": {
+      "type": "boolean",
+      "default": false
+    },
+    "paid_in_full_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "show_name",
+    "client",
+    "total"
+  ]
+}

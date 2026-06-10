@@ -1,0 +1,52 @@
+{
+  "name": "CrewAssignmentToken",
+  "type": "object",
+  "properties": {
+    "crew_assignment_id": {
+      "type": "string",
+      "description": "Reference to ProjectCrew"
+    },
+    "crew_email": {
+      "type": "string"
+    },
+    "token": {
+      "type": "string",
+      "description": "Secure unique token"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "confirm",
+        "decline"
+      ],
+      "description": "Type of action this token enables"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Token expiration time (optional)"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "used_by": {
+      "type": "string",
+      "description": "Email of user who used the token"
+    }
+  },
+  "required": [
+    "crew_assignment_id",
+    "token",
+    "action_type",
+    "crew_email"
+  ]
+}

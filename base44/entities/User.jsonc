@@ -1,0 +1,67 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "director",
+        "manager",
+        "coordinator",
+        "crew"
+      ],
+      "default": "crew"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "inactive"
+      ],
+      "default": "pending"
+    },
+    "company": {
+      "type": "string",
+      "description": "Company or organization"
+    },
+    "job_title": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Short bio or notes"
+    },
+    "specialties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Technical specialties (tags)"
+    },
+    "profile_picture_url": {
+      "type": "string"
+    },
+    "onboarding_complete": {
+      "type": "boolean",
+      "default": false
+    },
+    "username": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "company",
+    "job_title",
+    "phone",
+    "bio",
+    "specialties",
+    "profile_picture_url",
+    "username"
+  ]
+}

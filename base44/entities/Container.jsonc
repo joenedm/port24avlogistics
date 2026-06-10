@@ -1,0 +1,127 @@
+{
+  "name": "Container",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Container name (e.g. Audio Rack A, Pelican 1610)"
+    },
+    "container_type": {
+      "type": "string",
+      "enum": [
+        "pelican",
+        "road_case",
+        "rack",
+        "tote",
+        "cable_trunk",
+        "cart",
+        "shelf",
+        "pallet",
+        "custom"
+      ],
+      "default": "road_case"
+    },
+    "asset_number": {
+      "type": "string",
+      "description": "Internal asset number / QR code value"
+    },
+    "barcode": {
+      "type": "string"
+    },
+    "outside_length_in": {
+      "type": "number"
+    },
+    "outside_width_in": {
+      "type": "number"
+    },
+    "outside_height_in": {
+      "type": "number"
+    },
+    "inside_length_in": {
+      "type": "number"
+    },
+    "inside_width_in": {
+      "type": "number"
+    },
+    "inside_height_in": {
+      "type": "number"
+    },
+    "empty_weight_lbs": {
+      "type": "number"
+    },
+    "max_weight_lbs": {
+      "type": "number"
+    },
+    "stackable": {
+      "type": "boolean",
+      "default": true
+    },
+    "has_wheels": {
+      "type": "boolean",
+      "default": false
+    },
+    "must_stay_upright": {
+      "type": "boolean",
+      "default": false
+    },
+    "fragile": {
+      "type": "boolean",
+      "default": false
+    },
+    "can_stack_on_top": {
+      "type": "boolean",
+      "default": true,
+      "description": "This container can be placed on top of others"
+    },
+    "can_have_items_stacked_on_it": {
+      "type": "boolean",
+      "default": true,
+      "description": "Other items/containers can be placed on top of this one"
+    },
+    "home_location": {
+      "type": "string",
+      "description": "Where this container normally lives in the warehouse"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "assigned",
+        "packed",
+        "on_truck",
+        "on_show",
+        "returned",
+        "missing",
+        "repair"
+      ],
+      "default": "available"
+    },
+    "current_show_id": {
+      "type": "string"
+    },
+    "current_show_name": {
+      "type": "string"
+    },
+    "current_truck_pack_id": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "description": "Department/category (Audio, Video, Lighting, etc.)"
+    },
+    "color_code": {
+      "type": "string",
+      "description": "Color label for visual identification in truck pack"
+    }
+  },
+  "required": [
+    "name",
+    "container_type"
+  ]
+}

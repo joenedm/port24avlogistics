@@ -1,0 +1,59 @@
+{
+  "name": "Alert",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "missing_item",
+        "incomplete_scan",
+        "late_return",
+        "load_out_reminder",
+        "incomplete_kit",
+        "low_stock",
+        "custom"
+      ],
+      "description": "Alert type"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "critical"
+      ],
+      "default": "warning"
+    },
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "show_id": {
+      "type": "string"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "asset_name": {
+      "type": "string"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_resolved": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "type",
+    "title",
+    "message"
+  ]
+}

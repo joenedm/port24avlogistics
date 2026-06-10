@@ -1,0 +1,196 @@
+{
+  "name": "Client",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Legal company name"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Short/common name used in UI"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "prospect",
+        "vip"
+      ],
+      "default": "active"
+    },
+    "billing_address": {
+      "type": "string"
+    },
+    "billing_city": {
+      "type": "string"
+    },
+    "billing_state": {
+      "type": "string"
+    },
+    "billing_zip": {
+      "type": "string"
+    },
+    "billing_country": {
+      "type": "string",
+      "default": "USA"
+    },
+    "billing_email": {
+      "type": "string"
+    },
+    "billing_contact_name": {
+      "type": "string"
+    },
+    "payment_terms": {
+      "type": "string",
+      "enum": [
+        "net_15",
+        "net_30",
+        "net_45",
+        "net_60",
+        "due_on_receipt",
+        "50_50",
+        "custom"
+      ],
+      "default": "net_30"
+    },
+    "payment_terms_custom": {
+      "type": "string"
+    },
+    "po_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "po_notes": {
+      "type": "string"
+    },
+    "coi_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "coi_notes": {
+      "type": "string"
+    },
+    "coi_holder_name": {
+      "type": "string"
+    },
+    "coi_minimum_coverage": {
+      "type": "string"
+    },
+    "quote_format": {
+      "type": "string",
+      "enum": [
+        "detailed",
+        "summary",
+        "rooms_only",
+        "single_page"
+      ],
+      "default": "detailed"
+    },
+    "show_rates_on_quote": {
+      "type": "boolean",
+      "default": true
+    },
+    "show_equipment_detail": {
+      "type": "boolean",
+      "default": true
+    },
+    "invoice_format": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "summary",
+        "itemized"
+      ],
+      "default": "standard"
+    },
+    "invoice_delivery": {
+      "type": "string",
+      "enum": [
+        "email",
+        "portal",
+        "mail",
+        "both"
+      ],
+      "default": "email"
+    },
+    "tax_exempt": {
+      "type": "boolean",
+      "default": false
+    },
+    "tax_id": {
+      "type": "string"
+    },
+    "credit_limit": {
+      "type": "number"
+    },
+    "preferred_communication": {
+      "type": "string",
+      "enum": [
+        "email",
+        "phone",
+        "text",
+        "portal"
+      ],
+      "default": "email"
+    },
+    "communication_notes": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "internal_notes": {
+      "type": "string"
+    },
+    "general_notes": {
+      "type": "string"
+    },
+    "total_shows": {
+      "type": "number",
+      "default": 0
+    },
+    "total_revenue": {
+      "type": "number",
+      "default": 0
+    },
+    "first_show_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "last_show_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "quickbooks_customer_id": {
+      "type": "string",
+      "description": "QuickBooks Customer ID after sync"
+    },
+    "qb_customer_sync_status": {
+      "type": "string",
+      "enum": [
+        "not_synced",
+        "synced",
+        "needs_review"
+      ],
+      "default": "not_synced",
+      "description": "QuickBooks customer sync status"
+    }
+  },
+  "required": [
+    "company_name"
+  ]
+}

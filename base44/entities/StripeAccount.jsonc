@@ -1,0 +1,63 @@
+{
+  "name": "StripeAccount",
+  "type": "object",
+  "properties": {
+    "stripe_account_id": {
+      "type": "string",
+      "description": "Connected Stripe account ID (acct_...)"
+    },
+    "account_name": {
+      "type": "string",
+      "description": "Business name from Stripe"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email from connected Stripe account"
+    },
+    "is_connected": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether Stripe is actively connected"
+    },
+    "connected_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When Stripe was connected"
+    },
+    "connected_by": {
+      "type": "string",
+      "description": "Email of user who connected Stripe"
+    },
+    "payment_page_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Allow clients to pay invoices via Stripe hosted page"
+    },
+    "customer_portal_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Allow clients to access Stripe customer portal"
+    },
+    "default_payment_method": {
+      "type": "string",
+      "enum": [
+        "card",
+        "bank_transfer",
+        "all"
+      ],
+      "default": "all",
+      "description": "Default payment method on invoice page"
+    },
+    "webhook_endpoint_id": {
+      "type": "string",
+      "description": "Stripe webhook endpoint ID for syncing"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes about this Stripe connection"
+    }
+  },
+  "required": [
+    "stripe_account_id"
+  ]
+}

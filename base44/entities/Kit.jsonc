@@ -1,0 +1,65 @@
+{
+  "name": "Kit",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Kit name"
+    },
+    "kit_type": {
+      "type": "string",
+      "enum": [
+        "serialized",
+        "cloud"
+      ],
+      "default": "serialized",
+      "description": "Serialized = physical case with QR; Cloud = virtual bundle"
+    },
+    "barcode": {
+      "type": "string",
+      "description": "QR Code / Asset Number (serialized kits only)"
+    },
+    "description": {
+      "type": "string"
+    },
+    "is_sealed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Sealed kits cannot be checked in with missing items"
+    },
+    "require_complete_checkin": {
+      "type": "boolean",
+      "default": true
+    },
+    "auto_price": {
+      "type": "boolean",
+      "default": false,
+      "description": "Auto-compute daily rate from sum of contents"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "checked_out",
+        "incomplete",
+        "maintenance"
+      ],
+      "default": "available"
+    },
+    "current_show_id": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "daily_rate": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

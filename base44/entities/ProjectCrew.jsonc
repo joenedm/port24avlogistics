@@ -1,0 +1,146 @@
+{
+  "name": "ProjectCrew",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string",
+      "description": "Reference to Show"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "crew_booking_id": {
+      "type": "string",
+      "description": "Reference to linked CrewBooking for sync"
+    },
+    "crew_member_id": {
+      "type": "string",
+      "description": "Reference to CrewMember"
+    },
+    "crew_member_name": {
+      "type": "string"
+    },
+    "crew_member_email": {
+      "type": "string",
+      "description": "Crew member email for confirmations"
+    },
+    "role": {
+      "type": "string",
+      "description": "Job role"
+    },
+    "labor_type": {
+      "type": "string",
+      "enum": [
+        "crew",
+        "labor",
+        "freelance"
+      ],
+      "default": "crew"
+    },
+    "assignment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Day assigned"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Start time HH:MM"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "End time HH:MM"
+    },
+    "location": {
+      "type": "string",
+      "description": "Assignment location/venue"
+    },
+    "hours": {
+      "type": "number",
+      "description": "Total hours calculated"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "Number of people in this role"
+    },
+    "rate_type": {
+      "type": "string",
+      "enum": [
+        "hourly",
+        "daily",
+        "half_day",
+        "travel",
+        "fixed"
+      ],
+      "default": "hourly"
+    },
+    "union_type": {
+      "type": "string",
+      "enum": [
+        "union",
+        "non_union"
+      ],
+      "default": "non_union"
+    },
+    "labor_rate_id": {
+      "type": "string",
+      "description": "Reference to CrewRole or custom role"
+    },
+    "internal_rate": {
+      "type": "number",
+      "description": "Applied internal rate"
+    },
+    "billable_rate": {
+      "type": "number",
+      "description": "Applied billable rate (optional at booking stage)"
+    },
+    "internal_cost": {
+      "type": "number",
+      "description": "Calculated internal cost"
+    },
+    "billable_cost": {
+      "type": "number",
+      "description": "Calculated billable cost"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "send_notification": {
+      "type": "boolean",
+      "default": true,
+      "description": "Send notification email when assigned"
+    },
+    "assignment_status": {
+      "type": "string",
+      "enum": [
+        "not_sent",
+        "pending",
+        "confirmed",
+        "declined"
+      ],
+      "default": "not_sent",
+      "description": "Crew confirmation status"
+    },
+    "status_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When status was last updated"
+    },
+    "confirmed_by": {
+      "type": "string",
+      "description": "Email of crew member who confirmed"
+    },
+    "billable_rate_missing": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag if billable rate is missing (warning only, doesn't block scheduling)"
+    }
+  },
+  "required": [
+    "show_id",
+    "role",
+    "assignment_date",
+    "internal_cost",
+    "billable_cost"
+  ]
+}

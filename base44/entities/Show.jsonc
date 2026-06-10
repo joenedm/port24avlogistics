@@ -1,0 +1,188 @@
+{
+  "name": "Show",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Show/event name"
+    },
+    "client": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client entity"
+    },
+    "client_contact_id": {
+      "type": "string",
+      "description": "Reference to ClientContact"
+    },
+    "client_contact_name": {
+      "type": "string"
+    },
+    "venue_id": {
+      "type": "string",
+      "description": "Reference to Venue entity"
+    },
+    "venue_name": {
+      "type": "string"
+    },
+    "venue": {
+      "type": "string"
+    },
+    "delivery_address": {
+      "type": "string",
+      "description": "Project delivery address"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "confirmed",
+        "picking",
+        "picked",
+        "on_truck",
+        "on_location",
+        "needs_return",
+        "returning",
+        "finished"
+      ],
+      "default": "planning",
+      "description": "Canonical project status key \u2014 used by the status engine. UI shows admin-configured labels."
+    },
+    "fulfillment_status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "picking",
+        "picked",
+        "on_truck",
+        "on_location",
+        "needs_return",
+        "returning",
+        "finished"
+      ],
+      "default": "planned",
+      "description": "Warehouse/gear movement status \u2014 kept for legacy compatibility"
+    },
+    "quote_confirmed": {
+      "type": "boolean",
+      "default": false
+    },
+    "quote_locked": {
+      "type": "boolean",
+      "default": false
+    },
+    "quote_unlocked_change_pending": {
+      "type": "boolean",
+      "default": false
+    },
+    "status_override": {
+      "type": "boolean",
+      "default": false,
+      "description": "Admin manually overrode status rules"
+    },
+    "status_override_reason": {
+      "type": "string"
+    },
+    "status_override_by": {
+      "type": "string"
+    },
+    "status_override_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "load_out_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "return_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "internal_notes": {
+      "type": "string",
+      "description": "Internal only \u2014 never shown to client"
+    },
+    "client_visible_notes": {
+      "type": "string",
+      "description": "Shown to client in portal"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "invoice_status": {
+      "type": "string",
+      "enum": [
+        "uninvoiced",
+        "invoiced",
+        "paid"
+      ],
+      "default": "uninvoiced"
+    },
+    "total_value": {
+      "type": "number",
+      "description": "Total quote/invoice value"
+    },
+    "po_number": {
+      "type": "string"
+    },
+    "coi_received": {
+      "type": "boolean",
+      "default": false
+    },
+    "event_details_confirmed": {
+      "type": "boolean",
+      "default": false
+    },
+    "event_details_confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sub_locations": {
+      "type": "array",
+      "description": "Rooms, trucks, areas within this show",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "room",
+              "truck",
+              "area",
+              "stage"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name",
+    "start_date"
+  ]
+}

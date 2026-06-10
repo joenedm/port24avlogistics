@@ -1,0 +1,218 @@
+{
+  "name": "BrandSettings",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "primary_color": {
+      "type": "string",
+      "description": "Hex \u2014 buttons, active nav, highlights (default: Gold #F59E0B)"
+    },
+    "accent_color": {
+      "type": "string",
+      "description": "Hex \u2014 secondary accent (default: Amber #FBBF24)"
+    },
+    "bg_color": {
+      "type": "string",
+      "description": "Hex \u2014 app + sidebar background (default: #1E1B2E)"
+    },
+    "card_color": {
+      "type": "string",
+      "description": "Hex \u2014 cards and panels (default: #2A2540)"
+    },
+    "sidebar_color": {
+      "type": "string",
+      "description": "Hex \u2014 sidebar background override (defaults to bg_color)"
+    },
+    "border_color": {
+      "type": "string",
+      "description": "Hex \u2014 borders and dividers (default: #3B3655)"
+    },
+    "login_background_url": {
+      "type": "string"
+    },
+    "login_background_color": {
+      "type": "string"
+    },
+    "dashboard_background_url": {
+      "type": "string"
+    },
+    "invoice_header_note": {
+      "type": "string"
+    },
+    "invoice_footer_note": {
+      "type": "string"
+    },
+    "quote_footer_note": {
+      "type": "string"
+    },
+    "default_tax_pct": {
+      "type": "number",
+      "default": 0
+    },
+    "default_payment_terms": {
+      "type": "string"
+    },
+    "company_phone": {
+      "type": "string"
+    },
+    "company_email": {
+      "type": "string"
+    },
+    "company_website": {
+      "type": "string"
+    },
+    "company_address": {
+      "type": "string"
+    },
+    "email_header_logo_url": {
+      "type": "string"
+    },
+    "email_header_logo_position": {
+      "type": "string",
+      "enum": [
+        "top",
+        "inline_left",
+        "inline_center",
+        "inline_right"
+      ],
+      "default": "top"
+    },
+    "email_header_background_type": {
+      "type": "string",
+      "enum": [
+        "solid",
+        "image",
+        "gradient"
+      ],
+      "default": "solid"
+    },
+    "email_header_background_color": {
+      "type": "string"
+    },
+    "email_header_background_url": {
+      "type": "string"
+    },
+    "email_header_background_gradient": {
+      "type": "string"
+    },
+    "email_header_text_color": {
+      "type": "string"
+    },
+    "email_header_alignment": {
+      "type": "string",
+      "enum": [
+        "left",
+        "center",
+        "right"
+      ],
+      "default": "center"
+    },
+    "email_header_show_logo": {
+      "type": "boolean",
+      "default": true
+    },
+    "email_header_show_social": {
+      "type": "boolean",
+      "default": false
+    },
+    "email_header_social_instagram": {
+      "type": "string"
+    },
+    "email_header_social_facebook": {
+      "type": "string"
+    },
+    "email_header_social_linkedin": {
+      "type": "string"
+    },
+    "email_footer_logo_url": {
+      "type": "string"
+    },
+    "email_footer_alignment": {
+      "type": "string",
+      "enum": [
+        "left",
+        "center"
+      ],
+      "default": "center"
+    },
+    "email_footer_background_type": {
+      "type": "string",
+      "enum": [
+        "solid",
+        "image",
+        "gradient"
+      ],
+      "default": "solid"
+    },
+    "email_footer_background_color": {
+      "type": "string",
+      "default": "#f9fafb"
+    },
+    "email_footer_background_url": {
+      "type": "string"
+    },
+    "email_footer_background_gradient": {
+      "type": "string"
+    },
+    "email_footer_text_color": {
+      "type": "string",
+      "default": "#6b7280"
+    },
+    "email_footer_show_logo": {
+      "type": "boolean",
+      "default": false
+    },
+    "email_footer_show_company_name": {
+      "type": "boolean",
+      "default": true
+    },
+    "email_footer_show_phone": {
+      "type": "boolean",
+      "default": true
+    },
+    "email_footer_show_email": {
+      "type": "boolean",
+      "default": true
+    },
+    "email_footer_show_website": {
+      "type": "boolean",
+      "default": true
+    },
+    "email_footer_show_address": {
+      "type": "boolean",
+      "default": true
+    },
+    "email_footer_show_social": {
+      "type": "boolean",
+      "default": true
+    },
+    "email_footer_social_instagram": {
+      "type": "string"
+    },
+    "email_footer_social_facebook": {
+      "type": "string"
+    },
+    "email_footer_social_linkedin": {
+      "type": "string"
+    },
+    "email_footer_disclaimer": {
+      "type": "string"
+    },
+    "email_footer_custom_text": {
+      "type": "string"
+    },
+    "email_footer_text": {
+      "type": "string"
+    },
+    "email_footer_show_contact": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": []
+}

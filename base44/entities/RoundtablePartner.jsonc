@@ -1,0 +1,55 @@
+{
+  "name": "RoundtablePartner",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Partner company name"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "Company logo URL"
+    },
+    "contact_name": {
+      "type": "string",
+      "description": "Primary contact name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string",
+      "description": "Main business address"
+    },
+    "pickup_address": {
+      "type": "string",
+      "description": "Pickup/warehouse address"
+    },
+    "delivery_notes": {
+      "type": "string",
+      "description": "Notes on how they deliver"
+    },
+    "billing_notes": {
+      "type": "string",
+      "description": "Billing terms and notes"
+    },
+    "preferred_categories": {
+      "type": "string",
+      "description": "Comma-separated categories they specialize in"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "company_name"
+  ]
+}

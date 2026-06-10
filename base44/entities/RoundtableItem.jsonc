@@ -1,0 +1,64 @@
+{
+  "name": "RoundtableItem",
+  "type": "object",
+  "properties": {
+    "partner_id": {
+      "type": "string",
+      "description": "Reference to RoundtablePartner"
+    },
+    "partner_name": {
+      "type": "string",
+      "description": "Denormalized partner name"
+    },
+    "name": {
+      "type": "string",
+      "description": "Item name"
+    },
+    "category": {
+      "type": "string",
+      "description": "Audio, Video, Lighting, Staging, etc."
+    },
+    "qty_available": {
+      "type": "number",
+      "default": 1
+    },
+    "daily_rate": {
+      "type": "number",
+      "description": "Partner's daily rate"
+    },
+    "serial_numbers": {
+      "type": "string",
+      "description": "Comma-separated serial/asset numbers"
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "physical",
+        "kit"
+      ],
+      "default": "physical"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "excellent",
+        "good",
+        "fair",
+        "poor"
+      ],
+      "default": "good"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_available": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "partner_id",
+    "partner_name",
+    "name"
+  ]
+}

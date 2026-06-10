@@ -1,0 +1,124 @@
+{
+  "name": "CrewBooking",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string",
+      "description": "Show/project ID"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "crew_id": {
+      "type": "string",
+      "description": "CrewMember ID"
+    },
+    "crew_name": {
+      "type": "string"
+    },
+    "crew_email": {
+      "type": "string",
+      "description": "Crew member email"
+    },
+    "crew_phone": {
+      "type": "string"
+    },
+    "project_crew_id": {
+      "type": "string",
+      "description": "Reference to linked ProjectCrew for sync"
+    },
+    "role": {
+      "type": "string",
+      "description": "Job role assigned"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_sent",
+        "pending",
+        "confirmed",
+        "declined",
+        "cancelled"
+      ],
+      "default": "not_sent",
+      "description": "Booking/invite status"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Start time if day-specific"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "End time if day-specific"
+    },
+    "location": {
+      "type": "string",
+      "description": "Assignment location/venue"
+    },
+    "accommodation": {
+      "type": "string",
+      "description": "Where crew member is staying"
+    },
+    "rate_type": {
+      "type": "string",
+      "enum": [
+        "hourly",
+        "daily",
+        "fixed"
+      ],
+      "default": "daily"
+    },
+    "rate": {
+      "type": "number",
+      "description": "Offered rate for this booking"
+    },
+    "total_pay": {
+      "type": "number",
+      "description": "Calculated total pay"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "attached_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this person was attached to the show"
+    },
+    "email_sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When email invitation was sent"
+    },
+    "sent_by": {
+      "type": "string",
+      "description": "Email of the user who sent the invite"
+    },
+    "sms_sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When SMS invitation was sent"
+    },
+    "responded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When crew responded"
+    },
+    "billable_rate_missing": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag if billable rate is missing (warning only)"
+    }
+  },
+  "required": [
+    "show_id",
+    "crew_id"
+  ]
+}

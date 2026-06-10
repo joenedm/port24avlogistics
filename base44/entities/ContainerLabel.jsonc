@@ -1,0 +1,37 @@
+{
+  "name": "ContainerLabel",
+  "type": "object",
+  "properties": {
+    "label_id": {
+      "type": "string",
+      "description": "Unique scannable ID for this container label (e.g. CLB-XXXXXX)"
+    },
+    "kit_id": {
+      "type": "string",
+      "description": "Reference to Kit entity"
+    },
+    "kit_name": {
+      "type": "string",
+      "description": "Denormalized kit name for display"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes about this container/case"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this label is the active label for the kit"
+    },
+    "printed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the label was last printed"
+    }
+  },
+  "required": [
+    "label_id",
+    "kit_id",
+    "kit_name"
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "name": "TruckPack",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "vehicle_id": {
+      "type": "string"
+    },
+    "vehicle_name": {
+      "type": "string"
+    },
+    "vehicle_type": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "planned",
+        "loading",
+        "on_truck",
+        "on_show",
+        "returned"
+      ],
+      "default": "draft"
+    },
+    "total_weight_lbs": {
+      "type": "number"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pack_items": {
+      "type": "array",
+      "description": "Ordered list of containers/items in the pack",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "item_id": {
+            "type": "string"
+          },
+          "item_type": {
+            "type": "string",
+            "enum": [
+              "container",
+              "asset",
+              "kit"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "room_name": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "weight_lbs": {
+            "type": "number"
+          },
+          "length_in": {
+            "type": "number"
+          },
+          "width_in": {
+            "type": "number"
+          },
+          "height_in": {
+            "type": "number"
+          },
+          "stackable": {
+            "type": "boolean"
+          },
+          "fragile": {
+            "type": "boolean"
+          },
+          "must_stay_upright": {
+            "type": "boolean"
+          },
+          "load_order": {
+            "type": "number"
+          },
+          "unload_order": {
+            "type": "number"
+          },
+          "layer": {
+            "type": "number",
+            "description": "Floor=1, Stacked=2"
+          },
+          "x_pos": {
+            "type": "number"
+          },
+          "y_pos": {
+            "type": "number"
+          },
+          "rotated": {
+            "type": "boolean"
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "load_first, load_last, cab_item, keep_together, fragile"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "color_code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "prepared_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "show_id",
+    "show_name"
+  ]
+}

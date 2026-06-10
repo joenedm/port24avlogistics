@@ -1,0 +1,134 @@
+{
+  "name": "Venue",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "zip": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "default": "USA"
+    },
+    "venue_type": {
+      "type": "string",
+      "enum": [
+        "hotel",
+        "convention_center",
+        "theater",
+        "outdoor",
+        "corporate_office",
+        "arena",
+        "stadium",
+        "restaurant",
+        "club",
+        "other"
+      ],
+      "default": "other"
+    },
+    "capacity": {
+      "type": "number"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "load_in_rules": {
+      "type": "string",
+      "description": "Load-in time restrictions, dock rules, elevator access, etc."
+    },
+    "load_in_dock_address": {
+      "type": "string"
+    },
+    "load_in_hours": {
+      "type": "string",
+      "description": "e.g. 6am-10pm"
+    },
+    "freight_elevator": {
+      "type": "boolean",
+      "default": false
+    },
+    "dock_height": {
+      "type": "string"
+    },
+    "parking_notes": {
+      "type": "string"
+    },
+    "power_available": {
+      "type": "string",
+      "description": "Available power specs (amps, phases, etc.)"
+    },
+    "rigging_points": {
+      "type": "boolean",
+      "default": false
+    },
+    "rigging_notes": {
+      "type": "string"
+    },
+    "house_equipment_available": {
+      "type": "string",
+      "description": "What house equipment is available"
+    },
+    "house_engineer_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "exclusive_vendors": {
+      "type": "string",
+      "description": "Required or exclusive vendor list"
+    },
+    "union_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "union_notes": {
+      "type": "string"
+    },
+    "wifi_available": {
+      "type": "boolean",
+      "default": false
+    },
+    "wifi_notes": {
+      "type": "string"
+    },
+    "preferred_setup_notes": {
+      "type": "string"
+    },
+    "internal_notes": {
+      "type": "string",
+      "description": "Internal notes \u2014 never shown to client"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

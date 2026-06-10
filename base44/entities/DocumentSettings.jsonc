@@ -1,0 +1,106 @@
+{
+  "name": "DocumentSettings",
+  "type": "object",
+  "properties": {
+    "paper_size": {
+      "type": "string",
+      "enum": [
+        "letter",
+        "a4"
+      ],
+      "default": "letter",
+      "description": "Default paper size for all printed documents"
+    },
+    "orientation_default": {
+      "type": "string",
+      "enum": [
+        "portrait",
+        "landscape"
+      ],
+      "default": "portrait"
+    },
+    "margin_preset": {
+      "type": "string",
+      "enum": [
+        "narrow",
+        "normal",
+        "wide"
+      ],
+      "default": "normal",
+      "description": "narrow=10mm, normal=14mm, wide=20mm"
+    },
+    "show_header": {
+      "type": "boolean",
+      "default": true
+    },
+    "show_footer": {
+      "type": "boolean",
+      "default": true
+    },
+    "show_logo": {
+      "type": "boolean",
+      "default": true
+    },
+    "show_page_numbers": {
+      "type": "boolean",
+      "default": true
+    },
+    "show_printed_date": {
+      "type": "boolean",
+      "default": true
+    },
+    "header_style": {
+      "type": "string",
+      "enum": [
+        "full",
+        "compact",
+        "minimal"
+      ],
+      "default": "full"
+    },
+    "font_family": {
+      "type": "string",
+      "enum": [
+        "system",
+        "inter",
+        "georgia",
+        "courier"
+      ],
+      "default": "system"
+    },
+    "table_density": {
+      "type": "string",
+      "enum": [
+        "compact",
+        "normal",
+        "relaxed"
+      ],
+      "default": "normal"
+    },
+    "primary_doc_color": {
+      "type": "string",
+      "description": "Override brand primary color for documents (hex)"
+    },
+    "accent_doc_color": {
+      "type": "string",
+      "description": "Override brand accent color for documents (hex)"
+    },
+    "truck_pack_orientation": {
+      "type": "string",
+      "enum": [
+        "landscape",
+        "portrait"
+      ],
+      "default": "landscape"
+    },
+    "quote_show_signature": {
+      "type": "boolean",
+      "default": true
+    },
+    "invoice_show_signature": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": []
+}

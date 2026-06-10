@@ -1,0 +1,79 @@
+{
+  "name": "AdditionalEquipmentRequest",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string",
+      "description": "Reference to Show"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string",
+      "description": "Reference to Asset being requested"
+    },
+    "asset_name": {
+      "type": "string"
+    },
+    "asset_barcode": {
+      "type": "string"
+    },
+    "serial_number": {
+      "type": "string",
+      "description": "Serial number if applicable"
+    },
+    "requested_quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "Quantity requested"
+    },
+    "sub_location_id": {
+      "type": "string",
+      "description": "Room/truck/area assignment (required before approval)"
+    },
+    "sub_location_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Request status"
+    },
+    "requested_by": {
+      "type": "string",
+      "description": "Email of user who scanned the item"
+    },
+    "scanned_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the item was scanned"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Email of approver (manager/coordinator/admin)"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejected_reason": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes for the request"
+    }
+  },
+  "required": [
+    "show_id",
+    "asset_id",
+    "requested_by",
+    "scanned_at"
+  ]
+}

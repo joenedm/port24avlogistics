@@ -1,0 +1,74 @@
+{
+  "name": "PostEventCost",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string",
+      "description": "Reference to Show"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "cost_name": {
+      "type": "string",
+      "description": "Name of cost item"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "crew_hours",
+        "crew_addition",
+        "overtime",
+        "meal_penalties",
+        "rush_charges",
+        "purchased_items",
+        "expendables",
+        "rentals",
+        "miscellaneous"
+      ],
+      "description": "Cost category"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "unit_cost": {
+      "type": "number",
+      "description": "Internal cost per unit"
+    },
+    "unit_sell_price": {
+      "type": "number",
+      "description": "Billable price per unit"
+    },
+    "total_internal_cost": {
+      "type": "number",
+      "description": "Calculated internal total"
+    },
+    "total_billable_cost": {
+      "type": "number",
+      "description": "Calculated billable total"
+    },
+    "is_billable": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to charge client"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "date_added": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "added_by": {
+      "type": "string",
+      "description": "Email of user who added"
+    }
+  },
+  "required": [
+    "show_id",
+    "cost_name",
+    "category",
+    "unit_cost"
+  ]
+}

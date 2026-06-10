@@ -1,0 +1,37 @@
+{
+  "name": "ImportTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template name (e.g. 'My Rental Spreadsheet')"
+    },
+    "column_headers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Original column header names from the spreadsheet"
+    },
+    "field_map": {
+      "type": "object",
+      "description": "Map of column index to field key"
+    },
+    "duplicate_action": {
+      "type": "string",
+      "enum": [
+        "skip",
+        "update",
+        "create"
+      ],
+      "default": "skip"
+    },
+    "dupe_match_by": {
+      "type": "string",
+      "default": "barcode"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

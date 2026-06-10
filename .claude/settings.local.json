@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh auth *)",
+      "Bash(brew list *)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(gh --version)"
+    ]
+  }
+}

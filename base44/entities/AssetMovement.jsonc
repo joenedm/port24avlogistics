@@ -1,0 +1,62 @@
+{
+  "name": "AssetMovement",
+  "type": "object",
+  "properties": {
+    "asset_id": {
+      "type": "string"
+    },
+    "asset_name": {
+      "type": "string"
+    },
+    "asset_barcode": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "check_out",
+        "check_in",
+        "transfer",
+        "maintenance",
+        "av_hospital"
+      ]
+    },
+    "show_id": {
+      "type": "string"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "sub_location_id": {
+      "type": "string"
+    },
+    "sub_location_name": {
+      "type": "string"
+    },
+    "from_location": {
+      "type": "string"
+    },
+    "to_location": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "scanned_by": {
+      "type": "string",
+      "description": "Email or display name of the user who performed the action"
+    },
+    "scanned_by_user_id": {
+      "type": "string",
+      "description": "User ID of the actor (from base44.auth.me())"
+    },
+    "scan_session_id": {
+      "type": "string",
+      "description": "Groups scans from a single session"
+    }
+  },
+  "required": [
+    "asset_id",
+    "action"
+  ]
+}

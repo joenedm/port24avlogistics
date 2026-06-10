@@ -1,0 +1,121 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "invoice_id": {
+      "type": "string",
+      "description": "Reference to Invoice"
+    },
+    "show_id": {
+      "type": "string",
+      "description": "Reference to Show"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Payment amount"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When payment was received or recorded"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "stripe",
+        "quickbooks",
+        "check",
+        "ach",
+        "wire",
+        "cash",
+        "external_card",
+        "credit_comp",
+        "manual",
+        "other"
+      ],
+      "description": "How the payment was made"
+    },
+    "source_provider": {
+      "type": "string",
+      "enum": [
+        "stripe",
+        "quickbooks",
+        "manual",
+        "other"
+      ],
+      "description": "Where the payment originated (QB, Stripe, manual entry, etc)"
+    },
+    "source_payment_id": {
+      "type": "string",
+      "description": "Payment ID from source system (QB transaction ID, Stripe charge ID, etc)"
+    },
+    "source_invoice_id": {
+      "type": "string",
+      "description": "Invoice ID from source system (QB invoice ID, Stripe invoice ID)"
+    },
+    "reference_number": {
+      "type": "string",
+      "description": "Check number, wire reference, ACH confirmation, QB transaction ID, etc"
+    },
+    "receipt_url": {
+      "type": "string",
+      "description": "URL to receipt/proof of payment"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "refunded",
+        "disputed"
+      ],
+      "default": "completed",
+      "description": "Payment status"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "not_synced",
+        "pending_sync",
+        "synced",
+        "error",
+        "manual"
+      ],
+      "default": "manual",
+      "description": "Sync status with external systems (QB, Stripe, etc)"
+    },
+    "sync_error": {
+      "type": "string",
+      "description": "Last sync error if any"
+    },
+    "recorded_by": {
+      "type": "string",
+      "description": "Email of user who recorded the payment (for manual payments)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes about this payment"
+    },
+    "stripe_charge_id": {
+      "type": "string"
+    },
+    "stripe_payment_intent_id": {
+      "type": "string"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "invoice_id",
+    "amount",
+    "payment_date",
+    "payment_method"
+  ]
+}

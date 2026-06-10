@@ -1,0 +1,266 @@
+{
+  "name": "Asset",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Internal equipment name"
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "physical_item",
+        "physical_kit",
+        "cloud_kit",
+        "consumable",
+        "bulk"
+      ],
+      "default": "physical_item",
+      "description": "Type of inventory record \u2014 drives all platform behavior"
+    },
+    "ownership_type": {
+      "type": "string",
+      "enum": [
+        "owned",
+        "partner_stored"
+      ],
+      "default": "owned",
+      "description": "owned = we own it; partner_stored = belongs to a Roundtable partner"
+    },
+    "partner_owner_id": {
+      "type": "string"
+    },
+    "partner_owner_name": {
+      "type": "string"
+    },
+    "partner_use_allowed": {
+      "type": "boolean",
+      "default": true
+    },
+    "partner_approval_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "partner_agreement_notes": {
+      "type": "string"
+    },
+    "asset_number": {
+      "type": "string",
+      "description": "Internal asset number assigned by the company (e.g. AV-001)"
+    },
+    "barcode": {
+      "type": "string",
+      "description": "Barcode / QR shortcut \u2014 optional scan alias only"
+    },
+    "serial_numbers": {
+      "type": "string",
+      "description": "Manufacturer serial number(s) \u2014 comma-separated for multiple units"
+    },
+    "serial_number": {
+      "type": "string",
+      "description": "Legacy single serial number field"
+    },
+    "tracking": {
+      "type": "string",
+      "enum": [
+        "serialized",
+        "bulk",
+        "consumable"
+      ],
+      "default": "serialized"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "reorder_level": {
+      "type": "number"
+    },
+    "unit_of_measure": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "checked_out",
+        "maintenance",
+        "retired",
+        "lost"
+      ],
+      "default": "available"
+    },
+    "is_lost": {
+      "type": "boolean",
+      "default": false
+    },
+    "lost_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lost_by": {
+      "type": "string"
+    },
+    "lost_notes": {
+      "type": "string"
+    },
+    "found_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "found_by": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "excellent",
+        "good",
+        "fair",
+        "poor"
+      ],
+      "default": "good"
+    },
+    "location": {
+      "type": "string",
+      "description": "Current storage location"
+    },
+    "locked_to_show_id": {
+      "type": "string"
+    },
+    "locked_to_show_name": {
+      "type": "string"
+    },
+    "locked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "list_price": {
+      "type": "number"
+    },
+    "price_incl_tax": {
+      "type": "number"
+    },
+    "daily_rate": {
+      "type": "number"
+    },
+    "subrent_cost": {
+      "type": "number"
+    },
+    "cost_per_unit": {
+      "type": "number"
+    },
+    "country_of_origin": {
+      "type": "string"
+    },
+    "purchase_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "purchase_price": {
+      "type": "number"
+    },
+    "replacement_value": {
+      "type": "number"
+    },
+    "pricing_tier": {
+      "type": "string",
+      "enum": [
+        "retail",
+        "repeat",
+        "vip"
+      ],
+      "default": "retail"
+    },
+    "max_discount_pct": {
+      "type": "number",
+      "default": 50
+    },
+    "weight_kg": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "current_show_id": {
+      "type": "string"
+    },
+    "current_sub_location_id": {
+      "type": "string"
+    },
+    "current_sub_location_name": {
+      "type": "string"
+    },
+    "kit_id": {
+      "type": "string"
+    },
+    "custom_fields": {
+      "type": "object"
+    },
+    "employee_checkout_id": {
+      "type": "string"
+    },
+    "employee_checkout_name": {
+      "type": "string"
+    },
+    "employee_checkout_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "vendor": {
+      "type": "string"
+    },
+    "warranty_expiry": {
+      "type": "string",
+      "format": "date"
+    },
+    "mfr_serial": {
+      "type": "string",
+      "description": "Manufacturer serial number (separate from internal asset number)"
+    },
+    "home_container_id": {
+      "type": "string",
+      "description": "Container this item normally lives in"
+    },
+    "home_container_name": {
+      "type": "string"
+    },
+    "current_container_id": {
+      "type": "string",
+      "description": "Container this item is currently packed in"
+    },
+    "current_container_name": {
+      "type": "string"
+    },
+    "permanent_container": {
+      "type": "boolean",
+      "default": false,
+      "description": "Always stored in the same container"
+    },
+    "can_move_to_show_container": {
+      "type": "boolean",
+      "default": true
+    },
+    "storage_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

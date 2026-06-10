@@ -1,0 +1,48 @@
+{
+  "name": "BookingConfirmationToken",
+  "type": "object",
+  "properties": {
+    "crew_booking_id": {
+      "type": "string",
+      "description": "Reference to CrewBooking"
+    },
+    "crew_email": {
+      "type": "string"
+    },
+    "token": {
+      "type": "string",
+      "description": "Secure unique token"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "confirm",
+        "decline"
+      ],
+      "description": "Type of action this token enables"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Token expiration time (optional)"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "crew_booking_id",
+    "token",
+    "action_type",
+    "crew_email"
+  ]
+}

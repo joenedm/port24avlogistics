@@ -1,0 +1,69 @@
+{
+  "name": "EquipmentImportStaging",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "Groups all rows from a single import session"
+    },
+    "row_index": {
+      "type": "number",
+      "description": "Original row number in the uploaded file"
+    },
+    "raw_data": {
+      "type": "object",
+      "description": "Raw { header: value } pairs from the spreadsheet"
+    },
+    "mapped_data": {
+      "type": "object",
+      "description": "Resolved { fieldKey: value } after mapping is applied"
+    },
+    "validation_errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of validation error messages for this row"
+    },
+    "duplicate_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "duplicate",
+        "flagged"
+      ],
+      "default": "none",
+      "description": "Whether this row was identified as a duplicate"
+    },
+    "duplicate_asset_id": {
+      "type": "string",
+      "description": "ID of the existing asset that this row duplicates"
+    },
+    "import_action": {
+      "type": "string",
+      "enum": [
+        "create",
+        "update",
+        "skip",
+        "flag_review",
+        "error"
+      ],
+      "default": "create",
+      "description": "What action will be taken on final import"
+    },
+    "is_valid": {
+      "type": "boolean",
+      "default": true,
+      "description": "False if this row has blocking validation errors"
+    },
+    "imported": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once this row has been written to the Asset entity"
+    }
+  },
+  "required": [
+    "session_id",
+    "row_index"
+  ]
+}

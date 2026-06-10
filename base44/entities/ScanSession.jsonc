@@ -1,0 +1,56 @@
+{
+  "name": "ScanSession",
+  "type": "object",
+  "properties": {
+    "show_id": {
+      "type": "string"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "sub_location_id": {
+      "type": "string"
+    },
+    "sub_location_name": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "check_out",
+        "check_in",
+        "audit"
+      ],
+      "default": "check_out"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed"
+      ],
+      "default": "active"
+    },
+    "scanned_barcodes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of scanned asset IDs in this session"
+    },
+    "total_expected": {
+      "type": "number",
+      "default": 0
+    },
+    "total_scanned": {
+      "type": "number",
+      "default": 0
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "mode"
+  ]
+}

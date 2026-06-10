@@ -1,0 +1,84 @@
+{
+  "name": "AVHospital",
+  "type": "object",
+  "properties": {
+    "asset_id": {
+      "type": "string"
+    },
+    "asset_name": {
+      "type": "string"
+    },
+    "asset_barcode": {
+      "type": "string"
+    },
+    "marked_by": {
+      "type": "string",
+      "description": "Email of the user who marked it broken/lost"
+    },
+    "marked_reason": {
+      "type": "string",
+      "enum": [
+        "broken",
+        "damaged",
+        "needs_inspection",
+        "needs_repair",
+        "lost_missing"
+      ],
+      "default": "broken"
+    },
+    "issue_notes": {
+      "type": "string",
+      "description": "Description of the issue"
+    },
+    "repair_status": {
+      "type": "string",
+      "enum": [
+        "waiting_inspection",
+        "under_repair",
+        "sent_out",
+        "fixed",
+        "retired",
+        "lost"
+      ],
+      "default": "waiting_inspection"
+    },
+    "repair_notes": {
+      "type": "string"
+    },
+    "assigned_technician": {
+      "type": "string",
+      "description": "Name or email of the technician assigned to this repair"
+    },
+    "assigned_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the technician was assigned"
+    },
+    "show_id": {
+      "type": "string"
+    },
+    "show_name": {
+      "type": "string"
+    },
+    "review_id": {
+      "type": "string",
+      "description": "YearlyAssetReview session that triggered this record"
+    },
+    "returned_to_stock_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "returned_by": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "asset_id",
+    "asset_name",
+    "marked_reason"
+  ]
+}
