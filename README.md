@@ -2,7 +2,7 @@
 
 **About**
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+View and edit your app on [Base44.com](https://base44.com)
 
 This project contains everything you need to run your app locally.
 
@@ -22,15 +22,15 @@ VITE_BASE44_APP_ID=your_app_id
 VITE_BASE44_APP_BASE_URL=your_backend_url
 
 e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+VITE_BASE44_APP_ID=your_app_id
+VITE_BASE44_APP_BASE_URL=https://your-app-name.base44.app
 ```
 
 Run the app: `npm run dev`
 
 **Publish your changes**
 
-Open [Base44.com](http://Base44.com) and click on Publish.
+Open [Base44.com](https://base44.com) and click on Publish.
 
 **Docs & Support**
 
