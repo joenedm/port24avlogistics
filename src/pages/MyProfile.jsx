@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { User, Phone, Mail, Briefcase, Package, Save, Upload, RefreshCw } from 'lucide-react';
@@ -22,7 +22,7 @@ export default function MyProfile() {
   // Find the crew member record linked to the current user
   const { data: crewList = [], isLoading } = useQuery({
     queryKey: ['myCrewProfile', userRecord?.id],
-    queryFn: () => base44.entities.CrewMember.filter({ user_id: userRecord?.id }),
+    queryFn: () => db.entities.CrewMember.filter({ user_id: userRecord?.id }),
     enabled: !!userRecord?.id,
   });
 
@@ -46,7 +46,7 @@ export default function MyProfile() {
   }, [crewMember]);
 
   const saveMutation = useMutation({
-    mutationFn: (data) => base44.entities.CrewMember.update(crewMember.id, data),
+    mutationFn: (data) => db.entities.CrewMember.update(crewMember.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myCrewProfile'] });
       toast.success('Profile saved');
@@ -58,7 +58,7 @@ export default function MyProfile() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingPhoto(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await db.integrations.Core.UploadFile({ file });
     setForm(f => ({ ...f, profile_photo_url: file_url }));
     setUploadingPhoto(false);
   };

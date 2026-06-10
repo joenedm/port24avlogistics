@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useMutation } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -36,8 +36,8 @@ export default function ClientFormDialog({ open, onOpenChange, client, onSaved }
 
   const mutation = useMutation({
     mutationFn: (data) => isEdit
-      ? base44.entities.Client.update(client.id, data)
-      : base44.entities.Client.create(data),
+      ? db.entities.Client.update(client.id, data)
+      : db.entities.Client.create(data),
     onSuccess: () => {
       toast.success(isEdit ? 'Client updated' : 'Client created');
       onSaved?.();

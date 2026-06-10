@@ -1,5 +1,5 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Clock } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69d5151f0495918d567d1066/eab1935ba_generated_image.png';
@@ -45,7 +45,7 @@ export default function WaitingRoom() {
         </div>
 
         <button
-          onClick={() => base44.auth.logout('/')}
+          onClick={() => db.auth.logout('/')}
           className="w-full py-2.5 border border-white/10 rounded-xl text-sm text-slate-400 hover:bg-white/5 transition-colors"
         >
           Sign out

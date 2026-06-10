@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { usePermissions } from '@/lib/usePermissions';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ScanBarcode, CheckCircle2, AlertCircle, MapPin, Package,
@@ -63,12 +63,12 @@ export default function CrewMode() {
   const inputRef = useRef(null);
   const queryClient = useQueryClient();
 
-  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => base44.entities.Show.list() });
+  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => db.entities.Show.list() });
   const { data: assets = [], isLoading: assetsLoading } = useQuery({ 
     queryKey: ['assets'], 
     queryFn: async () => {
       try {
-        const data = await base44.entities.Asset.list('-created_date', 5000);
+        const data = await db.entities.Asset.list('-created_date', 5000);
         await cacheAssets(data);
         return data;
       } catch (e) {
@@ -79,7 +79,7 @@ export default function CrewMode() {
 
   // Subscribe to asset changes for live updates
   useEffect(() => {
-    const unsubscribe = base44.entities.Asset.subscribe((event) => {
+    const unsubscribe = db.entities.Asset.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
     });
     return () => unsubscribe();
@@ -156,7 +156,7 @@ export default function CrewMode() {
         movementData.notes = `${reason}: ${notes}`;
         assetUpdate = { status: 'maintenance', location: 'AV Hospital', current_show_id: '', current_sub_location_id: '', current_sub_location_name: '' };
         // Create AV Hospital record
-        await base44.entities.AVHospital.create({
+        await db.entities.AVHospital.create({
           asset_id: asset.id, asset_name: asset.name, asset_barcode: asset.barcode,
           marked_reason: reason, issue_notes: notes,
           show_id: asset.current_show_id || selectedShowId || '',
@@ -166,8 +166,8 @@ export default function CrewMode() {
       }
 
       if (isOnline()) {
-        await base44.entities.AssetMovement.create(movementData);
-        await base44.entities.Asset.update(asset.id, assetUpdate);
+        await db.entities.AssetMovement.create(movementData);
+        await db.entities.Asset.update(asset.id, assetUpdate);
       } else {
         await saveScanOffline({ movementData, assetUpdate, asset, action });
       }
@@ -197,10 +197,10 @@ export default function CrewMode() {
     for (const scan of pending) {
       try {
         if (scan.movementData) {
-          await base44.entities.AssetMovement.create(scan.movementData);
+          await db.entities.AssetMovement.create(scan.movementData);
         }
         if (scan.assetUpdate) {
-          await base44.entities.Asset.update(scan.asset.id, scan.assetUpdate);
+          await db.entities.Asset.update(scan.asset.id, scan.assetUpdate);
         }
         syncIds.push(scan.id);
       } catch (e) {

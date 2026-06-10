@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useAuth } from '@/lib/AuthContext';
 import { Camera, Phone, FileText, Tag, X, Loader2, CheckCircle } from 'lucide-react';
 
@@ -29,7 +29,7 @@ export default function Onboarding() {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       setForm(f => ({ ...f, profile_picture_url: file_url }));
     } finally {
       setUploading(false);
@@ -53,7 +53,7 @@ export default function Onboarding() {
     setSaving(true);
     try {
       if (userRecord?.id) {
-        await base44.entities.User.update(userRecord.id, {
+        await db.entities.User.update(userRecord.id, {
           ...form,
           onboarding_complete: true,
         });
@@ -199,7 +199,7 @@ export default function Onboarding() {
         </div>
 
         <button
-          onClick={() => base44.auth.logout('/')}
+          onClick={() => db.auth.logout('/')}
           className="w-full mt-4 py-2 text-xs text-slate-500 hover:text-slate-400 transition-colors"
         >
           Sign out

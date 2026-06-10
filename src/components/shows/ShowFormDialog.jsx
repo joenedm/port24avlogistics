@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Plus, Building2, MapPin, User, ChevronDown, X, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,7 +20,7 @@ function CreateContactInline({ clientId, onCreated, onCancel }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const mutation = useMutation({
-    mutationFn: () => base44.entities.ClientContact.create({ ...form, client_id: clientId, role: 'primary' }),
+    mutationFn: () => db.entities.ClientContact.create({ ...form, client_id: clientId, role: 'primary' }),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['clientContacts', clientId] });
       toast.success('Contact created');
@@ -164,17 +164,17 @@ export default function ShowFormDialog({ open, onOpenChange, show }) {
   // Fetch CRM data
   const { data: clients = [] } = useQuery({
     queryKey: ['clients'],
-    queryFn: () => base44.entities.Client.list('-created_date', 500),
+    queryFn: () => db.entities.Client.list('-created_date', 500),
     enabled: open,
   });
   const { data: venues = [] } = useQuery({
     queryKey: ['venues'],
-    queryFn: () => base44.entities.Venue.list('-created_date', 500),
+    queryFn: () => db.entities.Venue.list('-created_date', 500),
     enabled: open,
   });
   const { data: contacts = [] } = useQuery({
     queryKey: ['clientContacts', formData.client_id],
-    queryFn: () => base44.entities.ClientContact.filter({ client_id: formData.client_id }),
+    queryFn: () => db.entities.ClientContact.filter({ client_id: formData.client_id }),
     enabled: !!formData.client_id,
   });
 
@@ -218,7 +218,7 @@ export default function ShowFormDialog({ open, onOpenChange, show }) {
   }, [venues, newVenueId]);
 
   const mutation = useMutation({
-    mutationFn: (data) => isEditing ? base44.entities.Show.update(show.id, data) : base44.entities.Show.create(data),
+    mutationFn: (data) => isEditing ? db.entities.Show.update(show.id, data) : db.entities.Show.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shows'] });
       onOpenChange(false);
@@ -486,7 +486,7 @@ export default function ShowFormDialog({ open, onOpenChange, show }) {
         onSaved={async () => {
           // Refetch clients then auto-select the newest one
           await queryClient.invalidateQueries({ queryKey: ['clients'] });
-          const refreshed = await base44.entities.Client.list('-created_date', 1);
+          const refreshed = await db.entities.Client.list('-created_date', 1);
           if (refreshed[0]) {
             handleSelectClient({ value: refreshed[0].id, label: refreshed[0].display_name || refreshed[0].company_name, raw: refreshed[0] });
           }
@@ -500,7 +500,7 @@ export default function ShowFormDialog({ open, onOpenChange, show }) {
         venue={null}
         onSaved={async () => {
           await queryClient.invalidateQueries({ queryKey: ['venues'] });
-          const refreshed = await base44.entities.Venue.list('-created_date', 1);
+          const refreshed = await db.entities.Venue.list('-created_date', 1);
           if (refreshed[0]) {
             handleSelectVenue({ value: refreshed[0].id, label: refreshed[0].name, raw: refreshed[0] });
           }

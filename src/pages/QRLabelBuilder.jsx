@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { buildPrintHTML } from '@/lib/printQRLabel';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Save, ArrowLeft, Printer, QrCode, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -111,7 +111,7 @@ export default function QRLabelBuilder() {
   // Load existing template
   const { data: existingTemplate } = useQuery({
     queryKey: ['printTemplate', templateId],
-    queryFn: () => base44.entities.PrintTemplate.filter({ id: templateId }),
+    queryFn: () => db.entities.PrintTemplate.filter({ id: templateId }),
     enabled: !!templateId,
   });
 
@@ -156,7 +156,7 @@ export default function QRLabelBuilder() {
 
   const { data: brandList = [] } = useQuery({
     queryKey: ['brand'],
-    queryFn: () => base44.entities.BrandSettings.list(),
+    queryFn: () => db.entities.BrandSettings.list(),
     staleTime: 10 * 60 * 1000,
   });
   const brand = brandList[0] || {};
@@ -173,8 +173,8 @@ export default function QRLabelBuilder() {
       });
       
       const savePromise = templateId
-        ? base44.entities.PrintTemplate.update(templateId, data)
-        : base44.entities.PrintTemplate.create(data);
+        ? db.entities.PrintTemplate.update(templateId, data)
+        : db.entities.PrintTemplate.create(data);
       
       return savePromise.then(result => {
         console.log('[QRLabelBuilder] Save successful. Created/Updated ID:', result?.id || templateId);
@@ -254,7 +254,7 @@ export default function QRLabelBuilder() {
     const file = e.target.files?.[0];
     if (!file || !selectedId) return;
     setLogoUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await db.integrations.Core.UploadFile({ file });
     updateElement(selectedId, { logoUrl: file_url });
     setLogoUploading(false);
   };

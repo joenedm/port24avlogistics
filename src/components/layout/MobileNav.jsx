@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, CalendarDays, ScanBarcode,
   Settings, Boxes, History, Menu, LogOut, Layers, Bell, TrendingUp, Upload, Users, DollarSign, Palette
 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -58,7 +58,7 @@ export default function MobileNav() {
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts'],
-    queryFn: () => base44.entities.Alert.list('-created_date', 50),
+    queryFn: () => db.entities.Alert.list('-created_date', 50),
   });
   const unreadAlerts = alerts.filter(a => !a.is_resolved && !a.is_read).length;
 
@@ -115,7 +115,7 @@ export default function MobileNav() {
               ))}
             </nav>
             <div className="px-2 pb-4">
-              <button onClick={() => base44.auth.logout()}
+              <button onClick={() => db.auth.logout()}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg w-full text-sidebar-foreground hover:bg-sidebar-accent">
                 <LogOut className="w-4 h-4" />
                 <span className="text-sm">Log out</span>

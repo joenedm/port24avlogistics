@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { buildFallbackDraft } from './smartBuildRules';
 
 /**
@@ -23,13 +23,13 @@ export function useSmartBuild() {
     try {
       // ── 1. Fetch all context in parallel ──────────────────────────────────────
       const [assets, kits, shows, crewRoles, roundtableItems, roundtablePartners, calibrations] = await Promise.all([
-        base44.entities.Asset.list('-updated_date', 300).catch(() => []),
-        base44.entities.Kit.list('-created_date', 60).catch(() => []),
-        base44.entities.Show.list('-start_date', 8).catch(() => []),
-        base44.entities.CrewRole.list('-created_date', 60).catch(() => []),
-        base44.entities.RoundtableItem.list('-created_date', 200).catch(() => []),
-        base44.entities.RoundtablePartner.list('-created_date', 50).catch(() => []),
-        base44.entities.FulfillmentCalibration.filter({ is_active: true }, '-created_date', 200).catch(() => []),
+        db.entities.Asset.list('-updated_date', 300).catch(() => []),
+        db.entities.Kit.list('-created_date', 60).catch(() => []),
+        db.entities.Show.list('-start_date', 8).catch(() => []),
+        db.entities.CrewRole.list('-created_date', 60).catch(() => []),
+        db.entities.RoundtableItem.list('-created_date', 200).catch(() => []),
+        db.entities.RoundtablePartner.list('-created_date', 50).catch(() => []),
+        db.entities.FulfillmentCalibration.filter({ is_active: true }, '-created_date', 200).catch(() => []),
       ]);
 
       // ── 2. Owned inventory context ────────────────────────────────────────────
@@ -255,7 +255,7 @@ Return ONLY this JSON (no other text):
       // ── 7. Call LLM ──────────────────────────────────────────────────────────
       let result = null;
       try {
-        result = await base44.integrations.Core.InvokeLLM({
+        result = await db.integrations.Core.InvokeLLM({
           prompt,
           response_json_schema: {
             type: 'object',

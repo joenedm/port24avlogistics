@@ -4,7 +4,7 @@
  * Shares the same block-canvas system — type param controls available blocks + default layout.
  */
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -171,11 +171,11 @@ export default function QuoteTemplateBuilder() {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [isDefault, setIsDefault] = useState(false);
 
-  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => base44.entities.BrandSettings.list() });
+  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => db.entities.BrandSettings.list() });
   // Load ALL templates — used both for finding the current one and for cache coherence with PrintTemplates page
   const { data: allTemplates = [] } = useQuery({
     queryKey: ['printTemplates'],
-    queryFn: () => base44.entities.PrintTemplate.list(),
+    queryFn: () => db.entities.PrintTemplate.list(),
   });
 
   const brand = brandList[0] || {};
@@ -197,8 +197,8 @@ export default function QuoteTemplateBuilder() {
 
   const saveMutation = useMutation({
     mutationFn: (data) => templateId
-      ? base44.entities.PrintTemplate.update(templateId, data)
-      : base44.entities.PrintTemplate.create(data),
+      ? db.entities.PrintTemplate.update(templateId, data)
+      : db.entities.PrintTemplate.create(data),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['printTemplates'] });
       queryClient.invalidateQueries({ queryKey: ['invoiceTemplates'] });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,12 +28,12 @@ export default function CrewInviteWorkflow({
 
   const { data: templates = [] } = useQuery({
     queryKey: ['emailTemplates'],
-    queryFn: () => base44.entities.EmailTemplate.list(),
+    queryFn: () => db.entities.EmailTemplate.list(),
   });
 
   const { data: brandSettings = [] } = useQuery({
     queryKey: ['brandSettings'],
-    queryFn: () => base44.entities.BrandSettings.list(),
+    queryFn: () => db.entities.BrandSettings.list(),
   });
 
   // Fetch CrewBooking data if ID is provided
@@ -42,7 +42,7 @@ export default function CrewInviteWorkflow({
     queryFn: async () => {
       if (!crewBookingId) return null;
       try {
-        const booking = await base44.entities.CrewBooking.get(crewBookingId);
+        const booking = await db.entities.CrewBooking.get(crewBookingId);
         console.log('✅ CrewBooking loaded from database:', booking.id);
         return booking;
       } catch (err) {
@@ -72,14 +72,14 @@ export default function CrewInviteWorkflow({
       // Get current user for audit trail
       let currentUserEmail = '';
       try {
-        const me = await base44.auth.me();
+        const me = await db.auth.me();
         currentUserEmail = me?.email || '';
       } catch {}
 
       // Re-fetch the latest booking record (never rely on stale cache)
       let latestBooking;
       try {
-        latestBooking = await base44.entities.CrewBooking.get(savedCrewBookingId);
+        latestBooking = await db.entities.CrewBooking.get(savedCrewBookingId);
         console.log('📋 Booking re-fetched:', latestBooking.id, '| project_crew_id:', latestBooking.project_crew_id || '(none)');
       } catch (err) {
         throw new Error('Could not load the crew booking record. It may have been deleted.');
@@ -95,7 +95,7 @@ export default function CrewInviteWorkflow({
 
       if (projectCrewId) {
         try {
-          await base44.entities.ProjectCrew.get(projectCrewId);
+          await db.entities.ProjectCrew.get(projectCrewId);
           projectCrewVerified = true;
           console.log('✅ ProjectCrew record verified:', projectCrewId);
         } catch {
@@ -107,7 +107,7 @@ export default function CrewInviteWorkflow({
       // Auto-repair: search for an existing ProjectCrew that matches this booking
       if (!projectCrewVerified) {
         try {
-          const existingCrew = await base44.entities.ProjectCrew.filter({
+          const existingCrew = await db.entities.ProjectCrew.filter({
             show_id: latestBooking.show_id,
             crew_member_email: latestBooking.crew_email,
           });
@@ -126,7 +126,7 @@ export default function CrewInviteWorkflow({
       if (!projectCrewVerified) {
         try {
           const show = showData || { id: latestBooking.show_id, name: latestBooking.show_name };
-          const newPC = await base44.entities.ProjectCrew.create({
+          const newPC = await db.entities.ProjectCrew.create({
             show_id: latestBooking.show_id,
             show_name: latestBooking.show_name || show.name || '',
             crew_member_name: latestBooking.crew_id || '',
@@ -155,12 +155,12 @@ export default function CrewInviteWorkflow({
 
       // Update the booking's project_crew_id if we repaired it
       if (projectCrewId && projectCrewId !== latestBooking.project_crew_id) {
-        await base44.entities.CrewBooking.update(savedCrewBookingId, { project_crew_id: projectCrewId });
+        await db.entities.CrewBooking.update(savedCrewBookingId, { project_crew_id: projectCrewId });
         console.log('🔗 Booking re-linked to ProjectCrew:', projectCrewId);
       }
 
       // Stamp booking as pending + audit fields
-      await base44.entities.CrewBooking.update(savedCrewBookingId, {
+      await db.entities.CrewBooking.update(savedCrewBookingId, {
         status: 'pending',
         email_sent_at: new Date().toISOString(),
         sent_by: currentUserEmail,
@@ -169,7 +169,7 @@ export default function CrewInviteWorkflow({
       // Sync status to ProjectCrew (best-effort — never block send on this)
       if (projectCrewId && projectCrewVerified) {
         try {
-          await base44.entities.ProjectCrew.update(projectCrewId, {
+          await db.entities.ProjectCrew.update(projectCrewId, {
             assignment_status: 'pending',
             status_updated_at: new Date().toISOString(),
           });
@@ -179,7 +179,7 @@ export default function CrewInviteWorkflow({
         }
       }
 
-      const response = await base44.functions.invoke('sendCrewInviteEmail', {
+      const response = await db.functions.invoke('sendCrewInviteEmail', {
         templateId: selectedTemplate,
         crewBookingId: savedCrewBookingId,
         recipientEmail,

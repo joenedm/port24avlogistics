@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +46,7 @@ export default function ClientPreferencesPanel({ clientId, clientName }) {
 
   const { data: prefs = [] } = useQuery({
     queryKey: ['client-prefs', clientId],
-    queryFn: () => base44.entities.ClientPreference.filter({ client_id: clientId }),
+    queryFn: () => db.entities.ClientPreference.filter({ client_id: clientId }),
     enabled: !!clientId,
   });
 
@@ -55,14 +55,14 @@ export default function ClientPreferencesPanel({ clientId, clientName }) {
 
   const saveMutation = useMutation({
     mutationFn: (data) => editing
-      ? base44.entities.ClientPreference.update(editing.id, data)
-      : base44.entities.ClientPreference.create({ ...data, client_id: clientId, client_name: clientName }),
+      ? db.entities.ClientPreference.update(editing.id, data)
+      : db.entities.ClientPreference.create({ ...data, client_id: clientId, client_name: clientName }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['client-prefs', clientId] }); setDialogOpen(false); toast.success('Preference saved'); },
     onError: (e) => toast.error(e.message),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ClientPreference.delete(id),
+    mutationFn: (id) => db.entities.ClientPreference.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['client-prefs', clientId] }),
   });
 

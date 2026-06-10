@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Folder, FolderOpen, ChevronRight, Package, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,19 +18,19 @@ export default function Categories() {
   const [selectedId, setSelectedId] = useState('__all');
   const queryClient = useQueryClient();
 
-  const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => base44.entities.Category.list() });
-  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => base44.entities.Asset.list('-created_date', 5000) });
-  const { data: movements = [] } = useQuery({ queryKey: ['movements'], queryFn: () => base44.entities.AssetMovement.list('-created_date', 1000) });
+  const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => db.entities.Category.list() });
+  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => db.entities.Asset.list('-created_date', 5000) });
+  const { data: movements = [] } = useQuery({ queryKey: ['movements'], queryFn: () => db.entities.AssetMovement.list('-created_date', 1000) });
 
   const saveMutation = useMutation({
     mutationFn: (data) => editingCat
-      ? base44.entities.Category.update(editingCat.id, data)
-      : base44.entities.Category.create(data),
+      ? db.entities.Category.update(editingCat.id, data)
+      : db.entities.Category.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); setCatDialogOpen(false); setEditingCat(null); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Category.delete(id),
+    mutationFn: (id) => db.entities.Category.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
   });
 

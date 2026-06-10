@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, Mail, ShieldCheck, RefreshCw } from 'lucide-react';
 
@@ -87,7 +87,7 @@ export default function VerifyEmail() {
 
   // Already authenticated → redirect home
   useEffect(() => {
-    base44.auth.isAuthenticated().then(authed => {
+    db.auth.isAuthenticated().then(authed => {
       if (authed) navigate('/');
     });
   }, []);
@@ -139,13 +139,13 @@ export default function VerifyEmail() {
     setError('');
     setVerifying(true);
     try {
-      await base44.auth.verifyOtp({ email, otpCode });
+      await db.auth.verifyOtp({ email, otpCode });
       setSuccess(true);
       // Auto-login if we have the password, otherwise redirect to sign-in
       setTimeout(async () => {
         if (savedPassword) {
           try {
-            await base44.auth.loginViaEmailPassword(email, savedPassword);
+            await db.auth.loginViaEmailPassword(email, savedPassword);
             navigate('/');
             return;
           } catch (loginErr) {
@@ -164,7 +164,7 @@ export default function VerifyEmail() {
         setTimeout(async () => {
           if (savedPassword) {
             try {
-              await base44.auth.loginViaEmailPassword(email, savedPassword);
+              await db.auth.loginViaEmailPassword(email, savedPassword);
               navigate('/');
               return;
             } catch {}
@@ -183,7 +183,7 @@ export default function VerifyEmail() {
     setResendMsg('');
     setError('');
     try {
-      await base44.auth.resendOtp(email);
+      await db.auth.resendOtp(email);
       setResendMsg('A new code was sent to your email.');
       setCooldown(60);
       setDigits(Array(OTP_LENGTH).fill(''));

@@ -1,5 +1,5 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ const STATUS_COLORS = {
 export default function TruckPackSummary({ showId }) {
   const { data: packs = [], isLoading } = useQuery({
     queryKey: ['truckPacks', showId],
-    queryFn: () => base44.entities.TruckPack.filter({ show_id: showId }),
+    queryFn: () => db.entities.TruckPack.filter({ show_id: showId }),
     enabled: !!showId,
   });
 

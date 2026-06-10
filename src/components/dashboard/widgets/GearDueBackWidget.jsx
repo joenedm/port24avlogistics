@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function GearDueBackWidget() {
   const { data: fulfillments, isLoading } = useQuery({
     queryKey: ['fulfillments-returning'],
     queryFn: async () => {
-      const all = await base44.entities.ShowFulfillment.list();
+      const all = await db.entities.ShowFulfillment.list();
       return all.filter(f => ['returning', 'returned'].includes(f.movement_state));
     },
     staleTime: 60000

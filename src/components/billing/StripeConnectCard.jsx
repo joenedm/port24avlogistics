@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ export default function StripeConnectCard() {
     queryKey: ['stripeAccount'],
     queryFn: async () => {
       try {
-        const accounts = await base44.entities.StripeAccount.list();
+        const accounts = await db.entities.StripeAccount.list();
         return accounts[0] || null;
       } catch {
         return null;
@@ -27,7 +27,7 @@ export default function StripeConnectCard() {
   const connectMutation = useMutation({
     mutationFn: async () => {
       setIsConnecting(true);
-      const response = await base44.functions.invoke('initiateStripeConnect', {});
+      const response = await db.functions.invoke('initiateStripeConnect', {});
       
       if (response.data?.redirect_url) {
         const popup = window.open(response.data.redirect_url, '_blank');
@@ -51,7 +51,7 @@ export default function StripeConnectCard() {
 
   const disconnectMutation = useMutation({
     mutationFn: async () => {
-      await base44.functions.invoke('disconnectStripe', {});
+      await db.functions.invoke('disconnectStripe', {});
       refetch();
     },
     onSuccess: () => {

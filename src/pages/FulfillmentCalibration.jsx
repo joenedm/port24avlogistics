@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ChevronRight, ChevronLeft, CheckCircle2, Plus, Trash2, Info, Package, ArrowLeft, RefreshCw, Search } from 'lucide-react';
@@ -255,15 +255,15 @@ export default function FulfillmentCalibrationPage() {
 
   const { data: assets = [] } = useQuery({
     queryKey: ['assets_cal'],
-    queryFn: () => base44.entities.Asset.filter({ status: 'available' }, '-updated_date', 500),
+    queryFn: () => db.entities.Asset.filter({ status: 'available' }, '-updated_date', 500),
   });
   const { data: kits = [] } = useQuery({
     queryKey: ['kits_cal'],
-    queryFn: () => base44.entities.Kit.list('-created_date', 100),
+    queryFn: () => db.entities.Kit.list('-created_date', 100),
   });
   const { data: calibrations = [] } = useQuery({
     queryKey: ['fulfillment_calibrations'],
-    queryFn: () => base44.entities.FulfillmentCalibration.list(),
+    queryFn: () => db.entities.FulfillmentCalibration.list(),
   });
 
   const availableAssets = assets.filter(a => !a.is_lost && a.item_type !== 'consumable');
@@ -278,9 +278,9 @@ export default function FulfillmentCalibrationPage() {
     mutationFn: async (data) => {
       const existing = calibrationMap[data.scenario_key];
       if (existing?.id) {
-        return base44.entities.FulfillmentCalibration.update(existing.id, data);
+        return db.entities.FulfillmentCalibration.update(existing.id, data);
       }
-      return base44.entities.FulfillmentCalibration.create(data);
+      return db.entities.FulfillmentCalibration.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fulfillment_calibrations'] });

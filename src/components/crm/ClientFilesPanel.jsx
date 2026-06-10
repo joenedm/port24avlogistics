@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,13 +35,13 @@ export default function ClientFilesPanel({ clientId, clientName, showId }) {
     queryFn: () => {
       const q = { client_id: clientId };
       if (showId) q.show_id = showId;
-      return base44.entities.ClientFile.filter(q);
+      return db.entities.ClientFile.filter(q);
     },
     enabled: !!clientId,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ClientFile.delete(id),
+    mutationFn: (id) => db.entities.ClientFile.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qKey }),
   });
 
@@ -49,8 +49,8 @@ export default function ClientFilesPanel({ clientId, clientName, showId }) {
     if (!selectedFile) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: selectedFile });
-      await base44.entities.ClientFile.create({
+      const { file_url } = await db.integrations.Core.UploadFile({ file: selectedFile });
+      await db.entities.ClientFile.create({
         client_id: clientId,
         client_name: clientName,
         show_id: showId || undefined,

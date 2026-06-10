@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Wrench, History, ChevronRight, Search, ArrowLeft, User, Package } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -126,7 +126,7 @@ export default function Movements() {
 
   const { data: movements = [], isLoading } = useQuery({
     queryKey: ['movements'],
-    queryFn: () => base44.entities.AssetMovement.list('-created_date', 5000),
+    queryFn: () => db.entities.AssetMovement.list('-created_date', 5000),
   });
 
   // Group movements by show

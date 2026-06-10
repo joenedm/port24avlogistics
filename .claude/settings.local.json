@@ -5,7 +5,27 @@
       "Bash(brew list *)",
       "Skill(claude-api)",
       "Skill(claude-api:*)",
-      "Bash(gh --version)"
+      "Bash(gh --version)",
+      "Bash(gh pr create --title 'Fix README: use HTTPS links, fix typos, remove example credentials' --body ' *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(xargs cat)",
+      "Bash(psql --version)",
+      "Bash(supabase --version)",
+      "Bash(grep -rh \"{ *id,\" /Users/josephloffredo/Downloads/port24avlogistics/src --include=\"*.jsx\" --include=\"*.js\" --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(grep -rh \"\\\\bshow\\\\._\\\\|show\\\\.\\\\$\\\\|show\\\\.\\\\*\\\\|subtotal\\\\|discount\\\\|tax\\\\|total\" /Users/josephloffredo/Downloads/port24avlogistics/src --include=\"*.jsx\" --include=\"*.js\")",
+      "Bash(grep -oP \"\\\\w+$\")",
+      "Bash(/opt/homebrew/bin/supabase db query --linked ' *)",
+      "Bash(grep -E \"\\\\.\\(js|jsx|ts|tsx\\)$\")",
+      "Bash(grep -rh \"{\\\\s*\\\\w\\\\+,\" /Users/josephloffredo/Downloads/port24avlogistics/src/components --include=\"*.jsx\" --include=\"*.js\")",
+      "Bash(cat /Users/josephloffredo/.claude/projects/-Users-josephloffredo-Downloads-port24avlogistics/63dcd2ad-c492-4dac-a9e3-7f86ec4db8b2/tool-results/bjn11r4g5.txt | grep -o '\"column_name\": \"[^\"]*\"' | cut -d'\"' -f4 | sort > /tmp/db_columns.txt && wc -l /tmp/db_columns.txt)",
+      "Bash(python3)",
+      "Bash(tail -n +2 /Users/josephloffredo/.claude/projects/-Users-josephloffredo-Downloads-port24avlogistics/63dcd2ad-c492-4dac-a9e3-7f86ec4db8b2/tool-results/bjn11r4g5.txt | grep -o '\"table_name\": \"[^\"]*\", \"column_name\": \"[^\"]*\"' | sed 's/\"table_name\": \"\\\\\\([^\"]*\\\\\\)\", \"column_name\": \"\\\\\\([^\"]*\\\\\\)\"/\\\\1: \\\\2/' | sort > /tmp/db_table_cols.txt && head -50 /tmp/db_table_cols.txt)",
+      "Bash(awk '{print $2}')",
+      "Bash(awk '/\"table_name\": \"payments\"/,/}/' /Users/josephloffredo/.claude/projects/-Users-josephloffredo-Downloads-port24avlogistics/63dcd2ad-c492-4dac-a9e3-7f86ec4db8b2/tool-results/bjn11r4g5.txt)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Building2, Handshake, Search, Plus, ChevronRight, ArrowLeft, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,12 +25,12 @@ export default function SubRentAddForm({ onAdd, onCancel }) {
 
   const { data: partners = [], isLoading: loadingPartners } = useQuery({
     queryKey: ['roundtable_partners'],
-    queryFn: () => base44.entities.RoundtablePartner.list('-created_date', 100),
+    queryFn: () => db.entities.RoundtablePartner.list('-created_date', 100),
   });
 
   const { data: allItems = [] } = useQuery({
     queryKey: ['roundtable_items'],
-    queryFn: () => base44.entities.RoundtableItem.list('-created_date', 500),
+    queryFn: () => db.entities.RoundtableItem.list('-created_date', 500),
     enabled: step === 'from_inventory',
   });
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Lock, CheckCircle, AlertCircle } from 'lucide-react';
 
@@ -39,7 +39,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const res = await base44.functions.invoke('resetPassword', {
+      const res = await db.functions.invoke('resetPassword', {
         token,
         new_password: password,
       });

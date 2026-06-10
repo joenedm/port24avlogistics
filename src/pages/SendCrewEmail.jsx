@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,22 +20,22 @@ export default function SendCrewEmail() {
 
   const { data: shows = [] } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list(),
+    queryFn: () => db.entities.Show.list(),
   });
 
   const { data: projectCrew = [] } = useQuery({
     queryKey: ['projectCrew'],
-    queryFn: () => base44.entities.ProjectCrew.list(),
+    queryFn: () => db.entities.ProjectCrew.list(),
   });
 
   const { data: crewMembers = [] } = useQuery({
     queryKey: ['crewMembers'],
-    queryFn: () => base44.entities.CrewMember.list(),
+    queryFn: () => db.entities.CrewMember.list(),
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => db.entities.User.list(),
   });
 
   // Filter crew for selected show

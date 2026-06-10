@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,8 +20,8 @@ export default function PartnerFormDialog({ partner, onClose, onSaved }) {
 
   const mutation = useMutation({
     mutationFn: () => partner
-      ? base44.entities.RoundtablePartner.update(partner.id, form)
-      : base44.entities.RoundtablePartner.create(form),
+      ? db.entities.RoundtablePartner.update(partner.id, form)
+      : db.entities.RoundtablePartner.create(form),
     onSuccess: () => { toast.success(partner ? 'Partner updated' : 'Partner added'); onSaved(); },
   });
 

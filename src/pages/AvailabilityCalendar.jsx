@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Package, Calendar, Filter, Info, GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,27 +39,27 @@ export default function AvailabilityCalendar() {
 
   const { data: assets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.list('-name', 500),
+    queryFn: () => db.entities.Asset.list('-name', 500),
     refetchInterval: 30000,
   });
   const { data: shows = [] } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list(),
+    queryFn: () => db.entities.Show.list(),
     refetchInterval: 30000,
   });
   const { data: fulfillments = [] } = useQuery({
     queryKey: ['showFulfillments'],
-    queryFn: () => base44.entities.ShowFulfillment.list('-scanned_at', 2000),
+    queryFn: () => db.entities.ShowFulfillment.list('-scanned_at', 2000),
     refetchInterval: 30000,
   });
   const { data: requirements = [] } = useQuery({
     queryKey: ['showRequirements_calendar'],
-    queryFn: () => base44.entities.ShowRequirement.list('-created_date', 2000),
+    queryFn: () => db.entities.ShowRequirement.list('-created_date', 2000),
     refetchInterval: 60000,
   });
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list(),
+    queryFn: () => db.entities.Category.list(),
   });
 
   const monthStart = startOfMonth(currentDate);

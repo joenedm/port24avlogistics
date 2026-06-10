@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import RequirementLine from './RequirementLine';
 import MasterAddEquipmentForm from './MasterAddEquipmentForm';
 import RoundtableBadge from '@/components/roundtable/RoundtableBadge';
@@ -33,13 +33,13 @@ export default function RoomCard({
   const qc = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
   React.useEffect(() => {
-    base44.auth.me().then(u => setCurrentUser(u)).catch(() => {});
+    db.auth.me().then(u => setCurrentUser(u)).catch(() => {});
   }, []);
 
   const { isConflicted, conflictInfo, reqConflictInfo } = useConflictCheck({ currentShowId: showId, currentShow: show });
 
-  const { data: allAssets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => base44.entities.Asset.list('-updated_date', 500) });
-  const { data: allKits = [] } = useQuery({ queryKey: ['kits'], queryFn: () => base44.entities.Kit.list() });
+  const { data: allAssets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => db.entities.Asset.list('-updated_date', 500) });
+  const { data: allKits = [] } = useQuery({ queryKey: ['kits'], queryFn: () => db.entities.Kit.list() });
 
   // Build a lookup set of owned asset/kit names for "not in inventory" detection
   const ownedNameSet = React.useMemo(() => {
@@ -59,7 +59,7 @@ export default function RoomCard({
 
   const { data: requirements = [] } = useQuery({
     queryKey: ['show_requirements', showId, room.id],
-    queryFn: () => base44.entities.ShowRequirement.filter({ show_id: showId, room_id: room.id }),
+    queryFn: () => db.entities.ShowRequirement.filter({ show_id: showId, room_id: room.id }),
     enabled: !!showId,
   });
 
@@ -93,7 +93,7 @@ export default function RoomCard({
 
   const { data: fulfillments = [] } = useQuery({
     queryKey: ['show_fulfillments', showId],
-    queryFn: () => base44.entities.ShowFulfillment.filter({ show_id: showId }),
+    queryFn: () => db.entities.ShowFulfillment.filter({ show_id: showId }),
     enabled: !!showId,
   });
 
@@ -107,13 +107,13 @@ export default function RoomCard({
   };
 
   const createReq = useMutation({
-    mutationFn: (data) => base44.entities.ShowRequirement.create({ ...data, show_id: showId, show_name: showName, room_id: room.id, room_name: room.name }),
+    mutationFn: (data) => db.entities.ShowRequirement.create({ ...data, show_id: showId, show_name: showName, room_id: room.id, room_name: room.name }),
     // ✅ Do NOT close the form — user may want to add more items
     onSuccess: () => { invalidateRequirements(); },
   });
 
   const createSubrent = useMutation({
-    mutationFn: (data) => base44.entities.RoundtableSubrent.create({
+    mutationFn: (data) => db.entities.RoundtableSubrent.create({
       ...data,
       show_id: showId,
       show_name: showName,
@@ -135,17 +135,17 @@ export default function RoomCard({
     setOrderedReqIds(newOrder);
     // Persist sort_order to DB
     newOrder.forEach((id, idx) => {
-      base44.entities.ShowRequirement.update(id, { sort_order: idx }).catch(() => {});
+      db.entities.ShowRequirement.update(id, { sort_order: idx }).catch(() => {});
     });
   };
 
   const updateReq = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ShowRequirement.update(id, data),
+    mutationFn: ({ id, data }) => db.entities.ShowRequirement.update(id, data),
     onSuccess: () => invalidateRequirements(),
   });
 
   const deleteReq = useMutation({
-    mutationFn: (id) => base44.entities.ShowRequirement.delete(id),
+    mutationFn: (id) => db.entities.ShowRequirement.delete(id),
     onSuccess: () => invalidateRequirements(),
   });
 
@@ -153,11 +153,11 @@ export default function RoomCard({
   const [subrentDraft, setSubrentDraft] = useState({});
 
   const updateSubrent = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.RoundtableSubrent.update(id, data),
+    mutationFn: ({ id, data }) => db.entities.RoundtableSubrent.update(id, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['roundtable_subrents', showId] }); setEditingSubrentId(null); },
   });
   const deleteSubrent = useMutation({
-    mutationFn: (id) => base44.entities.RoundtableSubrent.delete(id),
+    mutationFn: (id) => db.entities.RoundtableSubrent.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['roundtable_subrents', showId] }),
   });
 

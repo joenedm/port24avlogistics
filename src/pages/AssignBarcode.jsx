@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ScanBarcode, Camera, Search, CheckCircle2, AlertCircle, Link2, Package, X } from 'lucide-react';
 import CameraScanner from '@/components/crew/CameraScanner';
@@ -27,7 +27,7 @@ export default function AssignBarcode() {
 
   const { data: assets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.list('-created_date', 5000),
+    queryFn: () => db.entities.Asset.list('-created_date', 5000),
   });
 
   const flash = (type, message) => {
@@ -75,7 +75,7 @@ export default function AssignBarcode() {
   const handleAssign = async () => {
     if (!scannedCode || !selectedAsset) return;
     setSaving(true);
-    await base44.entities.Asset.update(selectedAsset.id, { barcode: scannedCode });
+    await db.entities.Asset.update(selectedAsset.id, { barcode: scannedCode });
     queryClient.invalidateQueries({ queryKey: ['assets'] });
     flash('success', `✓ Barcode "${scannedCode}" assigned to "${selectedAsset.name}"`);
     // Reset for next assignment

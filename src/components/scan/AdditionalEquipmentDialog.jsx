@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,14 +16,14 @@ export default function AdditionalEquipmentDialog({ open, onOpenChange, asset, s
 
   const { data: currentUser } = useQuery({
     queryKey: ['me'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => db.auth.me(),
   });
 
   const createRequestMutation = useMutation({
     mutationFn: async () => {
       const subLoc = subLocations.find(sl => sl.id === selectedSubLocationId);
 
-      await base44.entities.AdditionalEquipmentRequest.create({
+      await db.entities.AdditionalEquipmentRequest.create({
         show_id: show.id,
         show_name: show.name,
         asset_id: asset.id,

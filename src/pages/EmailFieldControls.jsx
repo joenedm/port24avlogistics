@@ -1,5 +1,5 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,11 @@ export default function EmailFieldControls() {
 
   const { data: fieldControls = [] } = useQuery({
     queryKey: ['emailFieldControls'],
-    queryFn: () => base44.entities.EmailFieldControl.list()
+    queryFn: () => db.entities.EmailFieldControl.list()
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.EmailFieldControl.update(id, data),
+    mutationFn: ({ id, data }) => db.entities.EmailFieldControl.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['emailFieldControls'] })
   });
 
@@ -37,7 +37,7 @@ export default function EmailFieldControls() {
     const missingFields = DEFAULT_FIELDS.filter(f => !existingFields.includes(f.field_name));
 
     missingFields.forEach(field => {
-      base44.entities.EmailFieldControl.create({
+      db.entities.EmailFieldControl.create({
         field_name: field.field_name,
         display_label: field.display_label,
         is_visible: true
@@ -50,7 +50,7 @@ export default function EmailFieldControls() {
   const toggleField = (field) => {
     if (!field.id) {
       // Create if doesn't exist
-      base44.entities.EmailFieldControl.create({
+      db.entities.EmailFieldControl.create({
         field_name: field.field_name,
         display_label: field.display_label,
         is_visible: !field.is_visible

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -80,7 +80,7 @@ export default function ContactsPanel({ clientId, clientName }) {
 
   const { data: contacts = [] } = useQuery({
     queryKey: ['contacts', clientId],
-    queryFn: () => base44.entities.ClientContact.filter({ client_id: clientId }),
+    queryFn: () => db.entities.ClientContact.filter({ client_id: clientId }),
     enabled: !!clientId,
   });
 
@@ -91,14 +91,14 @@ export default function ContactsPanel({ clientId, clientName }) {
 
   const saveMutation = useMutation({
     mutationFn: (data) => editing
-      ? base44.entities.ClientContact.update(editing.id, data)
-      : base44.entities.ClientContact.create({ ...data, client_id: clientId, client_name: clientName }),
+      ? db.entities.ClientContact.update(editing.id, data)
+      : db.entities.ClientContact.create({ ...data, client_id: clientId, client_name: clientName }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['contacts', clientId] }); setDialogOpen(false); toast.success('Contact saved'); },
     onError: (e) => toast.error(e.message),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ClientContact.delete(id),
+    mutationFn: (id) => db.entities.ClientContact.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contacts', clientId] }),
   });
 

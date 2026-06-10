@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck, Trash2, AlertTriangle, AlertCircle, Info, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,32 +38,32 @@ export default function Alerts() {
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts'],
-    queryFn: () => base44.entities.Alert.list('-created_date', 100),
+    queryFn: () => db.entities.Alert.list('-created_date', 100),
   });
 
   const markReadMutation = useMutation({
-    mutationFn: (id) => base44.entities.Alert.update(id, { is_read: true }),
+    mutationFn: (id) => db.entities.Alert.update(id, { is_read: true }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
   });
 
   const resolveMutation = useMutation({
-    mutationFn: (id) => base44.entities.Alert.update(id, { is_resolved: true, is_read: true }),
+    mutationFn: (id) => db.entities.Alert.update(id, { is_resolved: true, is_read: true }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Alert.delete(id),
+    mutationFn: (id) => db.entities.Alert.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Alert.create(data),
+    mutationFn: (data) => db.entities.Alert.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); setCreateOpen(false); setForm({ type: 'custom', severity: 'warning', title: '', message: '' }); },
   });
 
   const markAllRead = async () => {
     const unread = alerts.filter(a => !a.is_read && !a.is_resolved);
-    await Promise.all(unread.map(a => base44.entities.Alert.update(a.id, { is_read: true })));
+    await Promise.all(unread.map(a => db.entities.Alert.update(a.id, { is_read: true })));
     queryClient.invalidateQueries({ queryKey: ['alerts'] });
   };
 

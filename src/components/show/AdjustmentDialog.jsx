@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,27 +24,27 @@ export default function AdjustmentDialog({ showId, show }) {
 
   const { data: projectCrew = [] } = useQuery({
     queryKey: ['projectCrew', showId],
-    queryFn: () => base44.entities.ProjectCrew.filter({ show_id: showId })
+    queryFn: () => db.entities.ProjectCrew.filter({ show_id: showId })
   });
 
   const { data: assets = [] } = useQuery({
     queryKey: ['assets', showId],
     queryFn: async () => {
-      const show = await base44.entities.Show.read(showId);
+      const show = await db.entities.Show.read(showId);
       if (!show?.sub_locations) return [];
-      const allAssets = await base44.entities.Asset.list();
+      const allAssets = await db.entities.Asset.list();
       return allAssets.filter(a => a.current_show_id === showId);
     }
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+    queryFn: () => db.entities.User.list()
   });
 
   const createAdjustmentMutation = useMutation({
     mutationFn: async (data) => {
-      return base44.entities.PostEventCost.create({
+      return db.entities.PostEventCost.create({
         show_id: showId,
         show_name: show?.name,
         cost_name: `${data.adjustmentType.charAt(0).toUpperCase() + data.adjustmentType.slice(1)} Adjustment: ${description}`,

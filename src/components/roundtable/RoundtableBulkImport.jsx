@@ -5,7 +5,7 @@
  */
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -161,7 +161,7 @@ export default function RoundtableBulkImport({ partners, defaultPartnerId, onClo
       const staged = toImport[i];
       setProgress(Math.round(((i + 1) / toImport.length) * 100));
       try {
-        await base44.entities.RoundtableItem.create({
+        await db.entities.RoundtableItem.create({
           ...staged.mappedData,
           partner_id: partnerId,
           partner_name: partner?.company_name || '',

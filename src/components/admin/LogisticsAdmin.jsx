@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Pencil, Trash2, Archive, RotateCcw, Plane, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -62,13 +62,13 @@ export default function LogisticsAdmin() {
 
   const { data: records = [] } = useQuery({
     queryKey: ['logisticsBank'],
-    queryFn: () => base44.entities.LogisticsBank.list('-created_date'),
+    queryFn: () => db.entities.LogisticsBank.list('-created_date'),
   });
 
   const saveMutation = useMutation({
     mutationFn: (data) => editingRecord
-      ? base44.entities.LogisticsBank.update(editingRecord.id, data)
-      : base44.entities.LogisticsBank.create(data),
+      ? db.entities.LogisticsBank.update(editingRecord.id, data)
+      : db.entities.LogisticsBank.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logisticsBank'] });
       setDialogOpen(false);
@@ -78,12 +78,12 @@ export default function LogisticsAdmin() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.LogisticsBank.delete(id),
+    mutationFn: (id) => db.entities.LogisticsBank.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['logisticsBank'] }),
   });
 
   const toggleActiveMutation = useMutation({
-    mutationFn: (record) => base44.entities.LogisticsBank.update(record.id, { is_active: !record.is_active }),
+    mutationFn: (record) => db.entities.LogisticsBank.update(record.id, { is_active: !record.is_active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['logisticsBank'] }),
   });
 

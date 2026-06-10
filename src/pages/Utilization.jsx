@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, AlertTriangle, Package, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,9 +16,9 @@ export default function Utilization() {
   const [sortBy, setSortBy] = useState('revenue');
   const [profitFilter, setProfitFilter] = useState('all');
 
-  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => base44.entities.Asset.list() });
-  const { data: movements = [] } = useQuery({ queryKey: ['movements'], queryFn: () => base44.entities.AssetMovement.list('-created_date', 2000) });
-  const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => base44.entities.Category.list() });
+  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => db.entities.Asset.list() });
+  const { data: movements = [] } = useQuery({ queryKey: ['movements'], queryFn: () => db.entities.AssetMovement.list('-created_date', 2000) });
+  const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => db.entities.Category.list() });
 
   // Build utilization data per asset
   const assetStats = assets.map(a => {

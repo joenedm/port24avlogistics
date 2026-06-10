@@ -4,7 +4,7 @@
  * All UI areas that render project status should use this hook.
  */
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import {
   parseStatusFlow,
   getStatusLabel,
@@ -19,7 +19,7 @@ import {
 export function useStatusFlow() {
   const { data: brandSettings = [] } = useQuery({
     queryKey: ['brand_settings'],
-    queryFn: () => base44.entities.BrandSettings.list(),
+    queryFn: () => db.entities.BrandSettings.list(),
     staleTime: 30_000,
   });
 

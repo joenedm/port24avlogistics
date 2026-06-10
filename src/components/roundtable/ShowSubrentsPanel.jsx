@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Plus, Trash2, Truck, MapPin, Handshake, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,17 +32,17 @@ export default function ShowSubrentsPanel({ showId, showName, rooms = [] }) {
 
   const { data: subrents = [], isLoading } = useQuery({
     queryKey: ['roundtable_subrents', showId],
-    queryFn: () => base44.entities.RoundtableSubrent.filter({ show_id: showId }, '-created_date'),
+    queryFn: () => db.entities.RoundtableSubrent.filter({ show_id: showId }, '-created_date'),
     enabled: !!showId,
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.RoundtableSubrent.update(id, { status }),
+    mutationFn: ({ id, status }) => db.entities.RoundtableSubrent.update(id, { status }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['roundtable_subrents', showId] }); toast.success('Status updated'); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.RoundtableSubrent.delete(id),
+    mutationFn: (id) => db.entities.RoundtableSubrent.delete(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['roundtable_subrents', showId] }); toast.success('Subrent removed'); },
   });
 

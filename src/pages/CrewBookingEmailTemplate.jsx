@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,7 +36,7 @@ export default function CrewBookingEmailTemplate() {
   // Fetch template
   const { data: templates } = useQuery({
     queryKey: ['crewBookingEmailTemplate'],
-    queryFn: () => base44.entities.CrewBookingEmailTemplate.list(),
+    queryFn: () => db.entities.CrewBookingEmailTemplate.list(),
   });
 
   const template = templates?.[0];
@@ -56,9 +56,9 @@ export default function CrewBookingEmailTemplate() {
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (template) {
-        return base44.entities.CrewBookingEmailTemplate.update(template.id, data);
+        return db.entities.CrewBookingEmailTemplate.update(template.id, data);
       } else {
-        return base44.entities.CrewBookingEmailTemplate.create(data);
+        return db.entities.CrewBookingEmailTemplate.create(data);
       }
     },
     onSuccess: () => {

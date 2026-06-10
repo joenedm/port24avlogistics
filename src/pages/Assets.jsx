@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Filter, Trash2, Pencil, Package, PanelLeftClose, PanelLeft, QrCode, Printer, Cloud, PackageOpen, ShoppingCart, Building2 } from 'lucide-react';
 import PartnerOwnershipBadge from '@/components/assets/PartnerOwnershipBadge';
@@ -55,12 +55,12 @@ export default function Assets() {
 
   const { data: assets = [], isLoading } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.list('-created_date', 5000),
+    queryFn: () => db.entities.Asset.list('-created_date', 5000),
   });
 
   const { data: kits = [] } = useQuery({
     queryKey: ['kits'],
-    queryFn: () => base44.entities.Kit.list(),
+    queryFn: () => db.entities.Kit.list(),
   });
 
   // Icon-only type indicator using unified item type system
@@ -85,18 +85,18 @@ export default function Assets() {
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list(),
+    queryFn: () => db.entities.Category.list(),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asset.delete(id),
+    mutationFn: (id) => db.entities.Asset.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assets'] }),
   });
 
   const saveCatMutation = useMutation({
     mutationFn: (data) => editingCat
-      ? base44.entities.Category.update(editingCat.id, data)
-      : base44.entities.Category.create(data),
+      ? db.entities.Category.update(editingCat.id, data)
+      : db.entities.Category.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       setCatDialogOpen(false);
@@ -105,7 +105,7 @@ export default function Assets() {
   });
 
   const deleteCatMutation = useMutation({
-    mutationFn: (id) => base44.entities.Category.delete(id),
+    mutationFn: (id) => db.entities.Category.delete(id),
     onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       if (selectedCategoryId === deletedId) setSelectedCategoryId('__all');

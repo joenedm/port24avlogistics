@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,13 +60,13 @@ export default function TravelLogisticsPanel({ showId, show }) {
 
   const { data: items = [] } = useQuery({
     queryKey: ['travelLogistics', showId],
-    queryFn: () => base44.entities.TravelLogistic.filter({ show_id: showId }, '-created_date'),
+    queryFn: () => db.entities.TravelLogistic.filter({ show_id: showId }, '-created_date'),
     enabled: !!showId,
   });
 
   const createMutation = useMutation({
     mutationFn: (data) =>
-      base44.entities.TravelLogistic.create({
+      db.entities.TravelLogistic.create({
         ...data,
         show_id: showId,
         show_name: show?.name,
@@ -89,7 +89,7 @@ export default function TravelLogisticsPanel({ showId, show }) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) =>
-      base44.entities.TravelLogistic.update(id, {
+      db.entities.TravelLogistic.update(id, {
         ...data,
         quantity: parseFloat(data.quantity) || 1,
         unit_cost: data.unit_cost ? parseFloat(data.unit_cost) : undefined,
@@ -110,7 +110,7 @@ export default function TravelLogisticsPanel({ showId, show }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.TravelLogistic.delete(id),
+    mutationFn: (id) => db.entities.TravelLogistic.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['travelLogistics', showId] }),
   });
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ export default function StripeConnectPanel() {
   const { data: stripeAccount, isLoading, error } = useQuery({
     queryKey: ['stripeAccount'],
     queryFn: async () => {
-      const accounts = await base44.entities.StripeAccount.list();
+      const accounts = await db.entities.StripeAccount.list();
       return accounts[0] || null;
     }
   });
@@ -25,7 +25,7 @@ export default function StripeConnectPanel() {
   const updateMutation = useMutation({
     mutationFn: async (data) => {
       if (stripeAccount?.id) {
-        return base44.entities.StripeAccount.update(stripeAccount.id, data);
+        return db.entities.StripeAccount.update(stripeAccount.id, data);
       }
     },
     onSuccess: () => {
@@ -39,7 +39,7 @@ export default function StripeConnectPanel() {
 
   // Disconnect mutation
   const disconnectMutation = useMutation({
-    mutationFn: () => base44.functions.invoke('disconnectStripe', {}),
+    mutationFn: () => db.functions.invoke('disconnectStripe', {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stripeAccount'] });
       toast.success('Stripe disconnected');
@@ -53,7 +53,7 @@ export default function StripeConnectPanel() {
 
   // Sync account status mutation
   const syncMutation = useMutation({
-    mutationFn: () => base44.functions.invoke('syncStripeAccountStatus', {}),
+    mutationFn: () => db.functions.invoke('syncStripeAccountStatus', {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stripeAccount'] });
       toast.success('Stripe status synced');
@@ -65,7 +65,7 @@ export default function StripeConnectPanel() {
 
   // Start OAuth flow
   const connectMutation = useMutation({
-    mutationFn: () => base44.functions.invoke('initiateStripeConnect', {}),
+    mutationFn: () => db.functions.invoke('initiateStripeConnect', {}),
     onSuccess: (response) => {
       if (response.data?.redirect_url) {
         window.location.href = response.data.redirect_url;

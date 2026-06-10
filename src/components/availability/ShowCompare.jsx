@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
@@ -17,12 +17,12 @@ export default function ShowCompare() {
 
   const { data: shows = [] } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list('-start_date', 200),
+    queryFn: () => db.entities.Show.list('-start_date', 200),
   });
 
   const { data: assets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.list('-name', 1000),
+    queryFn: () => db.entities.Asset.list('-name', 1000),
   });
 
   const { data: allRequirements = [] } = useQuery({
@@ -30,7 +30,7 @@ export default function ShowCompare() {
     queryFn: async () => {
       const ids = [showAId, showBId].filter(Boolean);
       if (ids.length === 0) return [];
-      const all = await Promise.all(ids.map(id => base44.entities.ShowRequirement.filter({ show_id: id })));
+      const all = await Promise.all(ids.map(id => db.entities.ShowRequirement.filter({ show_id: id })));
       return all.flat();
     },
     enabled: !!(showAId || showBId),
@@ -41,7 +41,7 @@ export default function ShowCompare() {
     queryFn: async () => {
       const ids = [showAId, showBId].filter(Boolean);
       if (ids.length === 0) return [];
-      const all = await Promise.all(ids.map(id => base44.entities.ShowFulfillment.filter({ show_id: id })));
+      const all = await Promise.all(ids.map(id => db.entities.ShowFulfillment.filter({ show_id: id })));
       return all.flat();
     },
     enabled: !!(showAId || showBId),

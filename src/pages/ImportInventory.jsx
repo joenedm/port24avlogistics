@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   FileSpreadsheet, CheckCircle2, ChevronRight, Trash2, BookOpen,
@@ -119,23 +119,23 @@ export default function ImportInventory() {
   // ── Data ──────────────────────────────────────────────────────────────────
   const { data: assets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.list('-created_date', 5000),
+    queryFn: () => db.entities.Asset.list('-created_date', 5000),
   });
   const { data: kits = [] } = useQuery({
     queryKey: ['kits'],
-    queryFn: () => base44.entities.Kit.list('-created_date', 2000),
+    queryFn: () => db.entities.Kit.list('-created_date', 2000),
   });
   const { data: customFields = [] } = useQuery({
     queryKey: ['customFields'],
-    queryFn: () => base44.entities.CustomField.filter({ applies_to: 'asset' }),
+    queryFn: () => db.entities.CustomField.filter({ applies_to: 'asset' }),
   });
   const { data: templates = [] } = useQuery({
     queryKey: ['importTemplates'],
-    queryFn: () => base44.entities.ImportTemplate.list('-created_date', 50),
+    queryFn: () => db.entities.ImportTemplate.list('-created_date', 50),
   });
 
   const saveTemplateMutation = useMutation({
-    mutationFn: (data) => base44.entities.ImportTemplate.create(data),
+    mutationFn: (data) => db.entities.ImportTemplate.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['importTemplates'] });
       setSaveTemplateOpen(false);
@@ -143,7 +143,7 @@ export default function ImportInventory() {
     },
   });
   const deleteTemplateMutation = useMutation({
-    mutationFn: (id) => base44.entities.ImportTemplate.delete(id),
+    mutationFn: (id) => db.entities.ImportTemplate.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['importTemplates'] }),
   });
 
@@ -447,10 +447,10 @@ export default function ImportInventory() {
         }
 
         if (staged.importAction === 'update' && staged.duplicateId) {
-          await apiCall(() => base44.entities.Kit.update(staged.duplicateId, kitRec));
+          await apiCall(() => db.entities.Kit.update(staged.duplicateId, kitRec));
           updated++;
         } else {
-          await apiCall(() => base44.entities.Kit.create(kitRec));
+          await apiCall(() => db.entities.Kit.create(kitRec));
           success++;
         }
         await sleep(200);
@@ -487,10 +487,10 @@ export default function ImportInventory() {
           for (const serial of serials) {
             const assetRec = { ...baseRec, serial_number: serial };
             if (staged.importAction === 'update' && staged.duplicateId && serial === serials[0]) {
-              await apiCall(() => base44.entities.Asset.update(staged.duplicateId, assetRec));
+              await apiCall(() => db.entities.Asset.update(staged.duplicateId, assetRec));
               updated++;
             } else {
-              await apiCall(() => base44.entities.Asset.create(assetRec));
+              await apiCall(() => db.entities.Asset.create(assetRec));
               success++;
             }
             await sleep(100);
@@ -501,20 +501,20 @@ export default function ImportInventory() {
           rawRec.tracking = 'serialized';
           rawRec.quantity = 1;
           if (staged.importAction === 'update' && staged.duplicateId) {
-            await apiCall(() => base44.entities.Asset.update(staged.duplicateId, rawRec));
+            await apiCall(() => db.entities.Asset.update(staged.duplicateId, rawRec));
             updated++;
           } else {
-            await apiCall(() => base44.entities.Asset.create(rawRec));
+            await apiCall(() => db.entities.Asset.create(rawRec));
             success++;
           }
         }
       } else {
         delete rawRec.serial_numbers;
         if (staged.importAction === 'update' && staged.duplicateId) {
-          await apiCall(() => base44.entities.Asset.update(staged.duplicateId, rawRec));
+          await apiCall(() => db.entities.Asset.update(staged.duplicateId, rawRec));
           updated++;
         } else {
-          await apiCall(() => base44.entities.Asset.create(rawRec));
+          await apiCall(() => db.entities.Asset.create(rawRec));
           success++;
         }
       }

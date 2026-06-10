@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,12 +18,12 @@ export default function VenueDetail() {
 
   const { data: venue, isLoading } = useQuery({
     queryKey: ['venue', id],
-    queryFn: () => base44.entities.Venue.filter({ id }).then(r => r[0]),
+    queryFn: () => db.entities.Venue.filter({ id }).then(r => r[0]),
   });
 
   const { data: shows = [] } = useQuery({
     queryKey: ['shows-for-venue', id],
-    queryFn: () => base44.entities.Show.filter({ venue_id: id }),
+    queryFn: () => db.entities.Show.filter({ venue_id: id }),
     enabled: !!id,
   });
 

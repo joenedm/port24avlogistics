@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +30,7 @@ export default function RegenerateCodesPanel({ allSettings }) {
     queryKey: ['regen-records', recordType],
     queryFn: async () => {
       if (!entityConfig) return [];
-      const ent = base44.entities[entityConfig.entity];
+      const ent = db.entities[entityConfig.entity];
       if (!ent) return [];
       return Object.keys(entityConfig.filter).length > 0
         ? ent.filter(entityConfig.filter, '-created_date', 200)
@@ -66,7 +66,7 @@ export default function RegenerateCodesPanel({ allSettings }) {
       for (const rec of selectedRecords) {
         const code = buildCode(prefix, sep, pad, num);
         num++;
-        const ent = base44.entities[entityConfig.entity];
+        const ent = db.entities[entityConfig.entity];
         await ent.update(rec.id, {
           [entityConfig.codeField]: code,
           [entityConfig.barcodeField]: code,
@@ -75,7 +75,7 @@ export default function RegenerateCodesPanel({ allSettings }) {
       // Update next_number in settings
       const settingsRecord = allSettings.find(s => s.record_type === recordType);
       if (settingsRecord) {
-        await base44.entities.CodeSettings.update(settingsRecord.id, { next_number: num });
+        await db.entities.CodeSettings.update(settingsRecord.id, { next_number: num });
       }
       toast.success(`Regenerated ${selectedRecords.length} codes`);
       queryClient.invalidateQueries({ queryKey: ['regen-records', recordType] });

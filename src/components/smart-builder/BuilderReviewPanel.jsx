@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import {
   Sparkles, CheckCircle, ChevronDown, ChevronUp,
   Trash2, AlertCircle, Info, DollarSign, Users, LayoutGrid, Package, RefreshCw,
@@ -334,7 +334,7 @@ export default function BuilderReviewPanel({ draft: initialDraft, inputs, usedFa
         type: r.type || 'room',
       }));
 
-      const show = await base44.entities.Show.create({
+      const show = await db.entities.Show.create({
         name: showName,
         status: 'planning',
         start_date: startDate,

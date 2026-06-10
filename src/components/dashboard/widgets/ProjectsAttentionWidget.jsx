@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProjectsAttentionWidget() {
   const { data: shows, isLoading } = useQuery({
     queryKey: ['shows-attention'],
     queryFn: async () => {
-      const all = await base44.entities.Show.list();
+      const all = await db.entities.Show.list();
       return all.filter(s => ['picking', 'on_truck', 'needs_return'].includes(s.status));
     },
     staleTime: 60000

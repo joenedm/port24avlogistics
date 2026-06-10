@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -8,7 +8,7 @@ export default function ActiveAlertsWidget() {
   const { data: alerts, isLoading } = useQuery({
     queryKey: ['alerts-active'],
     queryFn: async () => {
-      const all = await base44.entities.Alert.list('-created_date', 20);
+      const all = await db.entities.Alert.list('-created_date', 20);
       return all.filter(a => a.status === 'active');
     },
     staleTime: 60000

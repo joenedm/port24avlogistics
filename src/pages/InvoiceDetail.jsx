@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Send, Download, DollarSign, PanelRightOpen, PanelRightClose, LayoutTemplate } from 'lucide-react';
 import InvoiceQBActions from '@/components/accounting/InvoiceQBActions';
@@ -36,11 +36,11 @@ export default function InvoiceDetail() {
   const invoiceId = (!isNew && !fromQuoteId) ? path.split('/invoices/')[1] : null;
 
   const queryClient = useQueryClient();
-  const { data: invoices = [] } = useQuery({ queryKey: ['invoices'], queryFn: () => base44.entities.Invoice.list() });
-  const { data: quotes = [] } = useQuery({ queryKey: ['quotes'], queryFn: () => base44.entities.Quote.list() });
-  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => base44.entities.Show.list() });
-  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => base44.entities.BrandSettings.list() });
-  const { data: allPrintTemplates = [] } = useQuery({ queryKey: ['printTemplates'], queryFn: () => base44.entities.PrintTemplate.list() });
+  const { data: invoices = [] } = useQuery({ queryKey: ['invoices'], queryFn: () => db.entities.Invoice.list() });
+  const { data: quotes = [] } = useQuery({ queryKey: ['quotes'], queryFn: () => db.entities.Quote.list() });
+  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => db.entities.Show.list() });
+  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => db.entities.BrandSettings.list() });
+  const { data: allPrintTemplates = [] } = useQuery({ queryKey: ['printTemplates'], queryFn: () => db.entities.PrintTemplate.list() });
   const invoiceTemplates = allPrintTemplates.filter(t => t.template_type === 'invoice');
 
   const brand = brandList[0] || {};
@@ -83,8 +83,8 @@ export default function InvoiceDetail() {
 
   const saveMutation = useMutation({
     mutationFn: (data) => invoice
-      ? base44.entities.Invoice.update(invoice.id, data)
-      : base44.entities.Invoice.create(data),
+      ? db.entities.Invoice.update(invoice.id, data)
+      : db.entities.Invoice.create(data),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       if (!invoice) window.location.href = `/invoices/${result.id}`;

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tag, Plus, Printer, RefreshCw, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,19 +26,19 @@ export default function ContainerLabelManager({ kit, kitAssets = [] }) {
 
   const { data: labels = [] } = useQuery({
     queryKey: ['container-labels', kit.id],
-    queryFn: () => base44.entities.ContainerLabel.filter({ kit_id: kit.id }),
+    queryFn: () => db.entities.ContainerLabel.filter({ kit_id: kit.id }),
     enabled: open,
   });
 
   const { data: templates = [] } = useQuery({
     queryKey: ['printTemplates', 'qr_label'],
-    queryFn: () => base44.entities.PrintTemplate.filter({ template_type: 'qr_label' }),
+    queryFn: () => db.entities.PrintTemplate.filter({ template_type: 'qr_label' }),
     enabled: open,
   });
 
   const { data: brandList = [] } = useQuery({
     queryKey: ['brand'],
-    queryFn: () => base44.entities.BrandSettings.list(),
+    queryFn: () => db.entities.BrandSettings.list(),
     staleTime: 10 * 60 * 1000,
     enabled: open,
   });
@@ -59,9 +59,9 @@ export default function ContainerLabelManager({ kit, kitAssets = [] }) {
   const createMutation = useMutation({
     mutationFn: async () => {
       await Promise.all(labels.filter(l => l.is_active).map(l =>
-        base44.entities.ContainerLabel.update(l.id, { is_active: false })
+        db.entities.ContainerLabel.update(l.id, { is_active: false })
       ));
-      return base44.entities.ContainerLabel.create({
+      return db.entities.ContainerLabel.create({
         label_id: generateLabelId(),
         kit_id: kit.id,
         kit_name: kit.name,
@@ -89,7 +89,7 @@ export default function ContainerLabelManager({ kit, kitAssets = [] }) {
       
       console.log('[Kit Label] Printing with template:', selectedTemplate.name, `${selectedTemplate.label_width_mm}x${selectedTemplate.label_height_mm}mm`);
       
-      base44.entities.ContainerLabel.update(label.id, { printed_at: new Date().toISOString() });
+      db.entities.ContainerLabel.update(label.id, { printed_at: new Date().toISOString() });
       const assetLike = {
         id: label.id,
         name: kit.name,

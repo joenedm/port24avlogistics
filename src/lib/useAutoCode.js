@@ -5,7 +5,7 @@
  * and increments the next_number counter after use.
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 
 // Default settings for each record type (used as fallback if no DB record exists)
 export const CODE_TYPE_DEFAULTS = {
@@ -42,7 +42,7 @@ export function previewCode(settings) {
 export function useCodeSettings() {
   return useQuery({
     queryKey: ['codeSettings'],
-    queryFn: () => base44.entities.CodeSettings.list(),
+    queryFn: () => db.entities.CodeSettings.list(),
     staleTime: 60_000,
   });
 }
@@ -69,7 +69,7 @@ export function getMergedSettings(allSettings, recordType) {
  * Returns the generated code string.
  */
 export async function generateNextCode(recordType) {
-  const allSettings = await base44.entities.CodeSettings.list();
+  const allSettings = await db.entities.CodeSettings.list();
   const settings = getMergedSettings(allSettings, recordType);
 
   if (!settings.auto_generate) return null;
@@ -79,10 +79,10 @@ export async function generateNextCode(recordType) {
   // Increment next_number
   const nextNum = (settings.next_number ?? 1) + 1;
   if (settings.id) {
-    await base44.entities.CodeSettings.update(settings.id, { next_number: nextNum });
+    await db.entities.CodeSettings.update(settings.id, { next_number: nextNum });
   } else {
     // Create new settings record
-    await base44.entities.CodeSettings.create({
+    await db.entities.CodeSettings.create({
       record_type: recordType,
       label: CODE_TYPE_DEFAULTS[recordType]?.label || recordType,
       prefix: settings.prefix,

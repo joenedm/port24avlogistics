@@ -17,7 +17,7 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { parseISO, isWithinInterval, startOfDay, endOfDay, areIntervalsOverlapping } from 'date-fns';
 
 const HARD_OUT_STATES = new Set(['picked', 'on_truck', 'on_location', 'returning']);
@@ -37,19 +37,19 @@ export function useConflictCheck({ currentShowId, currentShow }) {
   // Fetch all requirements across shows — limited to 500, enough for conflict detection
   const { data: allRequirements = [], isSuccess: reqReady } = useQuery({
     queryKey: ['all_show_requirements_conflict'],
-    queryFn: () => base44.entities.ShowRequirement.list('-created_date', 500),
+    queryFn: () => db.entities.ShowRequirement.list('-created_date', 500),
     staleTime: 30000,
   });
 
   const { data: allFulfillments = [], isSuccess: fulfReady } = useQuery({
     queryKey: ['all_show_fulfillments_conflict'],
-    queryFn: () => base44.entities.ShowFulfillment.list('-scanned_at', 1000),
+    queryFn: () => db.entities.ShowFulfillment.list('-scanned_at', 1000),
     staleTime: 30000,
   });
 
   const { data: allShows = [], isSuccess: showsReady } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list(),
+    queryFn: () => db.entities.Show.list(),
     staleTime: 30000,
   });
 

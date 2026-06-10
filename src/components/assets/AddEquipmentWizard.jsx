@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -253,7 +253,7 @@ function StepProductDetails({ form, set, categories, mode }) {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       set('image_url', file_url);
     } finally {
       setUploading(false);
@@ -1120,7 +1120,7 @@ function StepCSVImport({ onClose, queryClient }) {
     if (!rows.length) return;
     setImporting(true);
     for (const row of rows) {
-      await base44.entities.Asset.create({
+      await db.entities.Asset.create({
         name: row.name,
         category: row.category || undefined,
         asset_number: row.asset_number || undefined,
@@ -1326,19 +1326,19 @@ export default function AddEquipmentWizard({ open, onOpenChange, initialType }) 
 
   const { data: customFields = [] } = useQuery({
     queryKey: ['customFields'],
-    queryFn: () => base44.entities.CustomField.filter({ applies_to: 'asset' }),
+    queryFn: () => db.entities.CustomField.filter({ applies_to: 'asset' }),
   });
   const { data: allAssets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.list('-created_date', 3000),
+    queryFn: () => db.entities.Asset.list('-created_date', 3000),
   });
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list(),
+    queryFn: () => db.entities.Category.list(),
   });
   const { data: partners = [] } = useQuery({
     queryKey: ['roundtablePartners'],
-    queryFn: () => base44.entities.RoundtablePartner.filter({ is_active: true }),
+    queryFn: () => db.entities.RoundtablePartner.filter({ is_active: true }),
   });
 
   const prevOpen = useRef(false);
@@ -1366,13 +1366,13 @@ export default function AddEquipmentWizard({ open, onOpenChange, initialType }) 
         const linked = form.linked_asset_ids || [];
         const linkedAssets = allAssets.filter(a => linked.includes(a.id));
         const autoPrice = form.auto_price ? linkedAssets.reduce((s, a) => s + (a.daily_rate || 0), 0) : null;
-        const kit = await base44.entities.Kit.create({
+        const kit = await db.entities.Kit.create({
           name: form.name, kit_type: 'cloud', category: form.category || undefined,
           location: form.location || undefined, auto_price: form.auto_price,
           daily_rate: form.auto_price ? autoPrice : (form.daily_rate ? Number(form.daily_rate) : undefined),
           status: 'available', description: form.notes || undefined,
         });
-        if (linked.length > 0) await Promise.all(linked.map(id => base44.entities.Asset.update(id, { kit_id: kit.id })));
+        if (linked.length > 0) await Promise.all(linked.map(id => db.entities.Asset.update(id, { kit_id: kit.id })));
         return kit;
       }
 
@@ -1381,7 +1381,7 @@ export default function AddEquipmentWizard({ open, onOpenChange, initialType }) 
         if (!kitBarcode) {
           kitBarcode = (await generateNextCode('physical_kit')) || `KIT-${Date.now().toString(36).toUpperCase().slice(-6)}`;
         }
-        const kit = await base44.entities.Kit.create({
+        const kit = await db.entities.Kit.create({
           name: form.name, kit_type: 'serialized', barcode: kitBarcode,
           category: form.category || undefined, location: form.location || undefined,
           daily_rate: form.daily_rate ? Number(form.daily_rate) : undefined,
@@ -1391,7 +1391,7 @@ export default function AddEquipmentWizard({ open, onOpenChange, initialType }) 
         const contents = form.kit_contents || [];
         if (contents.length > 0) {
           const ids = [...new Set(contents.map(e => e.asset_id))];
-          await Promise.all(ids.map(id => base44.entities.Asset.update(id, { kit_id: kit.id })));
+          await Promise.all(ids.map(id => db.entities.Asset.update(id, { kit_id: kit.id })));
         }
         return kit;
       }
@@ -1469,7 +1469,7 @@ export default function AddEquipmentWizard({ open, onOpenChange, initialType }) 
       }
 
       Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
-      return await base44.entities.Asset.create(payload);
+      return await db.entities.Asset.create(payload);
     },
     onSuccess: (created) => {
       setSavedItem(created);

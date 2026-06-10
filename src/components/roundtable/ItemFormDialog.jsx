@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,10 +32,10 @@ export default function ItemFormDialog({ item, partners, onClose, onSaved }) {
     mutationFn: async () => {
       if (item) {
         // Update existing item
-        return base44.entities.RoundtableItem.update(item.id, form);
+        return db.entities.RoundtableItem.update(item.id, form);
       } else {
         // Create new item
-        return base44.entities.RoundtableItem.create(form);
+        return db.entities.RoundtableItem.create(form);
       }
     },
     onSuccess: () => { 

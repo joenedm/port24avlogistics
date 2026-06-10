@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Upload, Palette, Building2, Image, CheckCircle2, RefreshCw, Wand2 } from 'lucide-react';
 import AutoBrandModal from '@/components/branding/AutoBrandModal';
@@ -14,7 +14,7 @@ export default function BrandingSettings() {
   const queryClient = useQueryClient();
   const { data: brandList = [], isLoading } = useQuery({
     queryKey: ['brand'],
-    queryFn: () => base44.entities.BrandSettings.list(),
+    queryFn: () => db.entities.BrandSettings.list(),
   });
 
   const existing = brandList[0];
@@ -38,8 +38,8 @@ export default function BrandingSettings() {
 
   const saveMutation = useMutation({
     mutationFn: (data) => existing
-      ? base44.entities.BrandSettings.update(existing.id, data)
-      : base44.entities.BrandSettings.create(data),
+      ? db.entities.BrandSettings.update(existing.id, data)
+      : db.entities.BrandSettings.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brand'] });
       setSaved(true);
@@ -51,7 +51,7 @@ export default function BrandingSettings() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingLogo(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await db.integrations.Core.UploadFile({ file });
     setForm(f => ({ ...f, logo_url: file_url }));
     setUploadingLogo(false);
   };
@@ -60,7 +60,7 @@ export default function BrandingSettings() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingBg(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await db.integrations.Core.UploadFile({ file });
     setForm(f => ({ ...f, login_background_url: file_url }));
     setUploadingBg(false);
   };

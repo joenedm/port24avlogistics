@@ -4,7 +4,7 @@ import { Sparkles, ArrowLeft, Settings2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import PageHeader from '@/components/shared/PageHeader';
 import BuilderInputForm from '@/components/smart-builder/BuilderInputForm';
 import BuilderReviewPanel from '@/components/smart-builder/BuilderReviewPanel';
@@ -20,7 +20,7 @@ export default function SmartProjectBuilder() {
 
   const { data: calibrations = [] } = useQuery({
     queryKey: ['fulfillment_calibrations'],
-    queryFn: () => base44.entities.FulfillmentCalibration.filter({ is_active: true }),
+    queryFn: () => db.entities.FulfillmentCalibration.filter({ is_active: true }),
   });
   const calibratedCount = calibrations.filter(c => (c.preferred_items || []).length > 0).length;
 

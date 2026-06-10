@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,7 +41,7 @@ export default function DocumentSettings() {
 
   const { data: existingSettings = [] } = useQuery({
     queryKey: ['documentSettings'],
-    queryFn: () => base44.entities.DocumentSettings.list(),
+    queryFn: () => db.entities.DocumentSettings.list(),
   });
 
   const settingsRecord = existingSettings[0];
@@ -56,9 +56,9 @@ export default function DocumentSettings() {
     mutationFn: async () => {
       const payload = { ...form };
       if (settingsRecord?.id) {
-        return base44.entities.DocumentSettings.update(settingsRecord.id, payload);
+        return db.entities.DocumentSettings.update(settingsRecord.id, payload);
       }
-      return base44.entities.DocumentSettings.create(payload);
+      return db.entities.DocumentSettings.create(payload);
     },
     onSuccess: () => {
       toast.success('Document settings saved');

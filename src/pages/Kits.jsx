@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Lock, Unlock, Trash2, ChevronDown, ChevronRight,
@@ -38,19 +38,19 @@ export default function Kits() {
 
   const { data: kits = [] } = useQuery({
     queryKey: ['kits'],
-    queryFn: () => base44.entities.Kit.list(),
+    queryFn: () => db.entities.Kit.list(),
   });
 
   const { data: assets = [] } = useQuery({
     queryKey: ['assets'],
     // Use filter({}) with a high limit to ensure we get ALL assets, not just the default page
-    queryFn: () => base44.entities.Asset.filter({}, '-updated_date', 2000),
+    queryFn: () => db.entities.Asset.filter({}, '-updated_date', 2000),
   });
 
 
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Kit.update(id, data),
+    mutationFn: ({ id, data }) => db.entities.Kit.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kits'] }),
   });
 
@@ -58,8 +58,8 @@ export default function Kits() {
     mutationFn: async (id) => {
       // Unlink all assets from this kit before deleting so kit_id doesn't point to ghost
       const linkedAssets = assets.filter(a => a.kit_id === id);
-      await Promise.all(linkedAssets.map(a => base44.entities.Asset.update(a.id, { kit_id: null })));
-      await base44.entities.Kit.delete(id);
+      await Promise.all(linkedAssets.map(a => db.entities.Asset.update(a.id, { kit_id: null })));
+      await db.entities.Kit.delete(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kits'] });
@@ -77,7 +77,7 @@ export default function Kits() {
       updateData.quantity = (asset.quantity || 1) - qty;
     }
     
-    base44.entities.Asset.update(asset.id, updateData).then(() => {
+    db.entities.Asset.update(asset.id, updateData).then(() => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       const kit = kits.find(k => k.id === kitId);
       if (kit?.auto_price) recomputeKitPrice(kitId);
@@ -91,7 +91,7 @@ export default function Kits() {
   };
 
   const removeAssetFromKit = (asset) => {
-    base44.entities.Asset.update(asset.id, { kit_id: null }).then(() => {
+    db.entities.Asset.update(asset.id, { kit_id: null }).then(() => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
     });
   };

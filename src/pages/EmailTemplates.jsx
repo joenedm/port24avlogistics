@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,16 +24,16 @@ export default function EmailTemplates() {
 
   const { data: templates = [] } = useQuery({
     queryKey: ['emailTemplates'],
-    queryFn: () => base44.entities.EmailTemplate.list()
+    queryFn: () => db.entities.EmailTemplate.list()
   });
 
   const { data: brandSettings = [] } = useQuery({
     queryKey: ['brandSettings'],
-    queryFn: () => base44.entities.BrandSettings.list()
+    queryFn: () => db.entities.BrandSettings.list()
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.EmailTemplate.create(data),
+    mutationFn: (data) => db.entities.EmailTemplate.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emailTemplates'] });
       setShowNewDialog(false);
@@ -42,7 +42,7 @@ export default function EmailTemplates() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.EmailTemplate.update(id, data),
+    mutationFn: ({ id, data }) => db.entities.EmailTemplate.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emailTemplates'] });
       setEditingId(null);
@@ -51,7 +51,7 @@ export default function EmailTemplates() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.EmailTemplate.delete(id),
+    mutationFn: (id) => db.entities.EmailTemplate.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emailTemplates'] });
       setDeleteId(null);
@@ -59,7 +59,7 @@ export default function EmailTemplates() {
   });
 
   const sendTestMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('sendTestEmail', data),
+    mutationFn: (data) => db.functions.invoke('sendTestEmail', data),
     onSuccess: () => {
       setShowTestDialog(false);
       setTestEmail('');

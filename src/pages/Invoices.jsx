@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, FileText, DollarSign, Clock, CheckCircle2, AlertTriangle, ExternalLink } from 'lucide-react';
@@ -27,11 +27,11 @@ export default function Invoices() {
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list('-created_date', 100),
+    queryFn: () => db.entities.Invoice.list('-created_date', 100),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Invoice.update(id, data),
+    mutationFn: ({ id, data }) => db.entities.Invoice.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invoices'] }),
   });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,11 +49,11 @@ export default function AddSubrentDialog({ showId, showName, rooms = [], editing
 
   const { data: partners = [] } = useQuery({
     queryKey: ['roundtable_partners'],
-    queryFn: () => base44.entities.RoundtablePartner.list('-created_date', 100),
+    queryFn: () => db.entities.RoundtablePartner.list('-created_date', 100),
   });
   const { data: items = [] } = useQuery({
     queryKey: ['roundtable_items'],
-    queryFn: () => base44.entities.RoundtableItem.list('-created_date', 500),
+    queryFn: () => db.entities.RoundtableItem.list('-created_date', 500),
   });
 
   const filtered = items.filter(item => {
@@ -79,15 +79,15 @@ export default function AddSubrentDialog({ showId, showName, rooms = [], editing
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       const total = (form.daily_rate || 0) * (form.quantity || 1) * (form.days || 1);
       if (isEdit) {
-        return base44.entities.RoundtableSubrent.update(editingSubrent.id, {
+        return db.entities.RoundtableSubrent.update(editingSubrent.id, {
           ...form,
           total_cost: total,
         });
       }
-      return base44.entities.RoundtableSubrent.create({
+      return db.entities.RoundtableSubrent.create({
         ...form,
         show_id: showId,
         show_name: showName,

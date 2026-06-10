@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Users, Layers, GripVertical, Eye, EyeOff, Lock, Star, Briefcase, ChevronDown, ChevronUp, ChevronRight, Shield, Upload, Mail, Palette, Pencil, UserPlus, Package, Zap, ShieldCheck, Settings, QrCode, BookOpen } from 'lucide-react';
 import EmployeeCheckoutPanel from '@/components/employee/EmployeeCheckoutPanel';
@@ -57,11 +57,11 @@ const emptyField = { field_name: '', field_key: '', field_type: 'text', options:
 function AdminEmployeeGear() {
   const { data: crewMembers = [] } = useQuery({
     queryKey: ['crewMembers'],
-    queryFn: () => base44.entities.CrewMember.list('-created_date'),
+    queryFn: () => db.entities.CrewMember.list('-created_date'),
   });
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => db.entities.User.list(),
   });
 
   const [expandedId, setExpandedId] = useState(null);
@@ -163,13 +163,13 @@ export default function Admin() {
 
   const queryClient = useQueryClient();
 
-  const { data: customFields = [] } = useQuery({ queryKey: ['customFields'], queryFn: () => base44.entities.CustomField.list() });
-  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => base44.entities.User.list() });
+  const { data: customFields = [] } = useQuery({ queryKey: ['customFields'], queryFn: () => db.entities.CustomField.list() });
+  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => db.entities.User.list() });
 
   const saveMutation = useMutation({
     mutationFn: (data) => editingField
-      ? base44.entities.CustomField.update(editingField.id, data)
-      : base44.entities.CustomField.create(data),
+      ? db.entities.CustomField.update(editingField.id, data)
+      : db.entities.CustomField.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customFields'] });
       setFieldDialogOpen(false);
@@ -179,12 +179,12 @@ export default function Admin() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CustomField.delete(id),
+    mutationFn: (id) => db.entities.CustomField.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customFields'] }),
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (id) => base44.entities.User.delete(id),
+    mutationFn: (id) => db.entities.User.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
 
@@ -204,7 +204,7 @@ export default function Admin() {
     );
   }
 
-  const toggleHidden = (field) => base44.entities.CustomField.update(field.id, { is_hidden: !field.is_hidden }).then(() => queryClient.invalidateQueries({ queryKey: ['customFields'] }));
+  const toggleHidden = (field) => db.entities.CustomField.update(field.id, { is_hidden: !field.is_hidden }).then(() => queryClient.invalidateQueries({ queryKey: ['customFields'] }));
   const autoKey = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
   const openCreate = () => { setEditingField(null); setFieldForm(emptyField); setFieldDialogOpen(true); };
   const openEdit = (f) => { setEditingField(f); setFieldForm({ ...emptyField, ...f }); setFieldDialogOpen(true); };

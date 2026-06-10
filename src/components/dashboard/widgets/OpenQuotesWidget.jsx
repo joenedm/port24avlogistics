@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 
@@ -8,7 +8,7 @@ export default function OpenQuotesWidget() {
   const { data: quotes, isLoading } = useQuery({
     queryKey: ['quotes-open'],
     queryFn: async () => {
-      const all = await base44.entities.Quote.list();
+      const all = await db.entities.Quote.list();
       return all.filter(q => ['draft', 'sent'].includes(q.status));
     },
     staleTime: 60000

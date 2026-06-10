@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,12 +30,12 @@ export default function ClientDetail() {
 
   const { data: client, isLoading } = useQuery({
     queryKey: ['client', id],
-    queryFn: () => base44.entities.Client.filter({ id }).then(r => r[0]),
+    queryFn: () => db.entities.Client.filter({ id }).then(r => r[0]),
   });
 
   const { data: shows = [] } = useQuery({
     queryKey: ['shows-for-client', id],
-    queryFn: () => base44.entities.Show.filter({ client_id: id }),
+    queryFn: () => db.entities.Show.filter({ client_id: id }),
     enabled: !!id,
   });
 

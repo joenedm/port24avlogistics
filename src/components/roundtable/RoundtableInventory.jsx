@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Plus, Trash2, Pencil, Search, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,15 +25,15 @@ export default function RoundtableInventory() {
 
   const { data: partners = [] } = useQuery({
     queryKey: ['roundtable_partners'],
-    queryFn: () => base44.entities.RoundtablePartner.list('-created_date', 100),
+    queryFn: () => db.entities.RoundtablePartner.list('-created_date', 100),
   });
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['roundtable_items'],
-    queryFn: () => base44.entities.RoundtableItem.list('-created_date', 500),
+    queryFn: () => db.entities.RoundtableItem.list('-created_date', 500),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.RoundtableItem.delete(id),
+    mutationFn: (id) => db.entities.RoundtableItem.delete(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['roundtable_items'] }); toast.success('Item removed'); },
   });
 

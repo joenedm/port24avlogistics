@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileText, ArrowRight, Plus } from 'lucide-react';
@@ -18,12 +18,12 @@ export default function Quotes() {
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ['quotes'],
-    queryFn: () => base44.entities.Quote.list('-updated_date'),
+    queryFn: () => db.entities.Quote.list('-updated_date'),
   });
 
   const { data: shows = [] } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list(),
+    queryFn: () => db.entities.Show.list(),
   });
 
   const handleCreateQuote = (showId) => {

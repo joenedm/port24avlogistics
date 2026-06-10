@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function RecentActivityWidget() {
   const { data: movements, isLoading } = useQuery({
     queryKey: ['asset-movements'],
     queryFn: async () => {
-      const all = await base44.entities.AssetMovement.list('-created_date', 10);
+      const all = await db.entities.AssetMovement.list('-created_date', 10);
       return all;
     },
     staleTime: 60000

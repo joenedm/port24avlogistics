@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ export default function UserEditDialog({ user, open, onOpenChange, allUsers }) {
   const isLastAdmin = user?.role === 'admin' && adminCount === 1;
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.User.update(user.id, data),
+    mutationFn: (data) => db.entities.User.update(user.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('User updated');
@@ -69,7 +69,7 @@ export default function UserEditDialog({ user, open, onOpenChange, allUsers }) {
   const handleGenerateResetLink = async () => {
     setGeneratingLink(true);
     try {
-      const res = await base44.functions.invoke('adminSetUserPassword', { email: user.email });
+      const res = await db.functions.invoke('adminSetUserPassword', { email: user.email });
       const { reset_url } = res.data;
       window.open(reset_url, '_blank');
       setLinkGenerated(true);
@@ -84,7 +84,7 @@ export default function UserEditDialog({ user, open, onOpenChange, allUsers }) {
   const handlePasswordReset = async () => {
     setResettingPassword(true);
     try {
-      await base44.auth.resetPasswordRequest(user.email);
+      await db.auth.resetPasswordRequest(user.email);
       setResetSent(true);
       toast.success('Password reset email sent to ' + user.email);
     } catch (err) {

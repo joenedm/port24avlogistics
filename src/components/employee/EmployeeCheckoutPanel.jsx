@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ScanBarcode, Package, XCircle, AlertCircle, Search, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ async function lookupAssetByCode(rawCode) {
   console.log('[AssetLookup] raw input:', JSON.stringify(val));
 
   // Fetch ALL assets fresh — no limit issues, no stale cache
-  const allAssets = await base44.entities.Asset.list('-created_date', 5000);
+  const allAssets = await db.entities.Asset.list('-created_date', 5000);
   console.log('[AssetLookup] total assets fetched:', allAssets.length);
 
   // Log first few barcodes so we can verify the field name
@@ -70,13 +70,13 @@ export default function EmployeeCheckoutPanel({ crewMember, readOnly = false }) 
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    base44.auth.me().then(u => setCurrentUser(u)).catch(() => {});
+    db.auth.me().then(u => setCurrentUser(u)).catch(() => {});
   }, []);
 
   // Load assets currently held by this crew member
   const { data: heldAssets = [], isLoading: loadingHeld } = useQuery({
     queryKey: ['employeeAssets', crewMember.id],
-    queryFn: () => base44.entities.Asset.filter({ employee_checkout_id: crewMember.id }),
+    queryFn: () => db.entities.Asset.filter({ employee_checkout_id: crewMember.id }),
     enabled: !!crewMember.id,
   });
 
@@ -115,7 +115,7 @@ export default function EmployeeCheckoutPanel({ crewMember, readOnly = false }) 
 
       const actorLabel = currentUser?.email || currentUser?.full_name || 'unknown';
 
-      await base44.entities.Asset.update(asset.id, {
+      await db.entities.Asset.update(asset.id, {
         employee_checkout_id: crewMember.id,
         employee_checkout_name: crewMember.email,
         employee_checkout_date: new Date().toISOString(),
@@ -124,13 +124,13 @@ export default function EmployeeCheckoutPanel({ crewMember, readOnly = false }) 
 
       const existing = crewMember.employee_checkout_asset_ids || [];
       if (!existing.includes(asset.id)) {
-        await base44.entities.CrewMember.update(crewMember.id, {
+        await db.entities.CrewMember.update(crewMember.id, {
           employee_checkout_asset_ids: [...existing, asset.id],
         });
       }
 
       // Write movement audit record
-      await base44.entities.AssetMovement.create({
+      await db.entities.AssetMovement.create({
         asset_id: asset.id,
         asset_name: asset.name,
         asset_barcode: asset.barcode || '',
@@ -161,19 +161,19 @@ export default function EmployeeCheckoutPanel({ crewMember, readOnly = false }) 
       // Find the asset from the held list for movement data
       const asset = heldAssets.find(a => a.id === assetId);
 
-      await base44.entities.Asset.update(assetId, {
+      await db.entities.Asset.update(assetId, {
         employee_checkout_id: null,
         employee_checkout_name: null,
         employee_checkout_date: null,
         status: 'available',
       });
       const existing = crewMember.employee_checkout_asset_ids || [];
-      await base44.entities.CrewMember.update(crewMember.id, {
+      await db.entities.CrewMember.update(crewMember.id, {
         employee_checkout_asset_ids: existing.filter(id => id !== assetId),
       });
 
       // Write movement audit record
-      await base44.entities.AssetMovement.create({
+      await db.entities.AssetMovement.create({
         asset_id: assetId,
         asset_name: asset?.name || assetId,
         asset_barcode: asset?.barcode || '',

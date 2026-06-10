@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,19 +51,19 @@ export default function QuickBooksPanel() {
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['qb-status'],
-    queryFn: () => base44.functions.invoke('qbGetStatus', {}).then(r => r.data),
+    queryFn: () => db.functions.invoke('qbGetStatus', {}).then(r => r.data),
     refetchInterval: 30000,
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list('-created_date', 50),
+    queryFn: () => db.entities.Invoice.list('-created_date', 50),
   });
 
   // Load mapping form from QB connection entity
   const { data: connections = [] } = useQuery({
     queryKey: ['qbConnection'],
-    queryFn: () => base44.entities.QuickBooksConnection.list().catch(() => []),
+    queryFn: () => db.entities.QuickBooksConnection.list().catch(() => []),
   });
   const connection = connections[0] || null;
 
@@ -89,7 +89,7 @@ export default function QuickBooksPanel() {
 
   const handleConnect = async () => {
     try {
-      const res = await base44.functions.invoke('qbGetConnectURL', {});
+      const res = await db.functions.invoke('qbGetConnectURL', {});
       if (res.data?.connect_url) {
         // Full browser redirect — do NOT open in iframe or modal
         window.location.href = res.data.connect_url;
@@ -103,7 +103,7 @@ export default function QuickBooksPanel() {
 
   const handleDisconnect = async () => {
     try {
-      await base44.functions.invoke('qbDisconnectAccount', {});
+      await db.functions.invoke('qbDisconnectAccount', {});
       toast.success('QuickBooks disconnected');
       queryClient.invalidateQueries({ queryKey: ['qb-status'] });
     } catch (err) {
@@ -114,7 +114,7 @@ export default function QuickBooksPanel() {
   const handleSyncAll = async () => {
     setSyncing(true);
     try {
-      const res = await base44.functions.invoke('qbSync', { scope: 'all' });
+      const res = await db.functions.invoke('qbSync', { scope: 'all' });
       const report = res.data?.report || {};
       const errors = [...(report.customers?.errors || []), ...(report.invoices?.errors || [])];
       if (errors.length) {
@@ -133,7 +133,7 @@ export default function QuickBooksPanel() {
 
   const syncOneInvoice = async (invoiceId) => {
     try {
-      await base44.functions.invoke('qbSyncInvoice', { invoice_id: invoiceId });
+      await db.functions.invoke('qbSyncInvoice', { invoice_id: invoiceId });
       toast.success('Invoice sent to QuickBooks');
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
     } catch (err) {
@@ -143,7 +143,7 @@ export default function QuickBooksPanel() {
 
   const saveMappings = async () => {
     if (!connection) return;
-    await base44.entities.QuickBooksConnection.update(connection.id, mappingForm);
+    await db.entities.QuickBooksConnection.update(connection.id, mappingForm);
     queryClient.invalidateQueries({ queryKey: ['qbConnection'] });
     toast.success('Accounting settings saved');
   };

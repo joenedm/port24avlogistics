@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CrewAssignmentsWidget() {
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['crew-bookings-active'],
     queryFn: async () => {
-      const all = await base44.entities.CrewBooking.list();
+      const all = await db.entities.CrewBooking.list();
       return all.filter(b => ['confirmed', 'assigned'].includes(b.status));
     },
     staleTime: 60000

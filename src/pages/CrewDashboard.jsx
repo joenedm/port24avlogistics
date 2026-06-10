@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Calendar, DollarSign, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,8 +18,8 @@ export default function CrewDashboard() {
   const { data: crew = [] } = useQuery({
     queryKey: ['myCrewProfile'],
     queryFn: async () => {
-      const user = await base44.auth.me();
-      const crewList = await base44.entities.CrewMember.filter({ user_id: user.id });
+      const user = await db.auth.me();
+      const crewList = await db.entities.CrewMember.filter({ user_id: user.id });
       return crewList[0] || null;
     },
   });
@@ -28,18 +28,18 @@ export default function CrewDashboard() {
     queryKey: ['myBookings', crew?.id],
     queryFn: async () => {
       if (!crew?.id) return [];
-      return base44.entities.CrewBooking.filter({ crew_id: crew.id }, '-created_date');
+      return db.entities.CrewBooking.filter({ crew_id: crew.id }, '-created_date');
     },
     enabled: !!crew?.id,
   });
 
   const { data: shows = [] } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list(),
+    queryFn: () => db.entities.Show.list(),
   });
 
   const respondMutation = useMutation({
-    mutationFn: (status) => base44.entities.CrewBooking.update(selectedBooking.id, {
+    mutationFn: (status) => db.entities.CrewBooking.update(selectedBooking.id, {
       status,
       responded_at: new Date().toISOString(),
     }),

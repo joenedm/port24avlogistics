@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,13 +30,13 @@ export default function EmailBrandingSettings() {
   // Fetch brand settings
   const { data: brandSettings = [] } = useQuery({
     queryKey: ['brandSettings'],
-    queryFn: () => base44.entities.BrandSettings.list()
+    queryFn: () => db.entities.BrandSettings.list()
   });
 
   // Fetch field controls
   const { data: fieldControls = [] } = useQuery({
     queryKey: ['emailFieldControls'],
-    queryFn: () => base44.entities.EmailFieldControl.list()
+    queryFn: () => db.entities.EmailFieldControl.list()
   });
 
   const brand = brandSettings[0] || {};
@@ -44,13 +44,13 @@ export default function EmailBrandingSettings() {
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       const result = brand.id ? 
-        await base44.entities.BrandSettings.update(brand.id, data) :
-        await base44.entities.BrandSettings.create(data);
+        await db.entities.BrandSettings.update(brand.id, data) :
+        await db.entities.BrandSettings.create(data);
       
       // Auto-create email template
-      const templates = await base44.entities.EmailTemplate.filter({ template_type: 'crew_assignment' });
+      const templates = await db.entities.EmailTemplate.filter({ template_type: 'crew_assignment' });
       if (templates.length === 0) {
-        await base44.entities.EmailTemplate.create({
+        await db.entities.EmailTemplate.create({
           template_name: 'Default Crew Assignment',
           subject_line: 'Crew Assignment - {{project_name}}',
           template_type: 'crew_assignment',
@@ -70,7 +70,7 @@ export default function EmailBrandingSettings() {
   });
 
   const fieldUpdateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.EmailFieldControl.update(id, data),
+    mutationFn: ({ id, data }) => db.entities.EmailFieldControl.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['emailFieldControls'] })
   });
 
@@ -84,7 +84,7 @@ export default function EmailBrandingSettings() {
     const missingFields = DEFAULT_FIELDS.filter(f => !existingFields.includes(f.field_name));
 
     if (missingFields.length > 0) {
-      base44.entities.EmailFieldControl.bulkCreate(
+      db.entities.EmailFieldControl.bulkCreate(
         missingFields.map(field => ({
           field_name: field.field_name,
           display_label: field.display_label,
@@ -97,7 +97,7 @@ export default function EmailBrandingSettings() {
   const handleFileUpload = async (file, fieldName) => {
     try {
       setUploadProgress(50);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       setUploadProgress(100);
       setFormData({ ...formData, [fieldName]: file_url });
       setTimeout(() => setUploadProgress(0), 1000);
@@ -112,7 +112,7 @@ export default function EmailBrandingSettings() {
 
   const toggleField = (field) => {
     if (!field.id) {
-      base44.entities.EmailFieldControl.create({
+      db.entities.EmailFieldControl.create({
         field_name: field.field_name,
         display_label: field.display_label,
         is_visible: !field.is_visible

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +44,7 @@ export default function InvoiceQBActions({ invoice, onRefresh }) {
   const handleSendToQB = async () => {
     setSyncing(true);
     try {
-      await base44.functions.invoke('qbSyncInvoice', { invoice_id: invoice.id });
+      await db.functions.invoke('qbSyncInvoice', { invoice_id: invoice.id });
       toast.success('Invoice sent to QuickBooks');
       invalidate();
     } catch (err) {
@@ -61,7 +61,7 @@ export default function InvoiceQBActions({ invoice, onRefresh }) {
     }
     setPullingStatus(true);
     try {
-      const res = await base44.functions.invoke('qbPullInvoiceStatus', { invoice_id: invoice.id });
+      const res = await db.functions.invoke('qbPullInvoiceStatus', { invoice_id: invoice.id });
       toast.success(`Status updated — ${res.data?.status || 'synced'}`);
       invalidate();
     } catch (err) {
@@ -78,7 +78,7 @@ export default function InvoiceQBActions({ invoice, onRefresh }) {
     }
     setPullingPayments(true);
     try {
-      const res = await base44.functions.invoke('qbPullPayments', { invoice_id: invoice.id });
+      const res = await db.functions.invoke('qbPullPayments', { invoice_id: invoice.id });
       toast.success(`${res.data?.payments_imported || 0} payment(s) imported from QuickBooks`);
       invalidate();
     } catch (err) {
@@ -90,7 +90,7 @@ export default function InvoiceQBActions({ invoice, onRefresh }) {
 
   const handleMarkNeedsReview = async () => {
     try {
-      await base44.entities.Invoice.update(invoice.id, {
+      await db.entities.Invoice.update(invoice.id, {
         quickbooks_sync_status: 'needs_review',
         status: 'needs_review',
       });
@@ -105,7 +105,7 @@ export default function InvoiceQBActions({ invoice, onRefresh }) {
     if (!linkQbId.trim()) return;
     setLinking(true);
     try {
-      await base44.functions.invoke('qbLinkInvoice', {
+      await db.functions.invoke('qbLinkInvoice', {
         invoice_id: invoice.id,
         quickbooks_invoice_id: linkQbId.trim(),
       });

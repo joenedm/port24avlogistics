@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,7 @@ export default function SmtpSettingsPanel() {
 
   const { data: settings = [], isLoading } = useQuery({
     queryKey: ['workspaceEmailSettings'],
-    queryFn: () => base44.entities.WorkspaceEmailSettings.list(),
+    queryFn: () => db.entities.WorkspaceEmailSettings.list(),
   });
 
   const existing = settings[0];
@@ -45,8 +45,8 @@ export default function SmtpSettingsPanel() {
         smtp_username: data.from_email,
         smtp_password: 'via-resend-api',
       };
-      if (existing) return base44.entities.WorkspaceEmailSettings.update(existing.id, payload);
-      return base44.entities.WorkspaceEmailSettings.create(payload);
+      if (existing) return db.entities.WorkspaceEmailSettings.update(existing.id, payload);
+      return db.entities.WorkspaceEmailSettings.create(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspaceEmailSettings'] });
@@ -65,7 +65,7 @@ export default function SmtpSettingsPanel() {
     if (!testEmail) { toast.error('Enter a test recipient email'); return; }
     setTesting(true);
     try {
-      const res = await base44.functions.invoke('sendSmtpEmail', {
+      const res = await db.functions.invoke('sendSmtpEmail', {
         to: testEmail,
         subject: 'Port 24 — Email Test',
         body: `<p style="font-family:sans-serif">This is a test email from <strong>Port 24</strong>.<br/>Your sender identity is working correctly!</p>`,
@@ -73,7 +73,7 @@ export default function SmtpSettingsPanel() {
       if (res.data?.success) {
         toast.success(`Test email sent to ${testEmail}`);
         if (existing) {
-          await base44.entities.WorkspaceEmailSettings.update(existing.id, {
+          await db.entities.WorkspaceEmailSettings.update(existing.id, {
             is_verified: true,
             last_tested_at: new Date().toISOString(),
           });

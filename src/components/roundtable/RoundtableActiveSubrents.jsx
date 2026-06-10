@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Handshake, Truck, MapPin, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,11 +30,11 @@ export default function RoundtableActiveSubrents() {
 
   const { data: subrents = [], isLoading } = useQuery({
     queryKey: ['roundtable_subrents'],
-    queryFn: () => base44.entities.RoundtableSubrent.list('-created_date', 200),
+    queryFn: () => db.entities.RoundtableSubrent.list('-created_date', 200),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.RoundtableSubrent.update(id, { status }),
+    mutationFn: ({ id, status }) => db.entities.RoundtableSubrent.update(id, { status }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['roundtable_subrents'] }); toast.success('Status updated'); },
   });
 

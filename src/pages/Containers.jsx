@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Package2, Trash2, Pencil, QrCode, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,11 +36,11 @@ export default function Containers() {
 
   const { data: containers = [], isLoading } = useQuery({
     queryKey: ['containers'],
-    queryFn: () => base44.entities.Container.list('-created_date', 2000),
+    queryFn: () => db.entities.Container.list('-created_date', 2000),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Container.delete(id),
+    mutationFn: (id) => db.entities.Container.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['containers'] }),
   });
 

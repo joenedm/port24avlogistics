@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LowStockWidget() {
   const { data: assets, isLoading } = useQuery({
     queryKey: ['assets-low-stock'],
     queryFn: async () => {
-      const all = await base44.entities.Asset.list();
+      const all = await db.entities.Asset.list();
       return all.filter(a => a.reorder_level && a.quantity <= a.reorder_level);
     },
     staleTime: 60000

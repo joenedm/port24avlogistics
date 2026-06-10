@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Edit2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,14 +49,14 @@ export default function CrewRoleManager() {
 
   const { data: roles = [] } = useQuery({
     queryKey: ['crewRoles'],
-    queryFn: () => base44.entities.CrewRole.list(),
+    queryFn: () => db.entities.CrewRole.list(),
   });
 
   const saveMutation = useMutation({
     mutationFn: (data) =>
       editingRole
-        ? base44.entities.CrewRole.update(editingRole.id, data)
-        : base44.entities.CrewRole.create(data),
+        ? db.entities.CrewRole.update(editingRole.id, data)
+        : db.entities.CrewRole.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crewRoles'] });
       setDialogOpen(false);
@@ -66,13 +66,13 @@ export default function CrewRoleManager() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CrewRole.delete(id),
+    mutationFn: (id) => db.entities.CrewRole.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['crewRoles'] }),
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, field, value }) =>
-      base44.entities.CrewRole.update(id, { [field]: value }),
+      db.entities.CrewRole.update(id, { [field]: value }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['crewRoles'] }),
   });
 

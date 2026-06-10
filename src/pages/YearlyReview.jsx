@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList, Plus, CheckCircle2, Clock, PlayCircle, Search } from 'lucide-react';
@@ -59,7 +59,7 @@ export default function AssetReviewPortal() {
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    base44.auth.me().then(u => setCurrentUser(u)).catch(() => {});
+    db.auth.me().then(u => setCurrentUser(u)).catch(() => {});
   }, []);
 
   // Auto-generate name when type/year changes
@@ -74,17 +74,17 @@ export default function AssetReviewPortal() {
 
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ['asset-reviews'],
-    queryFn: () => base44.entities.YearlyAssetReview.list('-created_date', 200),
+    queryFn: () => db.entities.YearlyAssetReview.list('-created_date', 200),
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list('name', 200),
+    queryFn: () => db.entities.Category.list('name', 200),
   });
 
   const { data: allAssets = [] } = useQuery({
     queryKey: ['assets-all'],
-    queryFn: () => base44.entities.Asset.list('-created_date', 5000),
+    queryFn: () => db.entities.Asset.list('-created_date', 5000),
   });
 
   // Unique locations from assets
@@ -102,7 +102,7 @@ export default function AssetReviewPortal() {
       if (data.category_filter) scope = scope.filter(a => a.category === data.category_filter);
       if (data.location_filter) scope = scope.filter(a => a.location === data.location_filter);
 
-      const review = await base44.entities.YearlyAssetReview.create({
+      const review = await db.entities.YearlyAssetReview.create({
         ...data,
         status: 'in_progress',
         started_by: currentUser?.email || '',
@@ -113,7 +113,7 @@ export default function AssetReviewPortal() {
       });
 
       for (let i = 0; i < scope.length; i += 50) {
-        await base44.entities.AssetReviewItem.bulkCreate(
+        await db.entities.AssetReviewItem.bulkCreate(
           scope.slice(i, i + 50).map(a => {
             // Build a combined identifier string: serial_numbers (comma-sep) + barcode
             // so scanning ANY individual serial OR the barcode tag will match

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useMutation } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -35,8 +35,8 @@ export default function VenueFormDialog({ open, onOpenChange, venue, onSaved }) 
 
   const mutation = useMutation({
     mutationFn: (data) => isEdit
-      ? base44.entities.Venue.update(venue.id, data)
-      : base44.entities.Venue.create(data),
+      ? db.entities.Venue.update(venue.id, data)
+      : db.entities.Venue.create(data),
     onSuccess: () => {
       toast.success(isEdit ? 'Venue updated' : 'Venue created');
       onSaved?.();

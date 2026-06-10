@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -387,7 +387,7 @@ export default function AutoBrandModal({ open, onClose, onApply, logoUrl }) {
     setLogoColors([]);
 
     try {
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await db.integrations.Core.InvokeLLM({
         prompt: `You are an expert UI/UX color designer specializing in branded app themes.
 
 Analyze this company logo image carefully. Your goal is to extract the brand colors and generate 3 distinct app themes that feel on-brand while being fully usable and readable.

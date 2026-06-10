@@ -5,7 +5,7 @@ import {
   Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Boxes, History,
   LogOut, Archive, Bell, TrendingUp, Upload, Users, FileText, DollarSign, Palette, CalendarRange, HeartPulse, Briefcase, Telescope, UserCircle, Handshake, Tag, ClipboardList, Building2, MapPin, Truck, Printer
 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/lib/usePermissions';
@@ -178,19 +178,19 @@ export default function Sidebar() {
     return groups;
   })();
 
-  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => base44.entities.BrandSettings.list(), staleTime: 10 * 60 * 1000 });
+  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => db.entities.BrandSettings.list(), staleTime: 10 * 60 * 1000 });
   const brand = brandList[0] || {};
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts'],
-    queryFn: () => base44.entities.Alert.list('-created_date', 50),
+    queryFn: () => db.entities.Alert.list('-created_date', 50),
     staleTime: 2 * 60 * 1000,
   });
   const unreadAlerts = alerts.filter(a => !a.is_resolved && !a.is_read).length;
 
   const { data: hospitalRecords = [] } = useQuery({
     queryKey: ['avhospital'],
-    queryFn: () => base44.entities.AVHospital.list('-created_date', 50),
+    queryFn: () => db.entities.AVHospital.list('-created_date', 50),
     staleTime: 2 * 60 * 1000,
   });
   const activeHospital = hospitalRecords.filter(r => r.is_active).length;
@@ -286,7 +286,7 @@ export default function Sidebar() {
           </button>
         )}
         <button
-          onClick={() => base44.auth.logout()}
+          onClick={() => db.auth.logout()}
           className={cn("flex items-center gap-3 px-3 py-2 rounded-lg transition-colors w-full text-sidebar-foreground hover:bg-sidebar-accent", collapsed && "justify-center")}
         >
           <LogOut className="w-4 h-4 shrink-0" />

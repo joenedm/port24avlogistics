@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, CalendarDays, MapPin, User, Trash2, Pencil, FileText, Sparkles } from 'lucide-react';
@@ -20,11 +20,11 @@ export default function Shows() {
 
   const { data: shows = [], isLoading } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list('-start_date', 100),
+    queryFn: () => db.entities.Show.list('-start_date', 100),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Show.delete(id),
+    mutationFn: (id) => db.entities.Show.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shows'] }),
   });
 

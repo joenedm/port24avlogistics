@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 
@@ -8,7 +8,7 @@ export default function UpcomingShowsWidget() {
   const { data: shows, isLoading } = useQuery({
     queryKey: ['shows-upcoming'],
     queryFn: async () => {
-      const all = await base44.entities.Show.list('-start_date', 10);
+      const all = await db.entities.Show.list('-start_date', 10);
       return all.filter(s => new Date(s.start_date) > new Date());
     },
     staleTime: 60000

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,13 +45,13 @@ export default function ProjectCrewPanel({ showId, show }) {
 
   const { data: projectCrew = [] } = useQuery({
     queryKey: ['projectCrew', showId],
-    queryFn: () => base44.entities.ProjectCrew.filter({ show_id: showId })
+    queryFn: () => db.entities.ProjectCrew.filter({ show_id: showId })
   });
 
   // Fetch all CrewBookings for this show so we can show invite status per person
   const { data: showBookings = [] } = useQuery({
     queryKey: ['crewBookings', showId],
-    queryFn: () => base44.entities.CrewBooking.filter({ show_id: showId }),
+    queryFn: () => db.entities.CrewBooking.filter({ show_id: showId }),
   });
 
   // Quick lookup: projectCrewId -> CrewBooking
@@ -65,17 +65,17 @@ export default function ProjectCrewPanel({ showId, show }) {
 
   const { data: crewRoles = [] } = useQuery({
     queryKey: ['crewRoles'],
-    queryFn: () => base44.entities.CrewRole.list()
+    queryFn: () => db.entities.CrewRole.list()
   });
 
   const { data: crewMembers = [] } = useQuery({
     queryKey: ['crewMembers'],
-    queryFn: () => base44.entities.CrewMember.list()
+    queryFn: () => db.entities.CrewMember.list()
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+    queryFn: () => db.entities.User.list()
   });
 
   const createCrewMutation = useMutation({
@@ -102,7 +102,7 @@ export default function ProjectCrewPanel({ showId, show }) {
       const user = isTBDSelection ? null : users.find(u => u.id === data.crew_member_name);
 
       // Create ProjectCrew
-      const projectCrew = await base44.entities.ProjectCrew.create({
+      const projectCrew = await db.entities.ProjectCrew.create({
         show_id: showId,
         show_name: show?.name,
         crew_member_name: isTBDSelection ? '' : data.crew_member_name,
@@ -127,7 +127,7 @@ export default function ProjectCrewPanel({ showId, show }) {
       // Auto-create linked CrewBooking — only if a real person is assigned
       const crewMemberRecord = isTBDSelection ? null : crewMembers.find(c => c.user_id === data.crew_member_name);
       if (crewMemberRecord) {
-        const newBooking = await base44.entities.CrewBooking.create({
+        const newBooking = await db.entities.CrewBooking.create({
           show_id: showId,
           show_name: show?.name,
           crew_id: crewMemberRecord.id,
@@ -150,7 +150,7 @@ export default function ProjectCrewPanel({ showId, show }) {
         });
 
         // Link the CrewBooking back to ProjectCrew
-        await base44.entities.ProjectCrew.update(projectCrew.id, {
+        await db.entities.ProjectCrew.update(projectCrew.id, {
           crew_booking_id: newBooking.id,
         });
       }
@@ -167,7 +167,7 @@ export default function ProjectCrewPanel({ showId, show }) {
   });
 
   const updateCrewMutation = useMutation({
-    mutationFn: (data) => base44.entities.ProjectCrew.update(editingCrew.id, data),
+    mutationFn: (data) => db.entities.ProjectCrew.update(editingCrew.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectCrew', showId] });
       resetForm();
@@ -176,7 +176,7 @@ export default function ProjectCrewPanel({ showId, show }) {
   });
 
   const deleteCrewMutation = useMutation({
-    mutationFn: (id) => base44.entities.ProjectCrew.delete(id),
+    mutationFn: (id) => db.entities.ProjectCrew.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projectCrew', showId] })
   });
 
@@ -275,7 +275,7 @@ export default function ProjectCrewPanel({ showId, show }) {
       if (!crewBookingId) {
         console.log('📌 Creating linked CrewBooking for ProjectCrew:', crew.id);
 
-        const newBooking = await base44.entities.CrewBooking.create({
+        const newBooking = await db.entities.CrewBooking.create({
           show_id: showId,
           show_name: show?.name,
           crew_id: crewMember?.id,
@@ -301,7 +301,7 @@ export default function ProjectCrewPanel({ showId, show }) {
         console.log('✅ CrewBooking created:', crewBookingId);
 
         // Update ProjectCrew with the booking ID
-        await base44.entities.ProjectCrew.update(crew.id, {
+        await db.entities.ProjectCrew.update(crew.id, {
           crew_booking_id: crewBookingId,
         });
         console.log('✅ ProjectCrew updated with CrewBooking ID:', crewBookingId);
@@ -312,7 +312,7 @@ export default function ProjectCrewPanel({ showId, show }) {
       } else {
         // Update existing CrewBooking with latest data
         console.log('📌 Updating existing CrewBooking:', crewBookingId);
-        await base44.entities.CrewBooking.update(crewBookingId, {
+        await db.entities.CrewBooking.update(crewBookingId, {
           role: crew.role,
           start_date: show?.start_date || crew.assignment_date,
           end_date: show?.end_date || '',
@@ -365,7 +365,7 @@ export default function ProjectCrewPanel({ showId, show }) {
           role={billableDialog.role}
           onSaveAndContinue={(updatedRole) => {
             // Update role with billable amount
-            base44.entities.CrewRole.update(billableDialog.role.id, {
+            db.entities.CrewRole.update(billableDialog.role.id, {
               hourly_rate_billable: billableDialog.role.pricing_method === 'hourly' ? updatedRole.billable_rate : billableDialog.role.hourly_rate_billable,
               fixed_cost_billable: billableDialog.role.pricing_method === 'fixed' ? updatedRole.billable_rate : billableDialog.role.fixed_cost_billable,
               daily_rate_billable: billableDialog.role.pricing_method === 'days' ? updatedRole.billable_rate : billableDialog.role.daily_rate_billable,

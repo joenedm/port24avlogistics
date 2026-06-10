@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -130,13 +130,13 @@ export default function QRLabelPrinter({ open, onOpenChange, assets = [] }) {
   // Fetch our saved QR label templates
   const { data: templates = [] } = useQuery({
     queryKey: ['printTemplates', 'qr_label'],
-    queryFn: () => base44.entities.PrintTemplate.filter({ template_type: 'qr_label' }),
+    queryFn: () => db.entities.PrintTemplate.filter({ template_type: 'qr_label' }),
     enabled: open,
   });
 
   const { data: brandList = [] } = useQuery({
     queryKey: ['brand'],
-    queryFn: () => base44.entities.BrandSettings.list(),
+    queryFn: () => db.entities.BrandSettings.list(),
     staleTime: 10 * 60 * 1000,
     enabled: open,
   });

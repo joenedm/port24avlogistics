@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import html2canvas from 'html2canvas';
 import { generateTruckPackHTML } from '@/lib/documentSettings';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -615,27 +615,27 @@ export default function TruckPackBuilder() {
   // ── Data ──
   const { data: show } = useQuery({
     queryKey: ['show', showId],
-    queryFn: () => base44.entities.Show.filter({ id: showId }).then(r => r[0]),
+    queryFn: () => db.entities.Show.filter({ id: showId }).then(r => r[0]),
     enabled: !!showId,
   });
   const { data: containers = [] } = useQuery({
     queryKey: ['containers'],
-    queryFn: () => base44.entities.Container.list('-created_date', 2000),
+    queryFn: () => db.entities.Container.list('-created_date', 2000),
   });
   const { data: assets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.filter({}, '-created_date', 5000),
+    queryFn: () => db.entities.Asset.filter({}, '-created_date', 5000),
   });
   const { data: existingPacks = [] } = useQuery({
     queryKey: ['truckPacks', showId],
-    queryFn: () => base44.entities.TruckPack.filter({ show_id: showId }),
+    queryFn: () => db.entities.TruckPack.filter({ show_id: showId }),
     enabled: !!showId,
   });
 
   // Show requirements for auto-populate
   const { data: showRequirements = [] } = useQuery({
     queryKey: ['showRequirements', showId],
-    queryFn: () => base44.entities.ShowRequirement.filter({ show_id: showId }),
+    queryFn: () => db.entities.ShowRequirement.filter({ show_id: showId }),
     enabled: !!showId,
   });
 
@@ -670,8 +670,8 @@ export default function TruckPackBuilder() {
         pack_items: packItems, warnings,
         total_weight_lbs: tw, status: 'planned',
       };
-      if (packId) return base44.entities.TruckPack.update(packId, payload);
-      const created = await base44.entities.TruckPack.create(payload);
+      if (packId) return db.entities.TruckPack.update(packId, payload);
+      const created = await db.entities.TruckPack.create(payload);
       setPackId(created.id);
       return created;
     },
@@ -1035,8 +1035,8 @@ export default function TruckPackBuilder() {
 
       // Load brand + doc settings
       const [brands, docSettingsList] = await Promise.all([
-        base44.entities.BrandSettings.list().catch(() => []),
-        base44.entities.DocumentSettings.list().catch(() => []),
+        db.entities.BrandSettings.list().catch(() => []),
+        db.entities.DocumentSettings.list().catch(() => []),
       ]);
       const brand = brands[0] || null;
       const settings = docSettingsList[0] || {};

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, Search, MapPin, AlertTriangle } from 'lucide-react';
@@ -23,7 +23,7 @@ export default function Venues() {
 
   const { data: venues = [], isLoading } = useQuery({
     queryKey: ['venues'],
-    queryFn: () => base44.entities.Venue.list('-created_date'),
+    queryFn: () => db.entities.Venue.list('-created_date'),
   });
 
   const filtered = venues.filter(v =>

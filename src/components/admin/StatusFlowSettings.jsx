@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -198,7 +198,7 @@ export default function StatusFlowSettings() {
 
   const { data: brandSettings = [] } = useQuery({
     queryKey: ['brand_settings'],
-    queryFn: () => base44.entities.BrandSettings.list(),
+    queryFn: () => db.entities.BrandSettings.list(),
   });
 
   const settingRecord = brandSettings.find(b => b.setting_key === SETTING_KEY);
@@ -214,9 +214,9 @@ export default function StatusFlowSettings() {
     mutationFn: async (newFlow) => {
       const payload = { setting_key: SETTING_KEY, setting_value: JSON.stringify(newFlow) };
       if (settingRecord) {
-        return base44.entities.BrandSettings.update(settingRecord.id, payload);
+        return db.entities.BrandSettings.update(settingRecord.id, payload);
       } else {
-        return base44.entities.BrandSettings.create(payload);
+        return db.entities.BrandSettings.create(payload);
       }
     },
     onSuccess: () => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Clock, XCircle, CheckCircle, UserCheck } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -34,9 +34,9 @@ function InviteOnboarding({ email, assignedRole, pendingInviteId, fullName, comp
       // role is NOT touched — stays as assigned by admin
     };
     // Call backend function to update User record with service role permissions
-    await base44.functions.invoke('completeOnboarding', { profile: payload });
+    await db.functions.invoke('completeOnboarding', { profile: payload });
     if (form.password) {
-      try { await base44.auth.updateMe({ password: form.password }); } catch (_) {}
+      try { await db.auth.updateMe({ password: form.password }); } catch (_) {}
     }
     setSaving(false);
     setStep('done');
@@ -68,7 +68,7 @@ function InviteOnboarding({ email, assignedRole, pendingInviteId, fullName, comp
           Continue to Form →
         </button>
         <button
-          onClick={() => base44.auth.logout('/')}
+          onClick={() => db.auth.logout('/')}
           className="w-full mt-3 py-2 rounded-xl border border-white/10 text-xs font-medium text-slate-500 hover:bg-white/5 transition-colors"
         >
           Sign out
@@ -182,7 +182,7 @@ function InviteOnboarding({ email, assignedRole, pendingInviteId, fullName, comp
         </button>
       </form>
       <button
-        onClick={() => base44.auth.logout('/')}
+        onClick={() => db.auth.logout('/')}
         className="w-full mt-3 py-2 rounded-xl border border-white/10 text-xs font-medium text-slate-500 hover:bg-white/5 transition-colors"
       >
         Sign out
@@ -221,7 +221,7 @@ function NoInvitationScreen() {
         If you believe this is a mistake, contact your administrator and ask them to invite your email address.
       </p>
       <button
-        onClick={() => base44.auth.logout('/')}
+        onClick={() => db.auth.logout('/')}
         className="w-full py-2.5 rounded-xl border border-white/10 text-sm font-medium text-slate-300 hover:bg-white/5 transition-colors"
       >
         Sign out
@@ -311,7 +311,7 @@ const UserNotRegisteredError = ({ authError }) => {
           <h1 className="text-2xl font-bold mb-3">{title}</h1>
           <p className="text-slate-400 text-sm leading-relaxed mb-6">{desc}</p>
           <button
-            onClick={() => base44.auth.logout('/')}
+            onClick={() => db.auth.logout('/')}
             className="w-full py-2.5 rounded-xl border border-white/10 text-sm font-medium text-slate-300 hover:bg-white/5 transition-colors"
           >
             Sign out

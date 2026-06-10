@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2, FileText, Send, Eye, EyeOff, ChevronDown, ChevronRight, Percent, PanelRightOpen, PanelRightClose, Users, Package, LayoutTemplate, Download, Lock, LockOpen, CheckCircle, AlertTriangle, Handshake, Truck } from 'lucide-react';
@@ -30,37 +30,37 @@ export default function QuoteBuilder() {
   const showId = window.location.pathname.split('/quotes/')[1];
   const queryClient = useQueryClient();
 
-  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => base44.entities.Show.list() });
-  const { data: allAssets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => base44.entities.Asset.list('-created_date', 5000) });
-  const { data: quotes = [] } = useQuery({ queryKey: ['quotes'], queryFn: () => base44.entities.Quote.list() });
-  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => base44.entities.BrandSettings.list() });
+  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => db.entities.Show.list() });
+  const { data: allAssets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => db.entities.Asset.list('-created_date', 5000) });
+  const { data: quotes = [] } = useQuery({ queryKey: ['quotes'], queryFn: () => db.entities.Quote.list() });
+  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => db.entities.BrandSettings.list() });
   const { data: projectCrewList = [] } = useQuery({
     queryKey: ['projectCrew', showId],
-    queryFn: () => base44.entities.ProjectCrew.filter({ show_id: showId }),
+    queryFn: () => db.entities.ProjectCrew.filter({ show_id: showId }),
     enabled: !!showId,
   });
   const { data: allPrintTemplates = [] } = useQuery({
     queryKey: ['printTemplates'],
-    queryFn: () => base44.entities.PrintTemplate.list(),
+    queryFn: () => db.entities.PrintTemplate.list(),
   });
   const printTemplates = allPrintTemplates.filter(t => t.template_type === 'quote');
 
   const { data: subrents = [] } = useQuery({
     queryKey: ['roundtable_subrents', showId],
-    queryFn: () => base44.entities.RoundtableSubrent.filter({ show_id: showId }),
+    queryFn: () => db.entities.RoundtableSubrent.filter({ show_id: showId }),
     enabled: !!showId,
   });
 
   const { data: travelLogistics = [] } = useQuery({
     queryKey: ['travelLogistics', showId],
-    queryFn: () => base44.entities.TravelLogistic.filter({ show_id: showId }),
+    queryFn: () => db.entities.TravelLogistic.filter({ show_id: showId }),
     enabled: !!showId,
   });
 
   // Live project requirements — the true source of truth for what should be quoted
   const { data: showRequirements = [], isSuccess: requirementsLoaded } = useQuery({
     queryKey: ['showRequirements', showId],
-    queryFn: () => base44.entities.ShowRequirement.filter({ show_id: showId }),
+    queryFn: () => db.entities.ShowRequirement.filter({ show_id: showId }),
     enabled: !!showId,
     staleTime: 0,
   });
@@ -93,7 +93,7 @@ export default function QuoteBuilder() {
 
   const isLocked = existingQuote?.is_locked === true;
   const [user, setUser] = useState(null);
-  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
+  useEffect(() => { db.auth.me().then(setUser).catch(() => {}); }, []);
 
   // One-time seed of quote-level settings from saved quote
   useEffect(() => {
@@ -117,7 +117,7 @@ export default function QuoteBuilder() {
     );
     if (orphaned.length === 0) return;
     // Delete orphaned requirements silently, then invalidate so quote rebuilds clean
-    Promise.all(orphaned.map(r => base44.entities.ShowRequirement.delete(r.id))).then(() => {
+    Promise.all(orphaned.map(r => db.entities.ShowRequirement.delete(r.id))).then(() => {
       queryClient.invalidateQueries({ queryKey: ['showRequirements', showId] });
       queryClient.invalidateQueries({ queryKey: ['show_requirements_detail', showId] });
       queryClient.invalidateQueries({ queryKey: ['show_requirements_all', showId] });
@@ -325,8 +325,8 @@ export default function QuoteBuilder() {
 
   const saveMutation = useMutation({
     mutationFn: (data) => existingQuote
-      ? base44.entities.Quote.update(existingQuote.id, data)
-      : base44.entities.Quote.create(data),
+      ? db.entities.Quote.update(existingQuote.id, data)
+      : db.entities.Quote.create(data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes'] }),
   });
 
@@ -369,7 +369,7 @@ export default function QuoteBuilder() {
       template_id: selectedTemplateId || null,
     });
     // Sync show: status, fulfillment_status, and quote flags
-    await base44.entities.Show.update(showId, {
+    await db.entities.Show.update(showId, {
       status: 'confirmed',
       fulfillment_status: 'picking',
       quote_confirmed: true,
@@ -382,14 +382,14 @@ export default function QuoteBuilder() {
 
   const handleRevertToPlanning = async () => {
     const now = new Date().toISOString();
-    await base44.entities.Quote.update(existingQuote.id, {
+    await db.entities.Quote.update(existingQuote.id, {
       is_locked: false,
       status: 'draft',
       reverted_at: now,
       reverted_by: user?.email || '',
     });
     // Sync show back to planning + clear quote flags
-    await base44.entities.Show.update(showId, {
+    await db.entities.Show.update(showId, {
       status: 'planning',
       fulfillment_status: 'planned',
       quote_confirmed: false,

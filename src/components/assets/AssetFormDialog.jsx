@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Check, QrCode } from 'lucide-react';
@@ -93,10 +93,10 @@ export default function AssetFormDialog({ open, onOpenChange, asset }) {
   const [qrPrinterOpen, setQrPrinterOpen] = useState(false);
   const [formData, setFormData] = useState(DEFAULT_FORM);
 
-  const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => base44.entities.Category.list() });
-  const { data: partners = [] } = useQuery({ queryKey: ['roundtablePartners'], queryFn: () => base44.entities.RoundtablePartner.filter({ is_active: true }) });
-  const { data: customFields = [] } = useQuery({ queryKey: ['customFields'], queryFn: () => base44.entities.CustomField.filter({ applies_to: 'asset' }) });
-  const { data: allAssets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => base44.entities.Asset.list('-created_date', 5000) });
+  const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => db.entities.Category.list() });
+  const { data: partners = [] } = useQuery({ queryKey: ['roundtablePartners'], queryFn: () => db.entities.RoundtablePartner.filter({ is_active: true }) });
+  const { data: customFields = [] } = useQuery({ queryKey: ['customFields'], queryFn: () => db.entities.CustomField.filter({ applies_to: 'asset' }) });
+  const { data: allAssets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => db.entities.Asset.list('-created_date', 5000) });
 
   useEffect(() => {
     if (!open) return;
@@ -185,8 +185,8 @@ export default function AssetFormDialog({ open, onOpenChange, asset }) {
 
       Object.keys(payload).forEach(key => { if (payload[key] === null) delete payload[key]; });
 
-      if (isEditing) return base44.entities.Asset.update(asset.id, payload);
-      return base44.entities.Asset.create(payload);
+      if (isEditing) return db.entities.Asset.update(asset.id, payload);
+      return db.entities.Asset.create(payload);
     },
     onSuccess: () => {
       toast.success(isEditing ? 'Asset updated' : 'Asset created');

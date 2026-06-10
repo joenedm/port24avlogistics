@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail, CheckCircle, ArrowRight } from 'lucide-react';
 
@@ -50,7 +50,7 @@ export default function ForgotPassword() {
     setError('');
     setLoading(true);
     try {
-      await base44.functions.invoke('sendPasswordReset', { email: email.trim().toLowerCase() });
+      await db.functions.invoke('sendPasswordReset', { email: email.trim().toLowerCase() });
     } catch (err) {
       console.error('[ForgotPassword] send error:', err);
     } finally {

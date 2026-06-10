@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,12 +27,12 @@ export default function PackIntoContainerPanel({ showId }) {
 
   const { data: containers = [] } = useQuery({
     queryKey: ['containers'],
-    queryFn: () => base44.entities.Container.list('-created_date', 2000),
+    queryFn: () => db.entities.Container.list('-created_date', 2000),
   });
 
   const { data: assets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.filter({}, '-created_date', 5000),
+    queryFn: () => db.entities.Asset.filter({}, '-created_date', 5000),
   });
 
   const containerResults = containerSearch.length > 1
@@ -67,13 +67,13 @@ export default function PackIntoContainerPanel({ showId }) {
     try {
       // Update each item's current container
       await Promise.all(packedItems.map(a =>
-        base44.entities.Asset.update(a.id, {
+        db.entities.Asset.update(a.id, {
           current_container_id: selectedContainer.id,
           current_container_name: selectedContainer.name,
         })
       ));
       // Update container status to packed
-      await base44.entities.Container.update(selectedContainer.id, {
+      await db.entities.Container.update(selectedContainer.id, {
         status: 'packed',
         current_show_id: showId || undefined,
       });
@@ -92,9 +92,9 @@ export default function PackIntoContainerPanel({ showId }) {
     if (!selectedContainer) return;
     setIsSaving(true);
     try {
-      await base44.entities.Container.update(selectedContainer.id, { status: 'on_truck' });
+      await db.entities.Container.update(selectedContainer.id, { status: 'on_truck' });
       await Promise.all(packedItems.map(a =>
-        base44.entities.Asset.update(a.id, { status: 'checked_out' })
+        db.entities.Asset.update(a.id, { status: 'checked_out' })
       ));
       toast.success(`${selectedContainer.name} marked On Truck — ${packedItems.length} items updated`);
       queryClient.invalidateQueries({ queryKey: ['assets'] });

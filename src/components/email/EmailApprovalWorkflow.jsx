@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,12 +24,12 @@ export default function EmailApprovalWorkflow({
 
   const { data: templates = [] } = useQuery({
     queryKey: ['emailTemplates'],
-    queryFn: () => base44.entities.EmailTemplate.list(),
+    queryFn: () => db.entities.EmailTemplate.list(),
   });
 
   const { data: brandSettings = [] } = useQuery({
     queryKey: ['brandSettings'],
-    queryFn: () => base44.entities.BrandSettings.list(),
+    queryFn: () => db.entities.BrandSettings.list(),
   });
 
   const sendMutation = useMutation({
@@ -37,7 +37,7 @@ export default function EmailApprovalWorkflow({
       if (!personEmail) throw new Error('No recipient email address found');
       
       setSendStatus('sending');
-      const response = await base44.functions.invoke('sendApprovedEmail', {
+      const response = await db.functions.invoke('sendApprovedEmail', {
         templateId: selectedTemplate,
         showId: selectedShow?.id,
         personId: selectedPerson?.id,
@@ -74,7 +74,7 @@ export default function EmailApprovalWorkflow({
       if (!template) return;
 
       const branding = brandSettings[0] || {};
-      const fieldControls = await base44.entities.EmailFieldControl.filter({ is_visible: true });
+      const fieldControls = await db.entities.EmailFieldControl.filter({ is_visible: true });
 
       // Build email data
       const emailData = buildEmailData(selectedShow, selectedPerson);

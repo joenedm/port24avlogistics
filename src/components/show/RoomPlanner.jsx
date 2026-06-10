@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Info } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -25,7 +25,7 @@ export default function RoomPlanner({
   // Fetch subrents for this show so they appear inline in room cards
   const { data: subrents = [] } = useQuery({
     queryKey: ['roundtable_subrents', showId],
-    queryFn: () => base44.entities.RoundtableSubrent.filter({ show_id: showId }, '-created_date'),
+    queryFn: () => db.entities.RoundtableSubrent.filter({ show_id: showId }, '-created_date'),
     enabled: !!showId,
   });
 
@@ -49,8 +49,8 @@ export default function RoomPlanner({
     setExpandedRooms(prev => { const next = new Set(prev); next.delete(roomId); return next; });
 
     // 2. Delete all ShowRequirements that belonged to this room so the quote doesn't show stale items
-    const reqs = await base44.entities.ShowRequirement.filter({ show_id: showId, room_id: roomId });
-    await Promise.all(reqs.map(r => base44.entities.ShowRequirement.delete(r.id)));
+    const reqs = await db.entities.ShowRequirement.filter({ show_id: showId, room_id: roomId });
+    await Promise.all(reqs.map(r => db.entities.ShowRequirement.delete(r.id)));
 
     // 3. Invalidate all requirement + quote caches so everything re-syncs immediately
     queryClient.invalidateQueries({ queryKey: ['showRequirements', showId] });

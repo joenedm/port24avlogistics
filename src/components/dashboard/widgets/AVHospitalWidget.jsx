@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
@@ -8,7 +8,7 @@ export default function AVHospitalWidget() {
   const { data: hospital, isLoading } = useQuery({
     queryKey: ['av-hospital'],
     queryFn: async () => {
-      const all = await base44.entities.AVHospital.list();
+      const all = await db.entities.AVHospital.list();
       return all.filter(h => h.is_active);
     },
     staleTime: 60000

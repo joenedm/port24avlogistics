@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { MapPin, CalendarDays, User, Phone, Mail, ScanBarcode, FileText, ClipboardList, Download, Handshake, Package, CheckCircle2, Truck, Archive } from 'lucide-react';
@@ -34,17 +34,17 @@ export default function ShowDetail() {
   
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => db.auth.me(),
   });
 
-  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => base44.entities.Show.list('-start_date', 200) });
+  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => db.entities.Show.list('-start_date', 200) });
   const { data: showRecord = [] } = useQuery({
     queryKey: ['show', showId],
-    queryFn: () => base44.entities.Show.filter({ id: showId }),
+    queryFn: () => db.entities.Show.filter({ id: showId }),
     enabled: !!showId,
   });
-  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => base44.entities.BrandSettings.list() });
-  const { data: allPrintTemplates = [] } = useQuery({ queryKey: ['printTemplates'], queryFn: () => base44.entities.PrintTemplate.list() });
+  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => db.entities.BrandSettings.list() });
+  const { data: allPrintTemplates = [] } = useQuery({ queryKey: ['printTemplates'], queryFn: () => db.entities.PrintTemplate.list() });
   const pickListTemplates = allPrintTemplates.filter(t => t.template_type === 'pick_list');
   // Prefer the direct show fetch; fall back to show list cache
   const show = showRecord[0] || shows.find(s => s.id === showId);
@@ -52,64 +52,64 @@ export default function ShowDetail() {
 
   const { data: assets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.filter({}, '-created_date', 5000),
+    queryFn: () => db.entities.Asset.filter({}, '-created_date', 5000),
     refetchInterval: 5000,  // Sync every 5 sec to catch asset movements between shows/rooms
   });
   const { data: movements = [] } = useQuery({
     queryKey: ['showMovements', showId],
-    queryFn: () => base44.entities.AssetMovement.filter({ show_id: showId }, '-created_date'),
+    queryFn: () => db.entities.AssetMovement.filter({ show_id: showId }, '-created_date'),
     enabled: !!showId,
   });
   const { data: projectCrew = [] } = useQuery({
     queryKey: ['projectCrew', showId],
-    queryFn: () => base44.entities.ProjectCrew.filter({ show_id: showId }),
+    queryFn: () => db.entities.ProjectCrew.filter({ show_id: showId }),
     enabled: !!showId,
     refetchInterval: 15000,
   });
   const { data: postEventCosts = [] } = useQuery({
     queryKey: ['postEventCosts', showId],
-    queryFn: () => base44.entities.PostEventCost.filter({ show_id: showId }),
+    queryFn: () => db.entities.PostEventCost.filter({ show_id: showId }),
     enabled: !!showId,
     refetchInterval: 15000,
   });
   const { data: allKits = [] } = useQuery({
     queryKey: ['kits'],
-    queryFn: () => base44.entities.Kit.list(),
+    queryFn: () => db.entities.Kit.list(),
   });
   const { data: subrents = [] } = useQuery({
     queryKey: ['roundtable_subrents', showId],
-    queryFn: () => base44.entities.RoundtableSubrent.filter({ show_id: showId }, '-created_date'),
+    queryFn: () => db.entities.RoundtableSubrent.filter({ show_id: showId }, '-created_date'),
     enabled: !!showId,
   });
 
   const { data: travelLogistics = [] } = useQuery({
     queryKey: ['travelLogistics', showId],
-    queryFn: () => base44.entities.TravelLogistic.filter({ show_id: showId }, '-created_date'),
+    queryFn: () => db.entities.TravelLogistic.filter({ show_id: showId }, '-created_date'),
     enabled: !!showId,
   });
 
   const { data: showRequirements = [] } = useQuery({
     queryKey: ['show_requirements_detail', showId],
-    queryFn: () => base44.entities.ShowRequirement.filter({ show_id: showId }),
+    queryFn: () => db.entities.ShowRequirement.filter({ show_id: showId }),
     enabled: !!showId,
   });
 
   const { data: showFulfillments = [] } = useQuery({
     queryKey: ['show_fulfillments', showId],
-    queryFn: () => base44.entities.ShowFulfillment.filter({ show_id: showId }),
+    queryFn: () => db.entities.ShowFulfillment.filter({ show_id: showId }),
     enabled: !!showId,
   });
 
   // Real-time sync — all project financial data streams update live
   useEffect(() => {
     const unsubs = [
-      base44.entities.Asset.subscribe(() => queryClient.invalidateQueries({ queryKey: ['assets'] })),
-      base44.entities.ShowFulfillment.subscribe(() => queryClient.invalidateQueries({ queryKey: ['show_fulfillments', showId] })),
-      base44.entities.ProjectCrew.subscribe(() => queryClient.invalidateQueries({ queryKey: ['projectCrew', showId] })),
-      base44.entities.PostEventCost.subscribe(() => queryClient.invalidateQueries({ queryKey: ['postEventCosts', showId] })),
-      base44.entities.RoundtableSubrent.subscribe(() => queryClient.invalidateQueries({ queryKey: ['roundtable_subrents', showId] })),
-      base44.entities.TravelLogistic.subscribe(() => queryClient.invalidateQueries({ queryKey: ['travelLogistics', showId] })),
-      base44.entities.ShowRequirement.subscribe(() => {
+      db.entities.Asset.subscribe(() => queryClient.invalidateQueries({ queryKey: ['assets'] })),
+      db.entities.ShowFulfillment.subscribe(() => queryClient.invalidateQueries({ queryKey: ['show_fulfillments', showId] })),
+      db.entities.ProjectCrew.subscribe(() => queryClient.invalidateQueries({ queryKey: ['projectCrew', showId] })),
+      db.entities.PostEventCost.subscribe(() => queryClient.invalidateQueries({ queryKey: ['postEventCosts', showId] })),
+      db.entities.RoundtableSubrent.subscribe(() => queryClient.invalidateQueries({ queryKey: ['roundtable_subrents', showId] })),
+      db.entities.TravelLogistic.subscribe(() => queryClient.invalidateQueries({ queryKey: ['travelLogistics', showId] })),
+      db.entities.ShowRequirement.subscribe(() => {
         queryClient.invalidateQueries({ queryKey: ['show_requirements_detail', showId] });
         queryClient.invalidateQueries({ queryKey: ['show_requirements_all', showId] });
         queryClient.invalidateQueries({ queryKey: ['showRequirements', showId] });
@@ -137,7 +137,7 @@ export default function ShowDetail() {
   });
 
   const updateShowMutation = useMutation({
-    mutationFn: (data) => base44.entities.Show.update(showId, data),
+    mutationFn: (data) => db.entities.Show.update(showId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shows'] });
       queryClient.invalidateQueries({ queryKey: ['show', showId] });
@@ -147,7 +147,7 @@ export default function ShowDetail() {
 
 
   const moveAssetMutation = useMutation({
-    mutationFn: ({ assetId, targetRoomId }) => base44.entities.Asset.update(assetId, { current_sub_location_id: targetRoomId }),
+    mutationFn: ({ assetId, targetRoomId }) => db.entities.Asset.update(assetId, { current_sub_location_id: targetRoomId }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assets'] }),
   });
 
@@ -165,7 +165,7 @@ export default function ShowDetail() {
     if (isKit) {
       // Update kit with show and room assignment
       const kit = allKits.find(k => k.id === assetOrKitId);
-      base44.entities.Kit.update(assetOrKitId, {
+      db.entities.Kit.update(assetOrKitId, {
         current_show_id: showId,
         current_sub_location_id: roomId,
       }).then(() => {
@@ -173,7 +173,7 @@ export default function ShowDetail() {
         if (kit && kit.kit_type === 'serialized') {
           const kitContents = assets.filter(a => a.kit_id === assetOrKitId);
           kitContents.forEach(asset => {
-            base44.entities.Asset.update(asset.id, {
+            db.entities.Asset.update(asset.id, {
               current_show_id: showId,
               current_sub_location_id: roomId,
               current_sub_location_name: room.name,
@@ -196,7 +196,7 @@ export default function ShowDetail() {
           assigned_at: new Date().toISOString(),
         });
         
-        base44.entities.Asset.update(assetOrKitId, {
+        db.entities.Asset.update(assetOrKitId, {
           current_show_id: showId,
           current_sub_location_id: roomId,
           current_sub_location_name: room.name,
@@ -210,7 +210,7 @@ export default function ShowDetail() {
 
   const handleRemoveAssetFromRoom = (assetId) => {
     // Remove just this asset from the room (clear sub-location only)
-    base44.entities.Asset.update(assetId, {
+    db.entities.Asset.update(assetId, {
       current_sub_location_id: null,
       current_sub_location_name: null,
     }).then(() => {
@@ -219,7 +219,7 @@ export default function ShowDetail() {
   };
 
   const handleRemoveKitFromRoom = (kitId) => {
-    base44.entities.Kit.update(kitId, {
+    db.entities.Kit.update(kitId, {
       current_sub_location_id: null,
     }).then(() => {
       queryClient.invalidateQueries({ queryKey: ['kits'] });

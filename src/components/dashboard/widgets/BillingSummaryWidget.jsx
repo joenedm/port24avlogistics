@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function BillingSummaryWidget() {
   const { data: invoices, isLoading } = useQuery({
     queryKey: ['invoices-summary'],
     queryFn: async () => {
-      return await base44.entities.Invoice.list();
+      return await db.entities.Invoice.list();
     },
     staleTime: 60000
   });

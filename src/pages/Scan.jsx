@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -272,23 +272,23 @@ export default function Scan() {
   const [avHospitalAsset, setAvHospitalAsset] = useState(null);
   const inputRef = useRef(null);
 
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => db.auth.me() });
   const { data: shows = [] } = useQuery({
     queryKey: ['shows_active'],
     queryFn: async () => {
-      const all = await base44.entities.Show.list('-start_date', 200);
+      const all = await db.entities.Show.list('-start_date', 200);
       return all.filter(s => ['planning', 'confirmed', 'picking', 'picked', 'on_truck', 'on_location', 'needs_return', 'returning', 'load_out', 'on_site', 'strike'].includes(s.status));
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
-  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => base44.entities.Asset.list() });
+  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => db.entities.Asset.list() });
 
   const selectedShow = shows.find(s => s.id === selectedShowId);
 
   const { data: requirements = [], refetch: refetchRequirements } = useQuery({
     queryKey: ['show_requirements_all', selectedShowId],
-    queryFn: () => base44.entities.ShowRequirement.filter({ show_id: selectedShowId }),
+    queryFn: () => db.entities.ShowRequirement.filter({ show_id: selectedShowId }),
     enabled: !!selectedShowId,
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -296,7 +296,7 @@ export default function Scan() {
 
   const { data: fulfillments = [] } = useQuery({
     queryKey: ['show_fulfillments', selectedShowId],
-    queryFn: () => base44.entities.ShowFulfillment.filter({ show_id: selectedShowId }),
+    queryFn: () => db.entities.ShowFulfillment.filter({ show_id: selectedShowId }),
     enabled: !!selectedShowId,
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -305,7 +305,7 @@ export default function Scan() {
   // Use same query key as AdditionalEquipmentApprovalPanel so both share the same cache
   const { data: approvalRequests = [] } = useQuery({
     queryKey: ['additionalEquipmentRequests', selectedShowId],
-    queryFn: () => base44.entities.AdditionalEquipmentRequest.filter({ show_id: selectedShowId }),
+    queryFn: () => db.entities.AdditionalEquipmentRequest.filter({ show_id: selectedShowId }),
     enabled: !!selectedShowId,
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -319,7 +319,7 @@ export default function Scan() {
     if (selectedShowId) {
       setSessionLog([]); setLastResult(null); setSearch(''); setStatusFilter('all');
       // Clean up orphaned fulfillment records (no requirement_id + no valid approval)
-      base44.functions.invoke('cleanupOrphanedFulfillments', { showId: selectedShowId })
+      db.functions.invoke('cleanupOrphanedFulfillments', { showId: selectedShowId })
         .then(res => {
           if (res.data?.cleaned > 0) {
             queryClient.invalidateQueries({ queryKey: ['show_fulfillments', selectedShowId] });
@@ -424,14 +424,14 @@ export default function Scan() {
         // Return: unlock item — must be on this show
         const existing = fulfillments.find(f => f.asset_id === asset.id && f.movement_state !== 'returned');
         if (!existing) throw new Error('No active fulfillment for this asset on this show');
-        await base44.entities.ShowFulfillment.update(existing.id, {
+        await db.entities.ShowFulfillment.update(existing.id, {
           movement_state: 'returned', returned_at: now, returned_by: user?.email || '',
         });
-        await base44.entities.Asset.update(asset.id, {
+        await db.entities.Asset.update(asset.id, {
           status: 'available', locked_to_show_id: null, locked_to_show_name: null,
           locked_at: null, current_show_id: null, current_sub_location_id: null, current_sub_location_name: null,
         });
-        await base44.entities.AssetMovement.create({
+        await db.entities.AssetMovement.create({
           asset_id: asset.id, asset_name: asset.name, asset_barcode: asset.barcode || asset.id,
           action: 'check_in', show_id: selectedShowId, show_name: selectedShow?.name,
           notes: 'Returned via scan', scanned_by: user?.email || 'unknown', scanned_by_user_id: user?.id,
@@ -442,7 +442,7 @@ export default function Scan() {
         // Pack: move picked → packed. Must already be picked for this show.
         const existing = fulfillments.find(f => f.asset_id === asset.id && f.movement_state === 'picked');
         if (!existing) throw new Error(`${asset.name} is not in "Picked" state — scan it in Pick mode first`);
-        await base44.entities.ShowFulfillment.update(existing.id, {
+        await db.entities.ShowFulfillment.update(existing.id, {
           movement_state: 'packed', packed_at: now, packed_by: user?.email || '',
         });
         return { type: 'pack', asset };
@@ -451,15 +451,15 @@ export default function Scan() {
         // Send: move packed → on_truck. LOCKS the item.
         const existing = fulfillments.find(f => f.asset_id === asset.id && (f.movement_state === 'packed' || f.movement_state === 'picked'));
         if (!existing) throw new Error(`${asset.name} must be Picked or Packed before sending`);
-        await base44.entities.ShowFulfillment.update(existing.id, {
+        await db.entities.ShowFulfillment.update(existing.id, {
           movement_state: 'on_truck', sent_at: now, sent_by: user?.email || '',
         });
         // Hard-lock the asset — cannot be used by any other show until returned
-        await base44.entities.Asset.update(asset.id, {
+        await db.entities.Asset.update(asset.id, {
           status: 'checked_out', locked_to_show_id: selectedShowId, locked_to_show_name: selectedShow?.name,
           locked_at: now, current_show_id: selectedShowId,
         });
-        await base44.entities.AssetMovement.create({
+        await db.entities.AssetMovement.create({
           asset_id: asset.id, asset_name: asset.name, asset_barcode: asset.barcode || asset.id,
           action: 'check_out', show_id: selectedShowId, show_name: selectedShow?.name,
           notes: 'Sent to show — locked', scanned_by: user?.email || 'unknown', scanned_by_user_id: user?.id,
@@ -468,7 +468,7 @@ export default function Scan() {
 
       } else {
         // Pick: initial scan-in to this show
-        await base44.entities.ShowFulfillment.create({
+        await db.entities.ShowFulfillment.create({
           show_id: selectedShowId, show_name: selectedShow?.name,
           requirement_id: requirement?.id || null, asset_id: asset.id,
           asset_name: asset.name, asset_barcode: asset.barcode,
@@ -478,13 +478,13 @@ export default function Scan() {
           movement_state: 'picked', scanned_by: user?.email || '', scanned_at: now,
         });
         // Soft-reserve the asset (not hard-locked until send)
-        await base44.entities.Asset.update(asset.id, {
+        await db.entities.Asset.update(asset.id, {
           status: 'checked_out', locked_to_show_id: selectedShowId, locked_to_show_name: selectedShow?.name,
           locked_at: now, current_show_id: selectedShowId,
           current_sub_location_id: requirement?.room_id || asset.current_sub_location_id || null,
           current_sub_location_name: requirement?.room_name || asset.current_sub_location_name || null,
         });
-        await base44.entities.AssetMovement.create({
+        await db.entities.AssetMovement.create({
           asset_id: asset.id, asset_name: asset.name, asset_barcode: asset.barcode || asset.id,
           action: 'check_out', show_id: selectedShowId, show_name: selectedShow?.name,
           sub_location_id: requirement?.room_id, sub_location_name: requirement?.room_name,
@@ -505,7 +505,7 @@ export default function Scan() {
 
   const updateFulfillmentStateMutation = useMutation({
     mutationFn: async ({ ids, state }) => {
-      await Promise.all(ids.map(id => base44.entities.ShowFulfillment.update(id, { movement_state: state })));
+      await Promise.all(ids.map(id => db.entities.ShowFulfillment.update(id, { movement_state: state })));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['show_fulfillments', selectedShowId] });
@@ -516,7 +516,7 @@ export default function Scan() {
   const pushBulkMutation = useMutation({
     mutationFn: async ({ item, asset, qty }) => {
       if (!asset) throw new Error('Asset not found for bulk push');
-      const res = await base44.functions.invoke('pushBulkFulfillment', {
+      const res = await db.functions.invoke('pushBulkFulfillment', {
         item, asset, qty, showId: selectedShowId, showName: selectedShow?.name,
       });
       if (res.data?.error) throw new Error(res.data.error);
@@ -531,11 +531,11 @@ export default function Scan() {
 
   const removeFulfillmentMutation = useMutation({
     mutationFn: async (fulfillment) => {
-      await base44.entities.ShowFulfillment.delete(fulfillment.id);
+      await db.entities.ShowFulfillment.delete(fulfillment.id);
       // Reset the asset back to available if it was locked to this show
       const asset = assets.find(a => a.id === fulfillment.asset_id);
       if (asset && asset.locked_to_show_id === selectedShowId) {
-        await base44.entities.Asset.update(asset.id, {
+        await db.entities.Asset.update(asset.id, {
           status: 'available', locked_to_show_id: null, locked_to_show_name: null,
           locked_at: null, current_show_id: null,
         });
@@ -550,7 +550,7 @@ export default function Scan() {
   });
 
   const updateShowFulfillmentStatus = useMutation({
-    mutationFn: ({ status }) => base44.entities.Show.update(selectedShowId, {
+    mutationFn: ({ status }) => db.entities.Show.update(selectedShowId, {
       fulfillment_status: status,
       status: status,
     }),
@@ -568,13 +568,13 @@ export default function Scan() {
     mutationFn: async ({ request }) => {
       const now = new Date().toISOString();
       // Update request status
-      await base44.entities.AdditionalEquipmentRequest.update(request.id, {
+      await db.entities.AdditionalEquipmentRequest.update(request.id, {
         status: 'approved', approved_by: user?.email || '', approved_at: now,
       });
       // Now fulfill it — pick the asset
       const asset = assets.find(a => a.id === request.asset_id);
       if (!asset) throw new Error('Asset not found');
-      await base44.entities.ShowFulfillment.create({
+      await db.entities.ShowFulfillment.create({
         show_id: selectedShowId, show_name: selectedShow?.name,
         requirement_id: null, asset_id: asset.id,
         asset_name: asset.name, asset_barcode: asset.barcode,
@@ -583,7 +583,7 @@ export default function Scan() {
         room_name: request.sub_location_name || null,
         movement_state: 'picked', scanned_by: request.requested_by || '', scanned_at: request.scanned_at || now,
       });
-      await base44.entities.Asset.update(asset.id, {
+      await db.entities.Asset.update(asset.id, {
         status: 'checked_out', locked_to_show_id: selectedShowId, locked_to_show_name: selectedShow?.name,
         locked_at: now, current_show_id: selectedShowId,
         current_sub_location_id: request.sub_location_id || null,
@@ -600,7 +600,7 @@ export default function Scan() {
 
   const rejectRequestMutation = useMutation({
     mutationFn: async ({ requestId, reason }) => {
-      await base44.entities.AdditionalEquipmentRequest.update(requestId, {
+      await db.entities.AdditionalEquipmentRequest.update(requestId, {
         status: 'rejected', approved_by: user?.email || '', approved_at: new Date().toISOString(),
         rejected_reason: reason || 'Rejected by manager',
       });
@@ -744,7 +744,7 @@ export default function Scan() {
     if (asset.locked_to_show_id && asset.locked_to_show_id !== selectedShowId) {
       const lockState = fulfillments.find(f => f.asset_id === asset.id && LOCKED_STATES.includes(f.movement_state));
       // Only block if it's in a locked state on another show
-      const otherShowFulfillment = await base44.entities.ShowFulfillment.filter({ asset_id: asset.id });
+      const otherShowFulfillment = await db.entities.ShowFulfillment.filter({ asset_id: asset.id });
       const hardLocked = otherShowFulfillment.some(f => f.show_id !== selectedShowId && LOCKED_STATES.includes(f.movement_state));
       if (hardLocked) {
         const result = { success: false, message: `${asset.name} is sent to "${asset.locked_to_show_name}" — must be returned first`, ts: new Date() };
@@ -789,7 +789,7 @@ export default function Scan() {
         toast.success('Picked!');
         const freshFulfillments = await queryClient.fetchQuery({
           queryKey: ['show_fulfillments', selectedShowId],
-          queryFn: () => base44.entities.ShowFulfillment.filter({ show_id: selectedShowId }),
+          queryFn: () => db.entities.ShowFulfillment.filter({ show_id: selectedShowId }),
           staleTime: 0,
         });
         const freshActive = freshFulfillments.filter(f => f.movement_state !== 'returned');
@@ -828,7 +828,7 @@ export default function Scan() {
         const affectedFulfillments = activeFulfillments.filter(f => idsToSend.includes(f.id));
         const now = new Date().toISOString();
         await Promise.all(affectedFulfillments.map(f =>
-          base44.entities.Asset.update(f.asset_id, {
+          db.entities.Asset.update(f.asset_id, {
             status: 'checked_out', locked_to_show_id: selectedShowId, locked_to_show_name: selectedShow?.name, locked_at: now,
           })
         ));
@@ -1100,8 +1100,8 @@ export default function Scan() {
                         queryClient.invalidateQueries({ queryKey: ['additionalEquipmentRequests', selectedShowId] }),
                       ]);
                       const [freshFulfillments, freshReqs] = await Promise.all([
-                        queryClient.fetchQuery({ queryKey: ['show_fulfillments', selectedShowId], queryFn: () => base44.entities.ShowFulfillment.filter({ show_id: selectedShowId }), staleTime: 0 }),
-                        queryClient.fetchQuery({ queryKey: ['show_requirements_all', selectedShowId], queryFn: () => base44.entities.ShowRequirement.filter({ show_id: selectedShowId }), staleTime: 0 }),
+                        queryClient.fetchQuery({ queryKey: ['show_fulfillments', selectedShowId], queryFn: () => db.entities.ShowFulfillment.filter({ show_id: selectedShowId }), staleTime: 0 }),
+                        queryClient.fetchQuery({ queryKey: ['show_requirements_all', selectedShowId], queryFn: () => db.entities.ShowRequirement.filter({ show_id: selectedShowId }), staleTime: 0 }),
                       ]);
                       const freshActive = freshFulfillments.filter(f => f.movement_state !== 'returned');
                       const freshTotal = freshReqs.reduce((s, r) => s + (r.quantity_needed || 1), 0);

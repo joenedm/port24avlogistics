@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export default function AVHospitalScanDialog({ open, onOpenChange, asset, show, 
   const submitMutation = useMutation({
     mutationFn: async () => {
       // Create AV Hospital record
-      await base44.entities.AVHospital.create({
+      await db.entities.AVHospital.create({
         asset_id: asset.id,
         asset_name: asset.name,
         asset_barcode: asset.barcode || '',
@@ -37,12 +37,12 @@ export default function AVHospitalScanDialog({ open, onOpenChange, asset, show, 
         is_active: true,
       });
       // Update asset status to maintenance
-      await base44.entities.Asset.update(asset.id, {
+      await db.entities.Asset.update(asset.id, {
         status: 'maintenance',
         condition: 'poor',
       });
       // Log the movement
-      await base44.entities.AssetMovement.create({
+      await db.entities.AssetMovement.create({
         asset_id: asset.id,
         asset_name: asset.name,
         asset_barcode: asset.barcode || asset.id,

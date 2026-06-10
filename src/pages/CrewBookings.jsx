@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Mail, Clock, CheckCircle2, XCircle, Send, Calendar, User, Briefcase, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,22 +46,22 @@ export default function CrewBookings() {
 
   const { data: shows = [] } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list(),
+    queryFn: () => db.entities.Show.list(),
   });
 
   const { data: crew = [] } = useQuery({
     queryKey: ['crewMembers'],
-    queryFn: () => base44.entities.CrewMember.list(),
+    queryFn: () => db.entities.CrewMember.list(),
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => db.entities.User.list(),
   });
 
   const { data: bookings = [] } = useQuery({
     queryKey: ['crewBookings'],
-    queryFn: () => base44.entities.CrewBooking.list('-created_date'),
+    queryFn: () => db.entities.CrewBooking.list('-created_date'),
     refetchInterval: 15000,
   });
 
@@ -71,7 +71,7 @@ export default function CrewBookings() {
       const crewMember = crew.find(c => c.id === data.crew_id);
       const user = users.find(u => u.id === crewMember?.user_id);
 
-      const booking = await base44.entities.CrewBooking.create({
+      const booking = await db.entities.CrewBooking.create({
         ...data,
         show_name: show?.name,
         crew_name: user?.full_name || crewMember?.user_id,
@@ -85,7 +85,7 @@ export default function CrewBookings() {
 
       // Auto-create linked ProjectCrew
       if (show?.id) {
-        const projectCrew = await base44.entities.ProjectCrew.create({
+        const projectCrew = await db.entities.ProjectCrew.create({
           show_id: show.id,
           show_name: show.name,
           crew_booking_id: booking.id,
@@ -106,7 +106,7 @@ export default function CrewBookings() {
           assignment_status: 'not_sent',
         });
 
-        await base44.entities.CrewBooking.update(booking.id, {
+        await db.entities.CrewBooking.update(booking.id, {
           project_crew_id: projectCrew.id,
         });
       }
@@ -131,7 +131,7 @@ export default function CrewBookings() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CrewBooking.delete(id),
+    mutationFn: (id) => db.entities.CrewBooking.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crewBookings'] });
       queryClient.invalidateQueries({ queryKey: ['projectCrew'] });

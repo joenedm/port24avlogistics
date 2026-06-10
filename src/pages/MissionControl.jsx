@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { usePermissions } from '@/lib/usePermissions';
 import {
   TrendingUp, TrendingDown, DollarSign, Users, Package,
@@ -27,15 +27,15 @@ export default function MissionControl() {
   const [sortBy, setSortBy] = useState('revenue');
   const [profitFilter, setProfitFilter] = useState('all');
 
-  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => base44.entities.Show.list() });
-  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => base44.entities.Asset.list() });
-  const { data: movements = [] } = useQuery({ queryKey: ['movements'], queryFn: () => base44.entities.AssetMovement.list('-created_date', 2000) });
-  const { data: projectCrew = [] } = useQuery({ queryKey: ['allProjectCrew'], queryFn: () => base44.entities.ProjectCrew.list() });
-  const { data: invoices = [] } = useQuery({ queryKey: ['invoices'], queryFn: () => base44.entities.Invoice.list() });
-  const { data: quotes = [] } = useQuery({ queryKey: ['quotes'], queryFn: () => base44.entities.Quote.list() });
-  const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => base44.entities.Category.list() });
-  const { data: crewMembers = [] } = useQuery({ queryKey: ['crewMembers'], queryFn: () => base44.entities.CrewMember.list() });
-  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => base44.entities.User.list() });
+  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: () => db.entities.Show.list() });
+  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => db.entities.Asset.list() });
+  const { data: movements = [] } = useQuery({ queryKey: ['movements'], queryFn: () => db.entities.AssetMovement.list('-created_date', 2000) });
+  const { data: projectCrew = [] } = useQuery({ queryKey: ['allProjectCrew'], queryFn: () => db.entities.ProjectCrew.list() });
+  const { data: invoices = [] } = useQuery({ queryKey: ['invoices'], queryFn: () => db.entities.Invoice.list() });
+  const { data: quotes = [] } = useQuery({ queryKey: ['quotes'], queryFn: () => db.entities.Quote.list() });
+  const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => db.entities.Category.list() });
+  const { data: crewMembers = [] } = useQuery({ queryKey: ['crewMembers'], queryFn: () => db.entities.CrewMember.list() });
+  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => db.entities.User.list() });
 
   if (!canAccessMissionControl) {
     return (

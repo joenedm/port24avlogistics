@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,7 +65,7 @@ export default function EmailBlockEditor({ sections, onUpdateSections }) {
   const handleImageUpload = async (file, index) => {
     try {
       setUploadingIndex(index);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       setEditData({ ...editData, content: file_url });
       setUploadingIndex(null);
     } catch (error) {

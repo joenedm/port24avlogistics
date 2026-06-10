@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,13 +18,13 @@ export default function AdditionalEquipmentApprovalPanel({ showId, show, subLoca
 
   const { data: currentUser } = useQuery({
     queryKey: ['me'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => db.auth.me(),
   });
 
   // Use the same query key as the Scan page ('additionalEquipmentRequests') so they share cache
   const { data: requests = [] } = useQuery({
     queryKey: ['additionalEquipmentRequests', showId],
-    queryFn: () => base44.entities.AdditionalEquipmentRequest.filter({ show_id: showId }),
+    queryFn: () => db.entities.AdditionalEquipmentRequest.filter({ show_id: showId }),
     enabled: !!showId,
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -33,7 +33,7 @@ export default function AdditionalEquipmentApprovalPanel({ showId, show, subLoca
 
   // Real-time subscription so new scan-created requests appear immediately
   useEffect(() => {
-    const unsub = base44.entities.AdditionalEquipmentRequest.subscribe(() => {
+    const unsub = db.entities.AdditionalEquipmentRequest.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ['additionalEquipmentRequests', showId] });
       // Also invalidate the Scan page variant
       queryClient.invalidateQueries({ queryKey: ['additional_equip_requests', showId] });
@@ -56,7 +56,7 @@ export default function AdditionalEquipmentApprovalPanel({ showId, show, subLoca
 
       try {
         // 1. Update request status to approved
-        await base44.entities.AdditionalEquipmentRequest.update(requestId, {
+        await db.entities.AdditionalEquipmentRequest.update(requestId, {
           status: 'approved',
           approved_by: currentUser?.email || currentUser?.full_name || 'Manager',
           approved_at: new Date().toISOString(),
@@ -65,7 +65,7 @@ export default function AdditionalEquipmentApprovalPanel({ showId, show, subLoca
         // 2. Assign the asset to the show
         const asset = assets.find(a => a.id === req.asset_id);
         if (asset) {
-          await base44.entities.Asset.update(req.asset_id, {
+          await db.entities.Asset.update(req.asset_id, {
             current_show_id: showId,
             current_sub_location_id: req.sub_location_id,
             current_sub_location_name: req.sub_location_name,
@@ -105,11 +105,11 @@ export default function AdditionalEquipmentApprovalPanel({ showId, show, subLoca
       for (const req of toApprove) {
         try {
           // Check status again to prevent duplicate approvals
-          const latestReq = await base44.entities.AdditionalEquipmentRequest.filter({ id: req.id });
+          const latestReq = await db.entities.AdditionalEquipmentRequest.filter({ id: req.id });
           if (latestReq[0]?.status === 'approved') continue;
 
           // Update request status
-          await base44.entities.AdditionalEquipmentRequest.update(req.id, {
+          await db.entities.AdditionalEquipmentRequest.update(req.id, {
             status: 'approved',
             approved_by: currentUser?.email || currentUser?.full_name || 'Manager',
             approved_at: new Date().toISOString(),
@@ -118,7 +118,7 @@ export default function AdditionalEquipmentApprovalPanel({ showId, show, subLoca
           // Assign asset to show
           const asset = assets.find(a => a.id === req.asset_id);
           if (asset) {
-            await base44.entities.Asset.update(req.asset_id, {
+            await db.entities.Asset.update(req.asset_id, {
               current_show_id: showId,
               current_sub_location_id: req.sub_location_id,
               current_sub_location_name: req.sub_location_name,
@@ -148,7 +148,7 @@ export default function AdditionalEquipmentApprovalPanel({ showId, show, subLoca
 
   const rejectMutation = useMutation({
     mutationFn: async ({ requestId, reason }) => {
-      await base44.entities.AdditionalEquipmentRequest.update(requestId, {
+      await db.entities.AdditionalEquipmentRequest.update(requestId, {
         status: 'rejected',
         rejected_reason: reason,
       });

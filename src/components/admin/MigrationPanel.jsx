@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Zap, CheckCircle2, AlertTriangle, Archive, Cloud } from 'lucide-react';
@@ -13,7 +13,7 @@ export default function MigrationPanel() {
     setRunning(true);
     setResult(null);
     try {
-      const response = await base44.functions.invoke('migrateOldCombinationTypes', {});
+      const response = await db.functions.invoke('migrateOldCombinationTypes', {});
       const data = response.data;
 
       if (data?.success) {

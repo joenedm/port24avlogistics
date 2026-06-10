@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   HeartPulse, CheckCircle2, AlertCircle, Package, Wrench,
@@ -48,21 +48,21 @@ export default function AVHospital() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    base44.auth.me().then(u => setCurrentUser(u)).catch(() => {});
+    db.auth.me().then(u => setCurrentUser(u)).catch(() => {});
   }, []);
 
   const { data: hospitalRecords = [], isLoading } = useQuery({
     queryKey: ['avhospital'],
-    queryFn: () => base44.entities.AVHospital.list('-created_date', 200),
+    queryFn: () => db.entities.AVHospital.list('-created_date', 200),
   });
 
   const { data: assets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.list('-created_date', 5000),
+    queryFn: () => db.entities.Asset.list('-created_date', 5000),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.AVHospital.update(id, data),
+    mutationFn: ({ id, data }) => db.entities.AVHospital.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avhospital'] });
       queryClient.invalidateQueries({ queryKey: ['assets'] });
@@ -74,7 +74,7 @@ export default function AVHospital() {
     const today = new Date().toISOString().split('T')[0];
     const actorLabel = currentUser?.email || currentUser?.full_name || 'unknown';
     // Log a movement
-    await base44.entities.AssetMovement.create({
+    await db.entities.AssetMovement.create({
       asset_id: record.asset_id, asset_name: record.asset_name, asset_barcode: record.asset_barcode,
       action: 'check_in', from_location: 'AV Hospital', to_location: 'Warehouse',
       scanned_by: actorLabel,
@@ -82,7 +82,7 @@ export default function AVHospital() {
       notes: `Released from AV Hospital — ${record.repair_notes || 'Fixed'}`,
     });
     // Update asset
-    await base44.entities.Asset.update(record.asset_id, {
+    await db.entities.Asset.update(record.asset_id, {
       status: 'available', location: 'Warehouse',
       current_show_id: '', current_sub_location_id: '', current_sub_location_name: '',
     });
@@ -94,7 +94,7 @@ export default function AVHospital() {
   };
 
   const retireAsset = async (record) => {
-    await base44.entities.Asset.update(record.asset_id, { status: 'retired', location: 'Retired' });
+    await db.entities.Asset.update(record.asset_id, { status: 'retired', location: 'Retired' });
     updateMutation.mutate({ id: record.id, data: { is_active: false, repair_status: 'retired' }});
   };
 

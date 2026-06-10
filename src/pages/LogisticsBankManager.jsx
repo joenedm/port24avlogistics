@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,12 +60,12 @@ export default function LogisticsBankManager() {
   // Fetch all logistics bank records
   const { data: records = [], isLoading } = useQuery({
     queryKey: ['logisticsBank'],
-    queryFn: () => base44.entities.LogisticsBank.list(),
+    queryFn: () => db.entities.LogisticsBank.list(),
   });
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.LogisticsBank.create(data),
+    mutationFn: (data) => db.entities.LogisticsBank.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logisticsBank'] });
       resetForm();
@@ -75,7 +75,7 @@ export default function LogisticsBankManager() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.LogisticsBank.update(id, data),
+    mutationFn: ({ id, data }) => db.entities.LogisticsBank.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logisticsBank'] });
       resetForm();
@@ -85,7 +85,7 @@ export default function LogisticsBankManager() {
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.LogisticsBank.delete(id),
+    mutationFn: (id) => db.entities.LogisticsBank.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logisticsBank'] });
     },

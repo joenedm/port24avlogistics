@@ -62,6 +62,11 @@ import TruckPackBuilder from './pages/TruckPackBuilder';
 import DocumentSettings from './pages/DocumentSettings';
 import AcceptInvite from './pages/AcceptInvite';
 import QuickBooksCallback from './pages/QuickBooksCallback';
+import PlatformLogin from './pages/PlatformLogin';
+import PlatformJoin from './pages/PlatformJoin';
+import PlatformAdmin from './pages/PlatformAdmin';
+import PlatformOrgDetail from './pages/PlatformOrgDetail';
+import PlatformLayout from './components/platform/PlatformLayout';
 import SignIn from './pages/SignIn';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -167,6 +172,14 @@ const AuthenticatedApp = () => {
           <Route path="/billing" element={<AdminBilling />} />
           <Route path="/client-billing" element={<ClientBilling />} />
           <Route path="/document-settings" element={<DocumentSettings />} />
+      </Route>
+
+      {/* ── Platform Admin — completely separate layout + auth ── */}
+      <Route path="/platform/login" element={<PlatformLogin />} />
+      <Route path="/platform/join" element={<PlatformJoin />} />
+      <Route element={<PlatformLayout />}>
+        <Route path="/platform" element={<PlatformAdmin />} />
+        <Route path="/platform/org/:orgId" element={<PlatformOrgDetail />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

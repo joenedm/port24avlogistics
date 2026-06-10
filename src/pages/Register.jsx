@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Link } from 'react-router-dom';
 import { User, Building2, Mail, ChevronDown, Plus, Loader2, CheckCircle } from 'lucide-react';
 
@@ -16,7 +16,7 @@ export default function Register() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    base44.entities.User.list().then(users => {
+    db.entities.User.list().then(users => {
       const unique = [...new Set(users.map(u => u.company).filter(Boolean))].sort();
       setCompanies(unique);
     }).catch(() => {});
@@ -35,7 +35,7 @@ export default function Register() {
     }
     setSubmitting(true);
     try {
-      await base44.functions.invoke('requestAccess', {
+      await db.functions.invoke('requestAccess', {
         full_name: form.full_name,
         email: form.email,
         company: form.company,
@@ -62,7 +62,7 @@ export default function Register() {
             You'll receive an email once your access is approved.
           </p>
           <button
-            onClick={() => base44.auth.redirectToLogin('/')}
+            onClick={() => db.auth.redirectToLogin('/')}
             className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-colors"
           >
             Back to Sign In
@@ -200,7 +200,7 @@ export default function Register() {
 
         <p className="text-center text-slate-500 text-xs mt-6">
           Already have an account?{' '}
-          <button onClick={() => base44.auth.redirectToLogin('/')} className="text-blue-400 hover:text-blue-300">
+          <button onClick={() => db.auth.redirectToLogin('/')} className="text-blue-400 hover:text-blue-300">
             Sign in
           </button>
         </p>

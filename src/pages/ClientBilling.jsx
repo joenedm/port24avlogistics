@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ export default function ClientBilling() {
   // Get current user
   const { data: currentUser } = useQuery({
     queryKey: ['me'],
-    queryFn: () => base44.auth.me()
+    queryFn: () => db.auth.me()
   });
 
   // Get client contact for current user
@@ -25,7 +25,7 @@ export default function ClientBilling() {
     queryKey: ['clientContacts', currentUser?.email],
     queryFn: async () => {
       if (!currentUser?.email) return [];
-      return base44.entities.ClientContact.filter({ portal_user_id: currentUser.id });
+      return db.entities.ClientContact.filter({ portal_user_id: currentUser.id });
     },
     enabled: !!currentUser?.id
   });
@@ -35,7 +35,7 @@ export default function ClientBilling() {
     queryKey: ['clientInvoices', clientContacts[0]?.client_id],
     queryFn: () => {
       if (!clientContacts[0]?.client_id) return [];
-      return base44.entities.Invoice.filter({ client_id: clientContacts[0].client_id });
+      return db.entities.Invoice.filter({ client_id: clientContacts[0].client_id });
     },
     enabled: !!clientContacts[0]?.client_id
   });
@@ -43,7 +43,7 @@ export default function ClientBilling() {
   // Get shows for display
   const { data: shows = [] } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list()
+    queryFn: () => db.entities.Show.list()
   });
 
   const filteredInvoices = invoices.filter(inv => {
@@ -168,7 +168,7 @@ export default function ClientBilling() {
                           className="gap-2 flex-1"
                           onClick={() => {
                             window.open(invoice.stripe_hosted_invoice_url, '_blank');
-                            base44.entities.Invoice.update(invoice.id, {
+                            db.entities.Invoice.update(invoice.id, {
                               viewed_date: new Date().toISOString(),
                               status: invoice.status === 'sent' ? 'viewed' : invoice.status
                             });

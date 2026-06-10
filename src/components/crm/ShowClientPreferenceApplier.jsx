@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,13 +23,13 @@ export default function ShowClientPreferenceApplier({ clientId, venueId, onApply
 
   const { data: clientPrefs = [] } = useQuery({
     queryKey: ['client-prefs-apply', clientId],
-    queryFn: () => base44.entities.ClientPreference.filter({ client_id: clientId }),
+    queryFn: () => db.entities.ClientPreference.filter({ client_id: clientId }),
     enabled: !!clientId,
   });
 
   const { data: venuePrefs = [] } = useQuery({
     queryKey: ['venue-prefs-apply', venueId],
-    queryFn: () => base44.entities.ClientPreference.filter({ venue_id: venueId }),
+    queryFn: () => db.entities.ClientPreference.filter({ venue_id: venueId }),
     enabled: !!venueId,
   });
 

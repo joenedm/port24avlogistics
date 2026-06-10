@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Pencil, FileText, QrCode, ClipboardList, FileCheck, Eye, ToggleLeft, ToggleRight, CheckCircle2, Wand2 } from 'lucide-react';
@@ -116,7 +116,7 @@ export default function PrintTemplates() {
     queryKey: ['printTemplates'],
     queryFn: async () => {
       console.log('[PrintTemplates] Fetching all PrintTemplates');
-      const result = await base44.entities.PrintTemplate.list();
+      const result = await db.entities.PrintTemplate.list();
       console.log('[PrintTemplates] Fetched templates count:', result?.length || 0);
       console.log('[PrintTemplates] QR Label templates count:', result?.filter(t => t.template_type === 'qr_label')?.length || 0);
       result?.forEach(t => {
@@ -130,8 +130,8 @@ export default function PrintTemplates() {
 
   const saveMutation = useMutation({
     mutationFn: (data) => editing
-      ? base44.entities.PrintTemplate.update(editing.id, data)
-      : base44.entities.PrintTemplate.create(data),
+      ? db.entities.PrintTemplate.update(editing.id, data)
+      : db.entities.PrintTemplate.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['printTemplates'] });
       setDialogOpen(false);
@@ -141,12 +141,12 @@ export default function PrintTemplates() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, is_default }) => base44.entities.PrintTemplate.update(id, { is_default }),
+    mutationFn: ({ id, is_default }) => db.entities.PrintTemplate.update(id, { is_default }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['printTemplates'] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.PrintTemplate.delete(id),
+    mutationFn: (id) => db.entities.PrintTemplate.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['printTemplates'] }),
   });
 

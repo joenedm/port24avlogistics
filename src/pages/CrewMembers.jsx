@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/lib/usePermissions';
@@ -43,18 +43,18 @@ function CrewMembersAdmin() {
 
   const { data: crewMembers = [] } = useQuery({
     queryKey: ['crewMembers'],
-    queryFn: () => base44.entities.CrewMember.list('-created_date'),
+    queryFn: () => db.entities.CrewMember.list('-created_date'),
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => db.entities.User.list(),
   });
 
   const saveMutation = useMutation({
     mutationFn: (data) => editing
-      ? base44.entities.CrewMember.update(editing.id, data)
-      : base44.entities.CrewMember.create(data),
+      ? db.entities.CrewMember.update(editing.id, data)
+      : db.entities.CrewMember.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crewMembers'] });
       setDialogOpen(false);
@@ -64,7 +64,7 @@ function CrewMembersAdmin() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CrewMember.delete(id),
+    mutationFn: (id) => db.entities.CrewMember.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['crewMembers'] }),
   });
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
@@ -8,7 +8,7 @@ export default function TruckPacksWidget() {
   const { data: packs, isLoading } = useQuery({
     queryKey: ['truck-packs-active'],
     queryFn: async () => {
-      const all = await base44.entities.TruckPack.list();
+      const all = await db.entities.TruckPack.list();
       return all.filter(p => ['loading', 'on_truck', 'on_show'].includes(p.status));
     },
     staleTime: 60000

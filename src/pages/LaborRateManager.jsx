@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,11 +34,11 @@ export default function LaborRateManager() {
 
   const { data: rates = [] } = useQuery({
     queryKey: ['laborRates'],
-    queryFn: () => base44.entities.LaborRate.list()
+    queryFn: () => db.entities.LaborRate.list()
   });
 
   const createRateMutation = useMutation({
-    mutationFn: (data) => base44.entities.LaborRate.create(data),
+    mutationFn: (data) => db.entities.LaborRate.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['laborRates'] });
       resetForm();
@@ -47,7 +47,7 @@ export default function LaborRateManager() {
   });
 
   const updateRateMutation = useMutation({
-    mutationFn: (data) => base44.entities.LaborRate.update(editingRate.id, data),
+    mutationFn: (data) => db.entities.LaborRate.update(editingRate.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['laborRates'] });
       resetForm();
@@ -56,7 +56,7 @@ export default function LaborRateManager() {
   });
 
   const deleteRateMutation = useMutation({
-    mutationFn: (id) => base44.entities.LaborRate.delete(id),
+    mutationFn: (id) => db.entities.LaborRate.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['laborRates'] })
   });
 

@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Archive } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 
 /**
  * Reusable Storage / Container section for Asset form dialogs.
@@ -18,7 +18,7 @@ import { base44 } from '@/api/base44Client';
 export default function AssetContainerSection({ formData, set }) {
   const { data: containers = [] } = useQuery({
     queryKey: ['containers'],
-    queryFn: () => base44.entities.Container.list('-created_date', 2000),
+    queryFn: () => db.entities.Container.list('-created_date', 2000),
   });
 
   const available = containers.filter(c => c.status === 'available' || c.id === formData.home_container_id || c.id === formData.current_container_id);

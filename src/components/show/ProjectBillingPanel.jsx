@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ export default function ProjectBillingPanel({ show, userRole }) {
   // Fetch invoice for this show
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', show.id],
-    queryFn: () => base44.entities.Invoice.filter({ show_id: show.id })
+    queryFn: () => db.entities.Invoice.filter({ show_id: show.id })
   });
 
   // Fetch quote for comparison
@@ -33,7 +33,7 @@ export default function ProjectBillingPanel({ show, userRole }) {
     queryKey: ['quotes', show.id],
     queryFn: async () => {
       if (!invoices[0]?.quote_id) return null;
-      const quotes = await base44.entities.Quote.filter({ id: invoices[0].quote_id });
+      const quotes = await db.entities.Quote.filter({ id: invoices[0].quote_id });
       return quotes[0];
     },
     enabled: !!invoices[0]?.quote_id
@@ -42,7 +42,7 @@ export default function ProjectBillingPanel({ show, userRole }) {
   // Fetch client details
   const { data: client } = useQuery({
     queryKey: ['clients', invoices[0]?.client_id],
-    queryFn: () => base44.entities.Client.filter({ id: invoices[0]?.client_id }),
+    queryFn: () => db.entities.Client.filter({ id: invoices[0]?.client_id }),
     enabled: !!invoices[0]?.client_id,
     select: data => data[0]
   });
@@ -68,7 +68,7 @@ export default function ProjectBillingPanel({ show, userRole }) {
 
       const updatedHistory = [...(invoice.payment_history || []), paymentEntry];
 
-      await base44.entities.Invoice.update(invoice.id, {
+      await db.entities.Invoice.update(invoice.id, {
         amount_paid: newAmountPaid,
         amount_due: Math.max(0, invoice.total - newAmountPaid),
         status: newStatus,
@@ -90,7 +90,7 @@ export default function ProjectBillingPanel({ show, userRole }) {
   const sendInvoiceMutation = useMutation({
     mutationFn: async () => {
       if (!invoices[0]) throw new Error('No invoice found');
-      const result = await base44.functions.invoke('createStripeInvoice', {
+      const result = await db.functions.invoke('createStripeInvoice', {
         invoiceId: invoices[0].id
       });
       return result.data;

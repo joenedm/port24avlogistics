@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { AlertCircle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
@@ -29,7 +29,7 @@ export default function CrewConfirmation() {
 
   const processConfirmation = async () => {
     try {
-      const response = await base44.functions.invoke('processCrewConfirmation', {
+      const response = await db.functions.invoke('processCrewConfirmation', {
         token,
         action
       });

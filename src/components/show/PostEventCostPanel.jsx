@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,7 @@ export default function PostEventCostPanel({ showId, show }) {
 
   const { data: postEventCosts = [] } = useQuery({
     queryKey: ['postEventCosts', showId],
-    queryFn: () => base44.entities.PostEventCost.filter({ show_id: showId })
+    queryFn: () => db.entities.PostEventCost.filter({ show_id: showId })
   });
 
   const createCostMutation = useMutation({
@@ -35,8 +35,8 @@ export default function PostEventCostPanel({ showId, show }) {
       const quantity = parseInt(data.quantity) || 1;
       const unitCost = parseFloat(data.unit_cost) || 0;
       const unitSellPrice = parseFloat(data.unit_sell_price) || unitCost;
-      const user = await base44.auth.me();
-      return base44.entities.PostEventCost.create({
+      const user = await db.auth.me();
+      return db.entities.PostEventCost.create({
         ...data,
         show_id: showId,
         show_name: show?.name,
@@ -57,12 +57,12 @@ export default function PostEventCostPanel({ showId, show }) {
   });
 
   const deleteCostMutation = useMutation({
-    mutationFn: (id) => base44.entities.PostEventCost.delete(id),
+    mutationFn: (id) => db.entities.PostEventCost.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['postEventCosts', showId] })
   });
 
   const toggleBillableMutation = useMutation({
-    mutationFn: ({ id, is_billable }) => base44.entities.PostEventCost.update(id, { is_billable }),
+    mutationFn: ({ id, is_billable }) => db.entities.PostEventCost.update(id, { is_billable }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['postEventCosts', showId] })
   });
 

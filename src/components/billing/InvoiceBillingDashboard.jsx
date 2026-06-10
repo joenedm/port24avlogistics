@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,14 +66,14 @@ export default function InvoiceBillingDashboard() {
   // Fetch invoices
   const { data: invoices = [], isLoading: invoicesLoading } = useQuery({
     queryKey: ['invoices-billing'],
-    queryFn: () => base44.entities.Invoice.list('-sent_date', 500)
+    queryFn: () => db.entities.Invoice.list('-sent_date', 500)
   });
 
   // Fetch settings
   const { data: settings } = useQuery({
     queryKey: ['invoice-settings'],
     queryFn: async () => {
-      const results = await base44.entities.InvoiceSettings.list();
+      const results = await db.entities.InvoiceSettings.list();
       return results[0] || null;
     }
   });
@@ -81,7 +81,7 @@ export default function InvoiceBillingDashboard() {
   // Fetch payments
   const { data: payments = [] } = useQuery({
     queryKey: ['payments-all'],
-    queryFn: () => base44.entities.Payment.list('-payment_date', 500)
+    queryFn: () => db.entities.Payment.list('-payment_date', 500)
   });
 
   // Calculate metrics

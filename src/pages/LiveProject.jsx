@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Package, MapPin, Clock, ScanBarcode, AlertCircle, AlertOctagon, Handshake } from 'lucide-react';
@@ -44,39 +44,39 @@ export default function LiveProject() {
 
   const { data: shows = [] } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list(),
+    queryFn: () => db.entities.Show.list(),
     staleTime: 0,
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
   });
-  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => base44.entities.Asset.list() });
+  const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => db.entities.Asset.list() });
   const { data: movements = [] } = useQuery({
     queryKey: ['showMovements', showId],
-    queryFn: () => base44.entities.AssetMovement.filter({ show_id: showId }, '-created_date', 100),
+    queryFn: () => db.entities.AssetMovement.filter({ show_id: showId }, '-created_date', 100),
     enabled: !!showId,
     refetchInterval: 10000,
   });
   const { data: projectCrew = [] } = useQuery({
     queryKey: ['projectCrew', showId],
-    queryFn: () => base44.entities.ProjectCrew.filter({ show_id: showId }),
+    queryFn: () => db.entities.ProjectCrew.filter({ show_id: showId }),
     enabled: !!showId,
   });
   const { data: postEventCosts = [] } = useQuery({
     queryKey: ['postEventCosts', showId],
-    queryFn: () => base44.entities.PostEventCost.filter({ show_id: showId }),
+    queryFn: () => db.entities.PostEventCost.filter({ show_id: showId }),
     enabled: !!showId,
   });
   const { data: quotes = [] } = useQuery({
     queryKey: ['quotes'],
-    queryFn: () => base44.entities.Quote.list(),
+    queryFn: () => db.entities.Quote.list(),
   });
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => db.entities.User.list(),
   });
   const { data: subrents = [] } = useQuery({
     queryKey: ['roundtable_subrents', showId],
-    queryFn: () => base44.entities.RoundtableSubrent.filter({ show_id: showId }, '-created_date'),
+    queryFn: () => db.entities.RoundtableSubrent.filter({ show_id: showId }, '-created_date'),
     enabled: !!showId,
   });
 
@@ -89,7 +89,7 @@ export default function LiveProject() {
   // Use ShowFulfillments as source of truth for pack status (mirrors Scan page logic)
   const { data: showFulfillmentsLive = [] } = useQuery({
     queryKey: ['show_fulfillments', showId],
-    queryFn: () => base44.entities.ShowFulfillment.filter({ show_id: showId }),
+    queryFn: () => db.entities.ShowFulfillment.filter({ show_id: showId }),
     enabled: !!showId,
     staleTime: 0,
     refetchInterval: 15000,
@@ -97,7 +97,7 @@ export default function LiveProject() {
   });
   const { data: showRequirementsLive = [] } = useQuery({
     queryKey: ['show_requirements_live', showId],
-    queryFn: () => base44.entities.ShowRequirement.filter({ show_id: showId }),
+    queryFn: () => db.entities.ShowRequirement.filter({ show_id: showId }),
     enabled: !!showId,
     staleTime: 0,
     refetchInterval: 15000,
@@ -145,12 +145,12 @@ export default function LiveProject() {
   });
 
   const updateShowMutation = useMutation({
-    mutationFn: (data) => base44.entities.Show.update(showId, data),
+    mutationFn: (data) => db.entities.Show.update(showId, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shows'] }),
   });
 
   const updateAssetMutation = useMutation({
-    mutationFn: ({ assetId, newLocationId }) => base44.entities.Asset.update(assetId, { current_sub_location_id: newLocationId }),
+    mutationFn: ({ assetId, newLocationId }) => db.entities.Asset.update(assetId, { current_sub_location_id: newLocationId }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assets'] }),
   });
 

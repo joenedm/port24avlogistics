@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -140,7 +140,7 @@ export default function AssetReviewSession() {
   const scanRef = useRef(null);
 
   useEffect(() => {
-    base44.auth.me().then(u => setCurrentUser(u)).catch(() => {});
+    db.auth.me().then(u => setCurrentUser(u)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -149,32 +149,32 @@ export default function AssetReviewSession() {
 
   const { data: review, isLoading: reviewLoading } = useQuery({
     queryKey: ['review', id],
-    queryFn: () => base44.entities.YearlyAssetReview.filter({ id }),
+    queryFn: () => db.entities.YearlyAssetReview.filter({ id }),
     select: d => d[0],
   });
 
   const { data: reviewItems = [], isLoading: itemsLoading } = useQuery({
     queryKey: ['review-items', id],
-    queryFn: () => base44.entities.AssetReviewItem.filter({ review_id: id }, '-scanned_at', 5000),
+    queryFn: () => db.entities.AssetReviewItem.filter({ review_id: id }, '-scanned_at', 5000),
     refetchInterval: 15000,
   });
 
   // Full active asset list — used to distinguish "not in scope" vs "doesn't exist"
   const { data: allActiveAssets = [] } = useQuery({
     queryKey: ['assets-active-for-review'],
-    queryFn: () => base44.entities.Asset.list('-created_date', 5000),
+    queryFn: () => db.entities.Asset.list('-created_date', 5000),
     select: assets => assets.filter(a => a.status !== 'retired'),
   });
 
   const updateItemMutation = useMutation({
-    mutationFn: ({ itemId, data }) => base44.entities.AssetReviewItem.update(itemId, data),
+    mutationFn: ({ itemId, data }) => db.entities.AssetReviewItem.update(itemId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['review-items', id] });
     },
   });
 
   const updateReviewMutation = useMutation({
-    mutationFn: (data) => base44.entities.YearlyAssetReview.update(id, data),
+    mutationFn: (data) => db.entities.YearlyAssetReview.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['review', id] }),
   });
 
@@ -290,7 +290,7 @@ export default function AssetReviewSession() {
     const notReviewed = reviewItems.filter(i => i.review_status === 'not_reviewed');
     for (let i = 0; i < notReviewed.length; i += 20) {
       await Promise.all(notReviewed.slice(i, i + 20).map(item =>
-        base44.entities.AssetReviewItem.update(item.id, { review_status: 'missing_candidate' })
+        db.entities.AssetReviewItem.update(item.id, { review_status: 'missing_candidate' })
       ));
     }
     await updateReviewMutation.mutateAsync({
@@ -315,7 +315,7 @@ export default function AssetReviewSession() {
   };
 
   const handleDeleteAsset = async (item) => {
-    await base44.entities.Asset.update(item.asset_id, {
+    await db.entities.Asset.update(item.asset_id, {
       status: 'retired',
       notes: `Removed during ${review?.name}`,
     });
@@ -338,14 +338,14 @@ export default function AssetReviewSession() {
 
   const handleSendToHospital = async (item) => {
     const now = new Date().toISOString();
-    await base44.entities.Asset.update(item.asset_id, {
+    await db.entities.Asset.update(item.asset_id, {
       status: 'lost',
       is_lost: true,
       lost_at: now,
       lost_by: currentUser?.email || '',
       lost_notes: decisionNotes || `Marked missing during ${review?.name}`,
     });
-    await base44.entities.AVHospital.create({
+    await db.entities.AVHospital.create({
       asset_id: item.asset_id,
       asset_name: item.asset_name,
       asset_barcode: item.asset_barcode || '',

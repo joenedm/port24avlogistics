@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
@@ -8,7 +8,7 @@ export default function OverdueInvoicesWidget() {
   const { data: invoices, isLoading } = useQuery({
     queryKey: ['invoices-overdue'],
     queryFn: async () => {
-      const all = await base44.entities.Invoice.list();
+      const all = await db.entities.Invoice.list();
       return all.filter(i => i.status === 'overdue' || (i.due_date && new Date(i.due_date) < new Date()));
     },
     staleTime: 60000

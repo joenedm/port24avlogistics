@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function BookingConfirmation() {
@@ -17,7 +17,7 @@ export default function BookingConfirmation() {
       return;
     }
 
-    base44.functions.invoke('processBookingConfirmation', { token })
+    db.functions.invoke('processBookingConfirmation', { token })
       .then(res => {
         const d = res.data;
         if (d.success) {

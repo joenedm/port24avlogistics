@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ export default function ContainerScanMode({ selectedShow, user, assets, fulfillm
 
   const { data: containers = [] } = useQuery({
     queryKey: ['containers'],
-    queryFn: () => base44.entities.Container.list(),
+    queryFn: () => db.entities.Container.list(),
   });
 
   // Find container by asset_number or barcode
@@ -66,7 +66,7 @@ export default function ContainerScanMode({ selectedShow, user, assets, fulfillm
   const pickItemMutation = useMutation({
     mutationFn: async ({ asset, requirement }) => {
       const now = new Date().toISOString();
-      await base44.entities.ShowFulfillment.create({
+      await db.entities.ShowFulfillment.create({
         show_id: selectedShow.id,
         show_name: selectedShow.name,
         requirement_id: requirement?.id || null,
@@ -80,7 +80,7 @@ export default function ContainerScanMode({ selectedShow, user, assets, fulfillm
         scanned_by: user?.email || '',
         scanned_at: now,
       });
-      await base44.entities.Asset.update(asset.id, {
+      await db.entities.Asset.update(asset.id, {
         status: 'checked_out',
         locked_to_show_id: selectedShow.id,
         locked_to_show_name: selectedShow.name,
@@ -91,7 +91,7 @@ export default function ContainerScanMode({ selectedShow, user, assets, fulfillm
         current_sub_location_id: requirement?.room_id || null,
         current_sub_location_name: requirement?.room_name || null,
       });
-      await base44.entities.AssetMovement.create({
+      await db.entities.AssetMovement.create({
         asset_id: asset.id,
         asset_name: asset.name,
         asset_barcode: asset.barcode || asset.id,
@@ -116,7 +116,7 @@ export default function ContainerScanMode({ selectedShow, user, assets, fulfillm
   const closeContainerMutation = useMutation({
     mutationFn: async () => {
       // Update container status to packed and link to show
-      await base44.entities.Container.update(openContainer.id, {
+      await db.entities.Container.update(openContainer.id, {
         status: 'packed',
         current_show_id: selectedShow.id,
         current_show_name: selectedShow.name,

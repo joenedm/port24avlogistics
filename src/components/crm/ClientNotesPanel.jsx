@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,13 +41,13 @@ export default function ClientNotesPanel({ clientId, clientName, showId }) {
     queryFn: () => {
       const q = { client_id: clientId };
       if (showId) q.show_id = showId;
-      return base44.entities.ClientNote.filter(q);
+      return db.entities.ClientNote.filter(q);
     },
     enabled: !!clientId,
   });
 
   const saveMutation = useMutation({
-    mutationFn: (data) => base44.entities.ClientNote.create({
+    mutationFn: (data) => db.entities.ClientNote.create({
       ...data, client_id: clientId, client_name: clientName,
       show_id: showId || undefined, show_name: undefined,
       author_name: user?.full_name || user?.email,
@@ -57,12 +57,12 @@ export default function ClientNotesPanel({ clientId, clientName, showId }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ClientNote.delete(id),
+    mutationFn: (id) => db.entities.ClientNote.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qKey }),
   });
 
   const pinMutation = useMutation({
-    mutationFn: ({ id, pinned }) => base44.entities.ClientNote.update(id, { pinned: !pinned }),
+    mutationFn: ({ id, pinned }) => db.entities.ClientNote.update(id, { pinned: !pinned }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qKey }),
   });
 

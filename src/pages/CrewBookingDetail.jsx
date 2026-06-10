@@ -1,5 +1,5 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { Calendar, MapPin, DollarSign, Phone, FileText } from 'lucide-react';
@@ -13,14 +13,14 @@ export default function CrewBookingDetail() {
   const { data: booking, isLoading } = useQuery({
     queryKey: ['crewBooking', id],
     queryFn: async () => {
-      const bookings = await base44.entities.CrewBooking.list();
+      const bookings = await db.entities.CrewBooking.list();
       return bookings.find(b => b.id === id);
     },
   });
 
   const { data: shows } = useQuery({
     queryKey: ['shows'],
-    queryFn: () => base44.entities.Show.list(),
+    queryFn: () => db.entities.Show.list(),
     enabled: !!booking?.show_id,
   });
 

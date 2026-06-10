@@ -21,7 +21,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 
 const ThemeContext = createContext({ brand: {} });
 export const useBrand = () => useContext(ThemeContext);
@@ -84,12 +84,12 @@ export default function ThemeProvider({ children }) {
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    base44.auth.isAuthenticated().then(setIsAuthed);
+    db.auth.isAuthenticated().then(setIsAuthed);
   }, []);
 
   const { data: brandList = [] } = useQuery({
     queryKey: ['brand'],
-    queryFn: () => base44.entities.BrandSettings.list(),
+    queryFn: () => db.entities.BrandSettings.list(),
     staleTime: 0,
     enabled: isAuthed,
     retry: false,

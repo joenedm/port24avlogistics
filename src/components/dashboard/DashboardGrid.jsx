@@ -8,7 +8,6 @@ import WidgetSlot from './WidgetSlot';
 import WidgetLibrary from './WidgetLibrary';
 import { WIDGET_REGISTRY, DEFAULT_LAYOUTS } from '@/lib/dashboardWidgetRegistry';
 import { cn } from '@/lib/utils';
-import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -32,22 +31,14 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await base44.functions.invoke('cleanupOrphanedCheckouts', {});
-      const { orphaned_count } = res.data;
-      queryClient.invalidateQueries({ queryKey: ['assets'] });
-      queryClient.invalidateQueries({ queryKey: ['shows'] });
-      queryClient.invalidateQueries({ queryKey: ['fulfillments'] });
-      queryClient.invalidateQueries({ queryKey: ['review-items'] });
-      queryClient.invalidateQueries({ queryKey: ['kits'] });
-      if (orphaned_count > 0) {
-        toast.success(`Synced — reset ${orphaned_count} orphaned checkout${orphaned_count !== 1 ? 's' : ''} back to Available`);
-      } else {
-        toast.success('All data is in sync');
-      }
+      // Invalidate every cached query so all widgets refetch fresh data
+      await queryClient.invalidateQueries();
+      toast.success('All data refreshed');
     } catch {
-      toast.error('Sync failed — please try again');
+      toast.error('Refresh failed — check your connection');
+    } finally {
+      setSyncing(false);
     }
-    setSyncing(false);
   };
 
   const handleLayoutChange = (newLayout) => {

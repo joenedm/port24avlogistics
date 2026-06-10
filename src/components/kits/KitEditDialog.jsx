@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save, Package, Cloud, Search, X, Layers, Printer } from 'lucide-react';
 import QRLabelPrinter from '@/components/assets/QRLabelPrinter';
@@ -24,7 +24,7 @@ export default function KitEditDialog({ kit, open, onOpenChange }) {
 
   const { data: allAssets = [] } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => base44.entities.Asset.list('-created_date', 5000),
+    queryFn: () => db.entities.Asset.list('-created_date', 5000),
     enabled: open,
   });
 
@@ -66,20 +66,20 @@ export default function KitEditDialog({ kit, open, onOpenChange }) {
     if (asset.tracking === 'bulk') {
       updateData.quantity = (asset.quantity || 1) - 1;
     }
-    await base44.entities.Asset.update(asset.id, updateData);
+    await db.entities.Asset.update(asset.id, updateData);
     queryClient.invalidateQueries({ queryKey: ['assets'] });
     // Auto-price recompute if enabled
     if (form.auto_price) {
       const updatedAssets = allAssets.filter(a => a.kit_id === kit.id || a.id === asset.id);
       const total = updatedAssets.reduce((s, a) => s + (a.daily_rate || 0), 0);
-      await base44.entities.Kit.update(kit.id, { daily_rate: total });
+      await db.entities.Kit.update(kit.id, { daily_rate: total });
       queryClient.invalidateQueries({ queryKey: ['kits'] });
     }
     setSearch(''); // clear search but keep panel open
   };
 
   const handleRemoveAsset = async (asset) => {
-    await base44.entities.Asset.update(asset.id, { kit_id: null });
+    await db.entities.Asset.update(asset.id, { kit_id: null });
     queryClient.invalidateQueries({ queryKey: ['assets'] });
   };
 
@@ -89,7 +89,7 @@ export default function KitEditDialog({ kit, open, onOpenChange }) {
       ? kitAssets.reduce((s, a) => s + (a.daily_rate || 0), 0)
       : null;
 
-    await base44.entities.Kit.update(kit.id, {
+    await db.entities.Kit.update(kit.id, {
       name: form.name.trim(),
       barcode: form.barcode?.trim() || undefined,
       location: form.location?.trim() || undefined,

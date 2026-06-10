@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,7 @@ export default function LogisticsPoolSelector({ open, onOpenChange, onSelect }) 
 
   const { data: bankRecords = [] } = useQuery({
     queryKey: ['logisticsBank'],
-    queryFn: () => base44.entities.LogisticsBank.list('-created_date'),
+    queryFn: () => db.entities.LogisticsBank.list('-created_date'),
     enabled: open,
   });
 

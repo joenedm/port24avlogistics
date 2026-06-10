@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Building2, Star, Filter } from 'lucide-react';
@@ -26,7 +26,7 @@ export default function Clients() {
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['clients'],
-    queryFn: () => base44.entities.Client.list('-created_date'),
+    queryFn: () => db.entities.Client.list('-created_date'),
   });
 
   const filtered = clients.filter(c => {

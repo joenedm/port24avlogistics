@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Clock, CheckCircle, XCircle, UserCheck } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -16,19 +16,19 @@ export default function PendingUsersPanel() {
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => db.entities.User.list(),
   });
 
   const pendingUsers = users.filter(u => u.status === 'pending');
 
   const approveMutation = useMutation({
     mutationFn: ({ id, role }) =>
-      base44.entities.User.update(id, { status: 'approved', role, onboarding_complete: false }),
+      db.entities.User.update(id, { status: 'approved', role, onboarding_complete: false }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (id) => base44.entities.User.update(id, { status: 'rejected' }),
+    mutationFn: (id) => db.entities.User.update(id, { status: 'rejected' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
 

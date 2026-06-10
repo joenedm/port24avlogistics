@@ -1,51 +1,44 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useMemo } from 'react';
+import { db } from '@/api/db';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PageHeader from '@/components/shared/PageHeader';
 import DashboardGrid from '@/components/dashboard/DashboardGrid';
 import { DEFAULT_LAYOUTS } from '@/lib/dashboardWidgetRegistry';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState(null);
-
-  // Load user
-  useEffect(() => {
-    const loadUser = async () => {
-      const me = await base44.auth.me();
-      setUser(me);
-    };
-    loadUser();
-  }, []);
+  const { userRecord } = useAuth();
+  const user = userRecord;
 
   // Load user's saved layout (optional, render default immediately)
   const { data: userDashboard } = useQuery({
     queryKey: ['userDashboard', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const configs = await base44.entities.UserDashboard.filter({ user_id: user.id });
+      const configs = await db.entities.UserDashboard.filter({ user_id: user.id });
       return configs[0] || null;
     },
     enabled: !!user?.id,
-    staleTime: 60000 // 1 minute
+    staleTime: 60000
   });
 
   // Use default layout immediately, update when userDashboard loads
   const layout = useMemo(() => {
     if (userDashboard?.widgets) return userDashboard.widgets;
-    if (user?.role && DEFAULT_LAYOUTS[user.role]) return DEFAULT_LAYOUTS[user.role];
-    return null;
+    const role = user?.role || 'admin';
+    return DEFAULT_LAYOUTS[role] ?? DEFAULT_LAYOUTS['admin'] ?? null;
   }, [userDashboard, user?.role]);
 
   const handleLayoutChange = async (newLayout) => {
     try {
       if (userDashboard?.id) {
-        await base44.entities.UserDashboard.update(userDashboard.id, {
+        await db.entities.UserDashboard.update(userDashboard.id, {
           widgets: newLayout,
           saved_at: new Date().toISOString()
         });
       } else {
-        await base44.entities.UserDashboard.create({
+        await db.entities.UserDashboard.create({
           user_id: user.id,
           user_role: user.role,
           widgets: newLayout,
@@ -65,9 +58,9 @@ export default function Dashboard() {
         description="Customizable operations command center"
       />
 
-      {layout && user && (
+      {layout && (
         <DashboardGrid
-          userRole={user.role}
+          userRole={user?.role || 'admin'}
           initialLayout={layout}
           onLayoutChange={handleLayoutChange}
         />

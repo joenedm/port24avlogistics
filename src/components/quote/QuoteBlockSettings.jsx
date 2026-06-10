@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { X, Upload, Trash2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 
 function Row({ label, children }) {
   return (
@@ -62,7 +62,7 @@ export default function QuoteBlockSettings({ block, onChange, onClose }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await db.integrations.Core.UploadFile({ file });
     setConfig({ logoUrl: file_url });
     setUploading(false);
   };

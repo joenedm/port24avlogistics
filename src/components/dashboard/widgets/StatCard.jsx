@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, CheckCircle2, Download, AlertTriangle } from 'lucide-react';
@@ -32,7 +32,7 @@ export default function StatCard({ type }) {
   const { data: assets, isLoading } = useQuery({
     queryKey: ['assets-summary'],
     queryFn: async () => {
-      const all = await base44.entities.Asset.list();
+      const all = await db.entities.Asset.list();
       return all;
     },
     staleTime: 60000

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { generateNextCode, useCodeSettings, getMergedSettings, previewCode } from '@/lib/useAutoCode';
@@ -74,8 +74,8 @@ export default function ContainerFormDialog({ open, onOpenChange, container }) {
         }
       }
       Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
-      if (isEditing) return base44.entities.Container.update(container.id, payload);
-      return base44.entities.Container.create(payload);
+      if (isEditing) return db.entities.Container.update(container.id, payload);
+      return db.entities.Container.create(payload);
     },
     onSuccess: () => {
       toast.success(isEditing ? 'Container updated' : 'Container created');

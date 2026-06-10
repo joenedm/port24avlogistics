@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQueryClient } from '@tanstack/react-query';
 import { Copy, Save } from 'lucide-react';
 
@@ -55,7 +55,7 @@ export default function AddKitInstanceDialog({ sourceKit, open, onOpenChange }) 
   const handleCreate = async () => {
     if (!form.name.trim()) return;
     setSaving(true);
-    await base44.entities.Kit.create({
+    await db.entities.Kit.create({
       name: form.name.trim(),
       kit_type: sourceKit.kit_type || 'serialized',
       barcode: form.barcode.trim() || undefined,

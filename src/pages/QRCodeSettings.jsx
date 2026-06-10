@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -163,7 +163,7 @@ export default function QRCodeSettings() {
 
   const { data: allSettings = [], isLoading } = useQuery({
     queryKey: ['codeSettings'],
-    queryFn: () => base44.entities.CodeSettings.list(),
+    queryFn: () => db.entities.CodeSettings.list(),
   });
 
   const saveMutation = useMutation({
@@ -179,9 +179,9 @@ export default function QRCodeSettings() {
         qr_enabled: !!form.qr_enabled,
       };
       if (existingId) {
-        return base44.entities.CodeSettings.update(existingId, payload);
+        return db.entities.CodeSettings.update(existingId, payload);
       }
-      return base44.entities.CodeSettings.create(payload);
+      return db.entities.CodeSettings.create(payload);
     },
     onSuccess: () => {
       toast.success('Code settings saved');

@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ImagePlus, X } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { toast } from 'sonner';
 
 export default function Step2ProductDetails({ formData, set, categories }) {
@@ -16,7 +16,7 @@ export default function Step2ProductDetails({ formData, set, categories }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await db.integrations.Core.UploadFile({ file });
     set('image_url', file_url);
     setUploading(false);
   };
