@@ -98,6 +98,8 @@ const AuthenticatedApp = () => {
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/qb-callback" element={<QuickBooksCallback />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/platform/login" element={<PlatformLogin />} />
+        <Route path="/platform/join" element={<PlatformJoin />} />
         <Route path="*" element={<Navigate to="/signin" replace />} />
       </Routes>
     );
