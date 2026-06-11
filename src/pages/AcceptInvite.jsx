@@ -42,27 +42,14 @@ async function loadInvite(token) {
   return data;
 }
 
-// Step 2: after the user signs up, claim the invite (set org_id, role on their user row)
-async function claimInvite(invite) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  // Upsert the user profile row with org info
-  const { error: upsertErr } = await supabase.from('users').upsert({
-    id: user.id,
-    email: user.email,
-    full_name: invite.full_name || user.user_metadata?.full_name || '',
-    org_id: invite.org_id,
-    role: invite.role,
-    is_platform_admin: false,
-  }, { onConflict: 'id' });
-  if (upsertErr) throw upsertErr;
-
-  // Mark invite accepted
-  await supabase.from('pending_invites').update({
-    status: 'accepted',
-    accepted_at: new Date().toISOString(),
-  }).eq('id', invite.id);
+// Step 2: claim the invite via edge function (service role — bypasses RLS)
+async function claimInvite(token, fullName) {
+  const { data, error } = await supabase.functions.invoke('claim-invite', {
+    body: { token, full_name: fullName },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
 }
 
 export default function AcceptInvite() {
@@ -120,12 +107,7 @@ export default function AcceptInvite() {
         return;
       }
 
-      await claimInvite({ ...invite, full_name: fullName });
-
-      // Verify the row was actually created (RLS can silently block)
-      const { data: { user: claimedUser } } = await supabase.auth.getUser();
-      const { data: userRow } = await supabase.from('users').select('id').eq('id', claimedUser.id).single();
-      if (!userRow) throw new Error('Account setup failed — please contact support.');
+      await claimInvite(token, fullName);
 
       setStep('company');
     } catch (err) {

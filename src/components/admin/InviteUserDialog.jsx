@@ -45,10 +45,10 @@ export default function InviteUserDialog({ open, onOpenChange }) {
       }
       if (!orgId) return setError('Could not determine your organization.');
 
-      // Enforce plan user limit
-      const { data: org } = await supabase.from('organizations').select('plan').eq('id', orgId).single();
+      // Enforce plan user limit and fetch org info in one query
+      const { data: orgData } = await supabase.from('organizations').select('plan, name').eq('id', orgId).single();
       const { data: existingUsers } = await supabase.from('users').select('id', { count: 'exact' }).eq('org_id', orgId);
-      const check = canAddUser(org?.plan, existingUsers?.length ?? 0);
+      const check = canAddUser(orgData?.plan, existingUsers?.length ?? 0);
       if (!check.allowed) return setError(check.reason);
 
       const { data: invite, error: invErr } = await supabase
@@ -67,16 +67,13 @@ export default function InviteUserDialog({ open, onOpenChange }) {
 
       const link = `${window.location.origin}/accept-invite?token=${invite.token}`;
 
-      // Fetch org name for the email
-      const { data: org } = await supabase.from('organizations').select('name').eq('id', orgId).single();
-
       // Send branded invite email (non-blocking — show link regardless)
       supabase.functions.invoke('send-invite-email', {
         body: {
           to_email: form.email.trim().toLowerCase(),
           to_name: form.full_name || null,
           invite_link: link,
-          org_name: org?.name || '',
+          org_name: orgData?.name || '',
           role: form.role,
           invited_by_name: userRecord?.full_name || userRecord?.email || null,
         },

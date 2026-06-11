@@ -31,7 +31,9 @@
       "Bash(git -C /Users/josephloffredo/Downloads/port24avlogistics add src/components/branding/AutoBrandModal.jsx src/pages/BrandingSettings.jsx)",
       "Bash(git -C /Users/josephloffredo/Downloads/port24avlogistics commit -m ' *)",
       "Bash(npx supabase *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(npx supabase functions logs * --project-ref hpnkbtcoafbdkxhaumpx)"
     ]
   }
 }
