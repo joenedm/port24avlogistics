@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import GridLayout from 'react-grid-layout';
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
+import React, { useState } from 'react';
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay,
+} from '@dnd-kit/core';
+import {
+  SortableContext, rectSortingStrategy, useSortable, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Edit2, Save, X, RefreshCw, GripVertical } from 'lucide-react';
 import WidgetSlot from './WidgetSlot';
@@ -11,27 +15,89 @@ import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+// Width classes based on widget w value (out of 12 columns)
+function widthClass(w) {
+  if (w >= 12) return 'col-span-12';
+  if (w >= 9)  return 'col-span-9';
+  if (w >= 8)  return 'col-span-8';
+  if (w >= 6)  return 'col-span-6';
+  if (w >= 4)  return 'col-span-4';
+  if (w >= 3)  return 'col-span-3';
+  return 'col-span-3';
+}
+
+function heightStyle(h) {
+  return { minHeight: `${h * 80}px` };
+}
+
+function SortableWidget({ item, editMode, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.i });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    ...heightStyle(item.h),
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        widthClass(item.w),
+        'bg-card rounded-lg border border-border shadow-sm flex flex-col',
+        editMode && 'ring-2 ring-primary/20',
+        isDragging && 'z-50'
+      )}
+    >
+      {/* Header — drag handle */}
+      <div
+        className={cn(
+          'flex items-center justify-between px-3 py-3 border-b border-border shrink-0',
+          editMode && 'cursor-grab active:cursor-grabbing select-none'
+        )}
+        {...(editMode ? { ...attributes, ...listeners } : {})}
+      >
+        <div className="flex items-center gap-2">
+          {editMode && <GripVertical className="w-4 h-4 text-muted-foreground/50 shrink-0" />}
+          <span className="font-semibold text-sm">{WIDGET_REGISTRY[item.i]?.name ?? item.i}</span>
+        </div>
+        {editMode && (
+          <button
+            onPointerDown={e => e.stopPropagation()}
+            onClick={onRemove}
+            className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className={cn('flex-1 overflow-auto p-4', editMode && 'pointer-events-none select-none')}>
+        <WidgetSlot widgetId={item.i} editMode={false} onRemove={onRemove} />
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardGrid({ userRole, initialLayout, onLayoutChange }) {
   const [layout, setLayout] = useState(initialLayout || DEFAULT_LAYOUTS[userRole] || []);
   const [editMode, setEditMode] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [gridWidth, setGridWidth] = useState(typeof window !== 'undefined' ? Math.min(window.innerWidth - 320, 1400) : 1000);
+  const [activeId, setActiveId] = useState(null);
   const queryClient = useQueryClient();
 
-  React.useEffect(() => {
-    const handleResize = () => {
-      setGridWidth(Math.min(window.innerWidth - 320, 1400));
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
   const handleSync = async () => {
     setSyncing(true);
     try {
-      // Invalidate every cached query so all widgets refetch fresh data
       await queryClient.invalidateQueries();
       toast.success('All data refreshed');
     } catch {
@@ -41,33 +107,31 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
     }
   };
 
-  const handleLayoutChange = (newLayout) => {
+  const handleDragStart = ({ active }) => setActiveId(active.id);
+
+  const handleDragEnd = ({ active, over }) => {
+    setActiveId(null);
+    if (!over || active.id === over.id) return;
+    const oldIndex = layout.findIndex(i => i.i === active.id);
+    const newIndex = layout.findIndex(i => i.i === over.id);
+    const newLayout = arrayMove(layout, oldIndex, newIndex);
     setLayout(newLayout);
     setUnsavedChanges(true);
   };
 
   const handleAddWidget = (widgetId) => {
-    // Check if widget already exists
     if (layout.some(item => item.i === widgetId)) return;
-
     const widget = WIDGET_REGISTRY[widgetId];
-    const newItem = {
-      x: 0,
-      y: Math.max(...layout.map(item => item.y + item.h), 0),
-      w: widget.defaultSize.w,
-      h: widget.defaultSize.h,
-      i: widgetId
-    };
-    setLayout([...layout, newItem]);
+    setLayout(prev => [...prev, { i: widgetId, x: 0, y: 999, w: widget.defaultSize.w, h: widget.defaultSize.h }]);
     setUnsavedChanges(true);
   };
 
   const handleRemoveWidget = (widgetId) => {
-    setLayout(layout.filter(item => item.i !== widgetId));
+    setLayout(prev => prev.filter(item => item.i !== widgetId));
     setUnsavedChanges(true);
   };
 
-  const handleSaveLayout = () => {
+  const handleSave = () => {
     onLayoutChange(layout);
     setUnsavedChanges(false);
     setEditMode(false);
@@ -79,207 +143,88 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
     setEditMode(false);
   };
 
-  const handleResetDefault = () => {
-    setLayout(DEFAULT_LAYOUTS[userRole] || []);
-    setUnsavedChanges(true);
-  };
+  const activeItem = layout.find(i => i.i === activeId);
 
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-end gap-2 px-2">
+      <div className="flex items-center justify-end gap-2 px-2 flex-wrap">
         <button
           onClick={handleSync}
           disabled={syncing}
-          title="Force-sync all platform data"
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={cn('w-3.5 h-3.5', syncing && 'animate-spin')} />
           {syncing ? 'Syncing...' : 'Sync'}
         </button>
 
-        <Button
-          variant={editMode ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setEditMode(!editMode)}
-          className="gap-2"
-        >
+        <Button variant={editMode ? 'default' : 'outline'} size="sm" onClick={() => setEditMode(e => !e)} className="gap-2">
           <Edit2 className="w-4 h-4" />
           {editMode ? 'Exit Edit' : 'Edit Dashboard'}
         </Button>
 
         {editMode && (
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowLibrary(true)}
-              className="gap-2"
-            >
-              + Add Widget
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResetDefault}
-            >
-              Reset
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowLibrary(true)}>+ Add Widget</Button>
+            <Button variant="outline" size="sm" onClick={() => { setLayout(DEFAULT_LAYOUTS[userRole] || []); setUnsavedChanges(true); }}>Reset</Button>
           </>
         )}
 
         {editMode && unsavedChanges && (
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCancel}
-              className="gap-2"
-            >
-              <X className="w-4 h-4" />
-              Cancel
+            <Button variant="outline" size="sm" onClick={handleCancel} className="gap-2">
+              <X className="w-4 h-4" /> Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleSaveLayout}
-              className="gap-2"
-            >
-              <Save className="w-4 h-4" />
-              Save
+            <Button size="sm" onClick={handleSave} className="gap-2">
+              <Save className="w-4 h-4" /> Save
             </Button>
           </>
         )}
       </div>
 
       {/* Grid */}
-      <div className="w-full px-2">
-        <GridLayout
-          className="dashboard-grid"
-          layout={layout}
-          onLayoutChange={handleLayoutChange}
-          cols={12}
-          rowHeight={80}
-          width={gridWidth}
-          isDraggable={editMode}
-          isResizable={editMode}
-          draggableCancel=".no-drag"
-          compactType="vertical"
-          preventCollision={false}
-          useCSSTransforms={true}
-          containerPadding={[0, 0]}
-          margin={[12, 12]}
-        >
-          {layout.map(item => (
-            <div
-              key={item.i}
-              data-grid={item}
-              className={cn(
-                'bg-card rounded-lg border border-border shadow-sm transition-all duration-200',
-                editMode && 'ring-2 ring-primary/20 hover:ring-primary/40'
-              )}
-            >
-              <WidgetSlot
-                widgetId={item.i}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={layout.map(i => i.i)} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-12 gap-3 px-2">
+            {layout.map(item => (
+              <SortableWidget
+                key={item.i}
+                item={item}
                 editMode={editMode}
                 onRemove={() => handleRemoveWidget(item.i)}
               />
-            </div>
-          ))}
-        </GridLayout>
-      </div>
+            ))}
+          </div>
+        </SortableContext>
 
-      {/* Widget Library Drawer */}
+        <DragOverlay>
+          {activeItem && (
+            <div
+              className={cn(widthClass(activeItem.w), 'bg-card rounded-lg border-2 border-primary shadow-2xl opacity-90')}
+              style={heightStyle(activeItem.h)}
+            >
+              <div className="px-3 py-3 border-b border-border flex items-center gap-2">
+                <GripVertical className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-sm">{WIDGET_REGISTRY[activeItem.i]?.name}</span>
+              </div>
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+
       {showLibrary && (
         <WidgetLibrary
           currentLayout={layout}
-          onAddWidget={(id) => {
-            handleAddWidget(id);
-            setShowLibrary(false);
-          }}
+          onAddWidget={(id) => { handleAddWidget(id); setShowLibrary(false); }}
           onClose={() => setShowLibrary(false)}
           userRole={userRole}
         />
       )}
-
-      <style>{`
-        .dashboard-grid {
-          background: transparent;
-        }
-        .react-grid-layout {
-          position: relative;
-          transition: height 200ms ease;
-        }
-        .react-grid-item {
-          transition: all 200ms ease;
-          transition-property: left, top;
-        }
-        .react-grid-item img {
-          pointer-events: none;
-          user-select: none;
-        }
-        .react-grid-item.cssTransforms {
-          transition-property: transform;
-        }
-        .react-grid-item.resizing {
-          opacity: 0.9;
-          z-index: 3;
-        }
-        .react-grid-item.static {
-          background: transparent;
-        }
-        .react-grid-item.text {
-          font-size: 24px;
-          text-align: center;
-          position: absolute;
-          top: 0;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          margin: auto;
-          height: 100%;
-          width: 100%;
-        }
-        .react-grid-item .resizing {
-          opacity: 1;
-        }
-        .react-grid-item .static {
-          background: transparent;
-        }
-        .react-grid-item .text {
-          font-size: 24px;
-          text-align: center;
-        }
-        .react-grid-item .no-drag {
-          height: 100%;
-          width: 100%;
-        }
-        .react-grid-item .minMax {
-          font-size: 12px;
-        }
-        .react-grid-item .add {
-          cursor: pointer;
-        }
-        .resize-handle {
-          position: absolute;
-          width: 20px;
-          height: 20px;
-          bottom: 0;
-          right: 0;
-          cursor: se-resize;
-        }
-        .text {
-          font-size: 24px;
-          text-align: center;
-          position: absolute;
-          top: 0;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          margin: auto;
-          height: 100%;
-          width: 100%;
-        }
-      `}</style>
     </div>
   );
 }

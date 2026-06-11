@@ -1,6 +1,4 @@
 import React from 'react';
-import { X, GripVertical } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { WIDGET_REGISTRY } from '@/lib/dashboardWidgetRegistry';
 
 // Import all widget components
@@ -41,42 +39,10 @@ const WIDGET_COMPONENTS = {
   av_hospital: () => <AVHospitalWidget />
 };
 
-export default function WidgetSlot({ widgetId, editMode, onRemove }) {
-  const widget = WIDGET_REGISTRY[widgetId];
+export default function WidgetSlot({ widgetId }) {
   const Component = WIDGET_COMPONENTS[widgetId];
-
-  if (!widget || !Component) {
-    return (
-      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-        <p>Widget not found</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full h-full flex flex-col">
-      {/* Header — draggable zone */}
-      <div className={`flex items-center justify-between px-3 py-3 border-b border-border ${editMode ? 'cursor-grab active:cursor-grabbing select-none' : ''}`}>
-        <div className="flex items-center gap-2">
-          {editMode && <GripVertical className="w-4 h-4 text-muted-foreground/50 shrink-0" />}
-          <h3 className="font-semibold text-sm">{widget.name}</h3>
-        </div>
-        {editMode && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onRemove}
-            className="no-drag h-6 w-6 text-muted-foreground hover:text-destructive"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-
-      {/* Content — marked no-drag so it doesn't interfere with grid dragging */}
-      <div className={`no-drag flex-1 overflow-auto p-4 ${editMode ? 'pointer-events-none select-none' : ''}`}>
-        <Component />
-      </div>
-    </div>
+  if (!Component) return (
+    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Widget not found</div>
   );
+  return <Component />;
 }
