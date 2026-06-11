@@ -25,8 +25,10 @@ export default function BrandingSettings() {
   const { orgId } = useAuth();
   const queryClient = useQueryClient();
   const { data: brandList = [], isLoading } = useQuery({
-    queryKey: ['brand'],
-    queryFn: () => db.entities.BrandSettings.list(),
+    queryKey: ['brand', orgId],
+    queryFn: () => orgId
+      ? db.entities.BrandSettings.filter({ org_id: orgId })
+      : db.entities.BrandSettings.list(),
   });
 
   const existing = brandList[0];
@@ -50,8 +52,8 @@ export default function BrandingSettings() {
 
   const saveMutation = useMutation({
     mutationFn: (data) => existing
-      ? db.entities.BrandSettings.update(existing.id, data)
-      : db.entities.BrandSettings.create(data),
+      ? db.entities.BrandSettings.update(existing.id, { ...data, org_id: orgId })
+      : db.entities.BrandSettings.create({ ...data, org_id: orgId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brand'] });
       setSaved(true);

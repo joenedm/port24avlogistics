@@ -22,6 +22,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { db } from '@/api/db';
+import { useAuth } from '@/lib/AuthContext';
 
 const ThemeContext = createContext({ brand: {} });
 export const useBrand = () => useContext(ThemeContext);
@@ -82,14 +83,18 @@ function clearVar(name) {
 
 export default function ThemeProvider({ children }) {
   const [isAuthed, setIsAuthed] = useState(false);
+  const { userRecord } = useAuth();
+  const orgId = userRecord?.org_id;
 
   useEffect(() => {
     db.auth.isAuthenticated().then(setIsAuthed);
   }, []);
 
   const { data: brandList = [] } = useQuery({
-    queryKey: ['brand'],
-    queryFn: () => db.entities.BrandSettings.list(),
+    queryKey: ['brand', orgId],
+    queryFn: () => orgId
+      ? db.entities.BrandSettings.filter({ org_id: orgId })
+      : db.entities.BrandSettings.list(),
     staleTime: 0,
     enabled: isAuthed,
     retry: false,
