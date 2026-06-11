@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import GridLayout from 'react-grid-layout';
+import { GripVertical } from 'lucide-react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { Button } from '@/components/ui/button';
-import { Edit2, Save, X, RefreshCw } from 'lucide-react';
+import { Edit2, Save, X, RefreshCw, GripVertical } from 'lucide-react';
 import WidgetSlot from './WidgetSlot';
 import WidgetLibrary from './WidgetLibrary';
 import { WIDGET_REGISTRY, DEFAULT_LAYOUTS } from '@/lib/dashboardWidgetRegistry';
@@ -162,6 +163,7 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
           width={gridWidth}
           isDraggable={editMode}
           isResizable={editMode}
+          draggableHandle=".drag-handle"
           compactType="vertical"
           preventCollision={false}
           useCSSTransforms={true}
@@ -174,7 +176,7 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
               data-grid={item}
               className={cn(
                 'bg-card rounded-lg border border-border overflow-hidden shadow-sm transition-all duration-200',
-                editMode && 'cursor-move ring-2 ring-primary/20 hover:ring-primary/40'
+                editMode && 'ring-2 ring-primary/20 hover:ring-primary/40'
               )}
             >
               <WidgetSlot

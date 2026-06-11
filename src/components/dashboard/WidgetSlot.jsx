@@ -1,5 +1,5 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WIDGET_REGISTRY } from '@/lib/dashboardWidgetRegistry';
 
@@ -56,12 +56,16 @@ export default function WidgetSlot({ widgetId, editMode, onRemove }) {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="font-semibold text-sm">{widget.name}</h3>
+      <div className={`flex items-center justify-between px-3 py-3 border-b border-border ${editMode ? 'drag-handle cursor-grab active:cursor-grabbing' : ''}`}>
+        <div className="flex items-center gap-2">
+          {editMode && <GripVertical className="w-4 h-4 text-muted-foreground/50 shrink-0" />}
+          <h3 className="font-semibold text-sm">{widget.name}</h3>
+        </div>
         {editMode && (
           <Button
             variant="ghost"
             size="icon"
+            onMouseDown={e => e.stopPropagation()}
             onClick={onRemove}
             className="h-6 w-6 text-muted-foreground hover:text-destructive"
           >
@@ -70,8 +74,8 @@ export default function WidgetSlot({ widgetId, editMode, onRemove }) {
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto p-4">
+      {/* Content — pointer events off in edit mode so drag isn't blocked */}
+      <div className={`flex-1 overflow-auto p-4 ${editMode ? 'pointer-events-none select-none' : ''}`}>
         <Component />
       </div>
     </div>
