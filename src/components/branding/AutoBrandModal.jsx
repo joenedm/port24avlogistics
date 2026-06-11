@@ -73,6 +73,117 @@ function ensureContrast(fgHex, bgHex, minRatio = 3.5) {
   return hslToHex(h, s, l);
 }
 
+// ─── Canvas-based color extraction ───────────────────────────────────────────
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function colorDistance(a, b) {
+  return Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2);
+}
+
+function isNeutral(r, g, b) {
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const saturation = max === 0 ? 0 : (max - min) / max;
+  const lightness = (max + min) / 510;
+  return saturation < 0.15 || lightness < 0.08 || lightness > 0.92;
+}
+
+async function extractLogoColors(url) {
+  // Fetch as blob first to avoid cross-origin canvas taint issues
+  let src = url;
+  try {
+    const resp = await fetch(url, { mode: 'cors' });
+    const blob = await resp.blob();
+    src = URL.createObjectURL(blob);
+  } catch {
+    // fall through and try direct URL
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const cleanup = () => { if (src.startsWith('blob:')) URL.revokeObjectURL(src); };
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 120;
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, size, size);
+        const { data } = ctx.getImageData(0, 0, size, size);
+
+        // Collect vivid non-transparent pixels; also collect all non-transparent as fallback
+        const vivid = [], all = [];
+        for (let i = 0; i < data.length; i += 4) {
+          const [r, g, b, a] = [data[i], data[i+1], data[i+2], data[i+3]];
+          if (a < 128) continue;
+          all.push([r, g, b]);
+          if (!isNeutral(r, g, b)) vivid.push([r, g, b]);
+        }
+
+        // Use vivid pixels; fall back to all pixels if too few
+        const pixels = vivid.length >= 10 ? vivid : all;
+        if (!pixels.length) { cleanup(); resolve([]); return; }
+
+        // k-means (k=3)
+        const k = 3;
+        let centers = [];
+        const step = Math.max(1, Math.floor(pixels.length / k));
+        for (let i = 0; i < k; i++) centers.push(pixels[Math.min(i * step, pixels.length - 1)]);
+
+        for (let iter = 0; iter < 10; iter++) {
+          const clusters = Array.from({ length: k }, () => []);
+          for (const p of pixels) {
+            let best = 0, bestD = Infinity;
+            centers.forEach((c, ci) => { const d = colorDistance(p, c); if (d < bestD) { bestD = d; best = ci; } });
+            clusters[best].push(p);
+          }
+          centers = clusters.map((cl, ci) => {
+            if (!cl.length) return centers[ci];
+            return [
+              Math.round(cl.reduce((s, p) => s + p[0], 0) / cl.length),
+              Math.round(cl.reduce((s, p) => s + p[1], 0) / cl.length),
+              Math.round(cl.reduce((s, p) => s + p[2], 0) / cl.length),
+            ];
+          });
+        }
+
+        // Sort by saturation descending so most vivid color comes first
+        const sorted = [...centers].sort((a, b) => {
+          const satA = Math.max(...a) === 0 ? 0 : (Math.max(...a) - Math.min(...a)) / Math.max(...a);
+          const satB = Math.max(...b) === 0 ? 0 : (Math.max(...b) - Math.min(...b)) / Math.max(...b);
+          return satB - satA;
+        });
+
+        cleanup();
+        resolve(sorted.map(([r, g, b]) => rgbToHex(r, g, b)));
+      } catch {
+        cleanup();
+        resolve([]);
+      }
+    };
+    img.onerror = () => { cleanup(); resolve([]); };
+    img.src = src;
+  });
+}
+
+function darken(hex, lightnessPct) {
+  const { h, s } = rgbToHsl(hexToRgb(hex));
+  return hslToHex(h, Math.max(s * 0.6, 15), lightnessPct);
+}
+
+function lighten(hex, lightnessPct) {
+  const { h, s } = rgbToHsl(hexToRgb(hex));
+  return hslToHex(h, Math.max(s * 0.3, 8), lightnessPct);
+}
+
+function shiftHue(hex, degrees) {
+  const { h, s, l } = rgbToHsl(hexToRgb(hex));
+  return hslToHex((h + degrees) % 360, s, l);
+}
+
 // ─── Per-palette usability fix ────────────────────────────────────────────────
 
 function fixPalette(p, mode) {
@@ -387,97 +498,42 @@ export default function AutoBrandModal({ open, onClose, onApply, logoUrl }) {
     setLogoColors([]);
 
     try {
-      const result = await db.integrations.Core.InvokeLLM({
-        prompt: `You are an expert UI/UX color designer specializing in branded app themes.
+      let colors = await extractLogoColors(logoUrl);
+      if (!colors.length) colors = ['#1FB8A0', '#3DC9C0', '#0E9E8A']; // fallback to Port 24 teal
 
-Analyze this company logo image carefully. Your goal is to extract the brand colors and generate 3 distinct app themes that feel on-brand while being fully usable and readable.
+      const primary = colors[0];
+      const secondary = colors[1] || shiftHue(primary, 30);
+      const tertiary = colors[2] || shiftHue(primary, 180);
 
-STEP 1 — COLOR EXTRACTION
-Identify the dominant and accent colors in the logo. List them as raw hex values. Include:
-- Primary brand color (most prominent non-white/black color)
-- Secondary / accent color (if present)
-- Any additional key colors
+      setLogoColors(colors);
 
-STEP 2 — GENERATE 3 THEMES
-
-Theme 1: "dark" — Dark UI, logo-inspired
-- bg_color: very dark, e.g. near-black with a faint brand hue tint (lightness 8–16%)
-- sidebar_color: slightly darker than bg (lightness 5–13%)  
-- card_color: slightly lighter than bg (lightness 13–22%)
-- border_color: subtle step above card (lightness card+5 to card+10%)
-- primary_color: the main brand color adapted for dark backgrounds — lightness 42–68%, saturation 55–80%
-- accent_color: a complementary brand-inspired hue, lightness 45–72%
-- login_background_color: deep dark version of primary hue, lightness 6–12%
-
-Theme 2: "light" — Light UI, logo-inspired  
-- bg_color: near-white with faint brand tint (lightness 94–98%)
-- sidebar_color: slightly darker than bg (lightness 88–94%)
-- card_color: pure or near-white (lightness 97–100%)
-- border_color: very light gray-tinted (lightness 85–92%)
-- primary_color: brand color adapted for light backgrounds — darker, lightness 30–55%, saturation 55–80%
-- accent_color: slightly lighter/shifted from primary, lightness 35–60%
-- login_background_color: light tint of the brand hue (lightness 92–96%)
-
-Theme 3: "unique" — Creative, distinct, polished
-- Use the brand's secondary/accent color as the PRIMARY for a fresh angle
-- Or use a split-complementary palette inspired by the logo
-- Dark background preferred but can be deep-jewel-toned (e.g., deep teal, plum, ink blue)
-- bg_color: distinctive dark (lightness 8–20%) — can have more color personality than theme 1
-- sidebar_color: darker variant (lightness 5–16%)
-- card_color: slightly lighter (lightness 14–24%)  
-- border_color: subtle step above card
-- primary_color: creative brand-inspired color, lightness 42–68%, saturation 55–85%
-- accent_color: complementary pop color
-- login_background_color: deep creative bg color
-
-HARD RULES (all themes):
-- All hex values: 6-digit, # prefix
-- Do NOT use pure black (#000000) or pure white (#ffffff)
-- primary_color MUST contrast ≥ 3:1 against bg_color
-- white text on primary_color MUST be ≥ 3:1
-- Include "raw_primary": the exact logo color before any adjustments
-- Include "rationale": 1-2 sentences on design intent and any adjustments made
-
-Return JSON only, no markdown:
-{
-  "logo_colors": ["#hex1", "#hex2", "#hex3"],
-  "dark": {
-    "raw_primary": "#hex",
-    "primary_color": "#hex",
-    "accent_color": "#hex",
-    "bg_color": "#hex",
-    "card_color": "#hex",
-    "sidebar_color": "#hex",
-    "border_color": "#hex",
-    "login_background_color": "#hex",
-    "rationale": "..."
-  },
-  "light": { "raw_primary": "#hex", "primary_color": "#hex", "accent_color": "#hex", "bg_color": "#hex", "card_color": "#hex", "sidebar_color": "#hex", "border_color": "#hex", "login_background_color": "#hex", "rationale": "..." },
-  "unique": { "raw_primary": "#hex", "primary_color": "#hex", "accent_color": "#hex", "bg_color": "#hex", "card_color": "#hex", "sidebar_color": "#hex", "border_color": "#hex", "login_background_color": "#hex", "rationale": "..." }
-}`,
-        file_urls: [logoUrl],
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            logo_colors: { type: 'array', items: { type: 'string' } },
-            dark: { type: 'object' },
-            light: { type: 'object' },
-            unique: { type: 'object' },
-          },
+      const rawThemes = {
+        dark: {
+          raw_primary: primary, primary_color: primary, accent_color: secondary,
+          bg_color: darken(primary, 8), card_color: darken(primary, 13),
+          sidebar_color: darken(primary, 5), border_color: darken(primary, 18),
+          login_background_color: darken(primary, 6),
+          rationale: 'Dark theme derived from your primary logo color.',
         },
-      });
+        light: {
+          raw_primary: primary, primary_color: primary, accent_color: secondary,
+          bg_color: lighten(primary, 96), card_color: '#fafafa',
+          sidebar_color: lighten(primary, 92), border_color: lighten(primary, 87),
+          login_background_color: lighten(primary, 94),
+          rationale: 'Light theme with brand-tinted backgrounds.',
+        },
+        unique: {
+          raw_primary: tertiary, primary_color: tertiary, accent_color: primary,
+          bg_color: darken(tertiary, 9), card_color: darken(tertiary, 14),
+          sidebar_color: darken(tertiary, 6), border_color: darken(tertiary, 19),
+          login_background_color: darken(tertiary, 7),
+          rationale: 'Creative theme using a complementary palette from your logo.',
+        },
+      };
 
-      if (!result?.dark) {
-        setError('Could not extract colors from the logo. Try a cleaner logo image.');
-        return;
-      }
-
-      if (result.logo_colors?.length) setLogoColors(result.logo_colors);
-
-      // Client-side safety fix pass
       const fixed = {};
       for (const mode of ['dark', 'light', 'unique']) {
-        const raw = result[mode] || {};
+        const raw = rawThemes[mode];
         const { fixed: f, adjustments } = fixPalette(raw, mode);
         fixed[mode] = { ...f, raw_primary: raw.raw_primary, adjustments, rationale: raw.rationale };
       }
@@ -489,6 +545,7 @@ Return JSON only, no markdown:
       setLoading(false);
     }
   };
+
 
   const handleApply = () => {
     const palette = themes?.[selected];
@@ -551,7 +608,7 @@ Return JSON only, no markdown:
               <RefreshCw className="w-6 h-6 animate-spin" />
               <p className="text-sm">Extracting logo colors…</p>
               <p className="text-xs">Generating Dark, Light & Unique themes</p>
-              <p className="text-xs opacity-50">This takes 10–20 seconds</p>
+              <p className="text-xs opacity-50">Sampling pixels and building palettes…</p>
             </div>
           )}
 
@@ -584,7 +641,7 @@ Return JSON only, no markdown:
           <Button variant="outline" onClick={handleClose}>Cancel</Button>
           {themes && !loading && (
             <Button onClick={handleApply}>
-              <Check className="w-4 h-4 mr-1.5" /> Apply Theme
+              <Check className="w-4 h-4 mr-1.5" /> Apply & Save Theme
             </Button>
           )}
         </DialogFooter>

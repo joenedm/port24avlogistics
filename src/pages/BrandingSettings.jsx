@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '@/api/db';
+import { supabase } from '@/api/supabaseClient';
+import { useAuth } from '@/lib/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Upload, Palette, Building2, Image, CheckCircle2, RefreshCw, Wand2 } from 'lucide-react';
 import AutoBrandModal from '@/components/branding/AutoBrandModal';
@@ -10,7 +12,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import PageHeader from '@/components/shared/PageHeader';
 
+async function uploadToStorage(file, folder) {
+  const ext = file.name.split('.').pop();
+  const path = `${folder}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('branding').upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from('branding').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export default function BrandingSettings() {
+  const { orgId } = useAuth();
   const queryClient = useQueryClient();
   const { data: brandList = [], isLoading } = useQuery({
     queryKey: ['brand'],
@@ -51,22 +63,34 @@ export default function BrandingSettings() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingLogo(true);
-    const { file_url } = await db.integrations.Core.UploadFile({ file });
-    setForm(f => ({ ...f, logo_url: file_url }));
-    setUploadingLogo(false);
+    try {
+      const url = await uploadToStorage(file, `logos/${orgId ?? 'shared'}`);
+      setForm(f => ({ ...f, logo_url: url }));
+    } catch (err) {
+      alert('Upload failed: ' + err.message);
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
   const handleBgUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingBg(true);
-    const { file_url } = await db.integrations.Core.UploadFile({ file });
-    setForm(f => ({ ...f, login_background_url: file_url }));
-    setUploadingBg(false);
+    try {
+      const url = await uploadToStorage(file, `backgrounds/${orgId ?? 'shared'}`);
+      setForm(f => ({ ...f, login_background_url: url }));
+    } catch (err) {
+      alert('Upload failed: ' + err.message);
+    } finally {
+      setUploadingBg(false);
+    }
   };
 
   const handleAutoBrandApply = (colors) => {
-    setForm(f => ({ ...f, ...colors }));
+    const merged = { ...form, ...colors };
+    setForm(merged);
+    saveMutation.mutate(merged);
   };
 
   return (
@@ -109,7 +133,7 @@ export default function BrandingSettings() {
                 </label>
                 {form.logo_url && <Button variant="ghost" size="sm" onClick={() => setForm(f => ({ ...f, logo_url: '' }))}>Remove</Button>}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">PNG or SVG recommended. Shows top-left in the app.</p>
+              <p className="text-xs text-muted-foreground mt-1">PNG or SVG recommended. Replaces the Port 24 logo throughout your company's portal.</p>
             </div>
           </CardContent>
         </Card>
