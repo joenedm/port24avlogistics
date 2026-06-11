@@ -17,10 +17,10 @@ export default function PlatformOrgDetail() {
   const navigate = useNavigate();
   const { isPlatformAdmin } = useAuth();
   const qc = useQueryClient();
-
-  if (!isPlatformAdmin) {
-    return <div className="flex items-center justify-center h-64"><p className="text-gray-500">Access denied.</p></div>;
-  }
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'admin' });
+  const [inviting, setInviting] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
 
   const { data: org, isLoading: orgLoading } = useQuery({
     queryKey: ['platform-org', orgId],
@@ -48,11 +48,6 @@ export default function PlatformOrgDetail() {
       return data;
     },
   });
-
-  const [showInvite, setShowInvite] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'admin' });
-  const [inviting, setInviting] = useState(false);
-  const [inviteLink, setInviteLink] = useState('');
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -96,6 +91,7 @@ export default function PlatformOrgDetail() {
     toast.success('User removed');
   };
 
+  if (!isPlatformAdmin) return <div className="flex items-center justify-center h-64"><p className="text-gray-500">Access denied.</p></div>;
   if (orgLoading) return <div className="text-center py-20 text-gray-500">Loading…</div>;
   if (!org) return <div className="text-center py-20 text-gray-500">Organization not found.</div>;
 
