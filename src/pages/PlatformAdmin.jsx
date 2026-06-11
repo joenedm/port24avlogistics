@@ -234,22 +234,13 @@ function AddPlatformStaffDialog({ onClose }) {
 }
 
 export default function PlatformAdmin() {
-  const { isPlatformAdmin, userRecord } = useAuth();
+  const { isPlatformAdmin, userRecord, isLoadingAuth } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [tab, setTab] = useState('companies');
   const [showAddStaff, setShowAddStaff] = useState(false);
   const isDevAdmin = DEV_ADMIN_EMAILS.includes(userRecord?.email?.toLowerCase());
-
-  // Block non-platform-admins
-  if (!isPlatformAdmin) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Access denied. Platform admins only.</p>
-      </div>
-    );
-  }
 
   const { data: orgs = [], isLoading } = useQuery({
     queryKey: ['platform-orgs'],
@@ -333,6 +324,16 @@ export default function PlatformAdmin() {
   };
 
   const usersForOrg = (orgId) => allUsers.filter(u => u.org_id === orgId);
+
+  // Guard after all hooks
+  if (isLoadingAuth) return null;
+  if (!isPlatformAdmin) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Access denied. Platform admins only.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
