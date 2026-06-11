@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import GridLayout from 'react-grid-layout';
-import { GripVertical } from 'lucide-react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { Button } from '@/components/ui/button';
