@@ -162,7 +162,7 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
           width={gridWidth}
           isDraggable={editMode}
           isResizable={editMode}
-          draggableHandle=".drag-handle"
+          draggableCancel=".no-drag"
           compactType="vertical"
           preventCollision={false}
           useCSSTransforms={true}
@@ -174,7 +174,7 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
               key={item.i}
               data-grid={item}
               className={cn(
-                'bg-card rounded-lg border border-border overflow-hidden shadow-sm transition-all duration-200',
+                'bg-card rounded-lg border border-border shadow-sm transition-all duration-200',
                 editMode && 'ring-2 ring-primary/20 hover:ring-primary/40'
               )}
             >

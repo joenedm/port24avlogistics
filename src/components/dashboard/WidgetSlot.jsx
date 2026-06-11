@@ -55,8 +55,8 @@ export default function WidgetSlot({ widgetId, editMode, onRemove }) {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Header */}
-      <div className={`flex items-center justify-between px-3 py-3 border-b border-border ${editMode ? 'drag-handle cursor-grab active:cursor-grabbing' : ''}`}>
+      {/* Header — draggable zone */}
+      <div className={`flex items-center justify-between px-3 py-3 border-b border-border ${editMode ? 'cursor-grab active:cursor-grabbing select-none' : ''}`}>
         <div className="flex items-center gap-2">
           {editMode && <GripVertical className="w-4 h-4 text-muted-foreground/50 shrink-0" />}
           <h3 className="font-semibold text-sm">{widget.name}</h3>
@@ -65,17 +65,16 @@ export default function WidgetSlot({ widgetId, editMode, onRemove }) {
           <Button
             variant="ghost"
             size="icon"
-            onMouseDown={e => e.stopPropagation()}
             onClick={onRemove}
-            className="h-6 w-6 text-muted-foreground hover:text-destructive"
+            className="no-drag h-6 w-6 text-muted-foreground hover:text-destructive"
           >
             <X className="w-4 h-4" />
           </Button>
         )}
       </div>
 
-      {/* Content — pointer events off in edit mode so drag isn't blocked */}
-      <div className={`flex-1 overflow-auto p-4 ${editMode ? 'pointer-events-none select-none' : ''}`}>
+      {/* Content — marked no-drag so it doesn't interfere with grid dragging */}
+      <div className={`no-drag flex-1 overflow-auto p-4 ${editMode ? 'pointer-events-none select-none' : ''}`}>
         <Component />
       </div>
     </div>
