@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Upload, Palette, Building2, Image, CheckCircle2, RefreshCw, Wand2 } from 'lucide-react';
 import AutoBrandModal from '@/components/branding/AutoBrandModal';
+import { canUseBranding, canUseFullBranding } from '@/lib/planLimits';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +25,20 @@ async function uploadToStorage(file, folder) {
 export default function BrandingSettings() {
   const { orgId } = useAuth();
   const queryClient = useQueryClient();
+
+  const { data: org } = useQuery({
+    queryKey: ['org-plan', orgId],
+    queryFn: async () => {
+      if (!orgId) return null;
+      const { data } = await supabase.from('organizations').select('plan').eq('id', orgId).single();
+      return data;
+    },
+    enabled: !!orgId,
+  });
+  const plan = org?.plan ?? 'trial';
+  const brandingAllowed = canUseBranding(plan);
+  const fullBrandingAllowed = canUseFullBranding(plan);
+
   const { data: brandList = [], isLoading } = useQuery({
     queryKey: ['brand', orgId],
     queryFn: () => orgId
@@ -100,8 +115,15 @@ export default function BrandingSettings() {
       <PageHeader title="Branding & Customization" description="Customize how the system looks for your company" />
 
       <div className="space-y-6">
+        {/* Plan gate for trial */}
+        {!brandingAllowed && (
+          <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/5 px-5 py-4 text-sm text-yellow-300 mb-2">
+            🔒 Branding is not available on the Trial plan. Upgrade to Starter or above to add your logo and colors.
+          </div>
+        )}
+
         {/* Company Identity */}
-        <Card>
+        <Card className={!brandingAllowed ? 'opacity-50 pointer-events-none' : ''}>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2"><Building2 className="w-4 h-4" /> Company Identity</CardTitle>
           </CardHeader>
@@ -144,13 +166,15 @@ export default function BrandingSettings() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2"><Palette className="w-4 h-4" /> Theme Colors</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2"><Palette className="w-4 h-4" /> Theme Colors
+                {!fullBrandingAllowed && <span className="text-xs font-normal text-yellow-400 border border-yellow-400/30 rounded-full px-2 py-0.5 ml-2">Pro+ only</span>}
+              </CardTitle>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setAutoBrandOpen(true)}
-                disabled={!form.logo_url}
-                title={!form.logo_url ? 'Upload a company logo first' : 'Generate a theme from your logo'}
+                disabled={!form.logo_url || !fullBrandingAllowed}
+                title={!fullBrandingAllowed ? 'Upgrade to Pro to use Auto Brand' : !form.logo_url ? 'Upload a company logo first' : 'Generate a theme from your logo'}
               >
                 <Wand2 className="w-3.5 h-3.5 mr-1.5 text-primary" /> Auto Brand
               </Button>

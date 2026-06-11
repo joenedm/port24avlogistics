@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
-import { ArrowLeft, Building2, Users, Mail, Shield, ToggleLeft, ToggleRight, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Mail, Shield, ToggleLeft, ToggleRight, UserPlus, X, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
+import { PLANS } from '@/lib/planLimits';
 
 const ROLE_COLORS = {
   admin: 'text-blue-400 bg-blue-400/10',
@@ -50,6 +51,23 @@ export default function PlatformOrgDetail() {
   });
 
   const [deleting, setDeleting] = useState(false);
+  const [changingPlan, setChangingPlan] = useState(false);
+
+  const handlePlanChange = async (newPlan) => {
+    const { error } = await supabase.from('organizations').update({ plan: newPlan }).eq('id', orgId);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ['platform-org', orgId] });
+    toast.success(`Plan changed to ${PLANS[newPlan]?.label}`);
+    setChangingPlan(false);
+  };
+
+  const handleStatusToggle = async () => {
+    const newStatus = org.status === 'active' ? 'suspended' : 'active';
+    const { error } = await supabase.from('organizations').update({ status: newStatus }).eq('id', orgId);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ['platform-org', orgId] });
+    toast.success(`Company ${newStatus === 'active' ? 'activated' : 'suspended'}`);
+  };
 
   const handleDeleteOrg = async () => {
     if (!confirm(`PERMANENTLY DELETE ${org?.name}?\n\nThis will remove all users, data, and the company account. They will need to contact Port 24 to reactivate.\n\nType the company name to confirm.`) ) return;
@@ -135,6 +153,58 @@ export default function PlatformOrgDetail() {
         >
           {deleting ? 'Deleting…' : '🗑 Delete Company'}
         </button>
+      </div>
+
+      {/* Plan & Status controls */}
+      <div className="bg-[#131920] border border-white/5 rounded-xl p-5 mb-6 flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <CreditCard className="w-4 h-4 text-[#1FB8A0]" />
+          <div>
+            <p className="text-xs text-gray-500">Current Plan</p>
+            <p className="text-sm font-bold text-white capitalize">{org.plan} — {PLANS[org.plan]?.price}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="text-xs text-gray-500">Status</p>
+            <p className={`text-sm font-bold capitalize ${org.status === 'active' ? 'text-green-400' : org.status === 'suspended' ? 'text-red-400' : 'text-yellow-400'}`}>{org.status}</p>
+          </div>
+          <button onClick={handleStatusToggle} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${org.status === 'active' ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : 'border-green-500/30 text-green-400 hover:bg-green-500/10'}`}>
+            {org.status === 'active' ? 'Suspend' : 'Activate'}
+          </button>
+        </div>
+        <div className="relative">
+          {changingPlan ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              {Object.entries(PLANS).map(([key, p]) => (
+                <button key={key} onClick={() => handlePlanChange(key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${org.plan === key ? 'border-[#1FB8A0] text-[#1FB8A0] bg-[#1FB8A0]/10' : 'border-white/10 text-gray-300 hover:border-white/30'}`}>
+                  {p.label} {p.price}
+                </button>
+              ))}
+              <button onClick={() => setChangingPlan(false)} className="text-gray-500 hover:text-white text-xs">Cancel</button>
+            </div>
+          ) : (
+            <button onClick={() => setChangingPlan(true)} className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#1FB8A0]/30 text-[#1FB8A0] hover:bg-[#1FB8A0]/10 transition-colors">
+              Change Plan
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Plan limits overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        {[
+          { label: 'Max Users', value: PLANS[org.plan]?.maxUsers ?? '∞' },
+          { label: 'Max Assets', value: PLANS[org.plan]?.maxAssets ?? '∞' },
+          { label: 'Max Shows', value: PLANS[org.plan]?.maxShows ?? '∞' },
+          { label: 'Branding', value: PLANS[org.plan]?.branding === 'full' ? 'Full' : PLANS[org.plan]?.branding === 'logo' ? 'Logo only' : 'None' },
+        ].map(({ label, value }) => (
+          <div key={label} className="bg-[#131920] border border-white/5 rounded-xl p-4 text-center">
+            <p className="text-xs text-gray-500 mb-1">{label}</p>
+            <p className="text-lg font-bold text-white">{value}</p>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">

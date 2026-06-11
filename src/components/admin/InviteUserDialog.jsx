@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { canAddUser } from '@/lib/planLimits';
 import { UserPlus, Copy, Check, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,12 @@ export default function InviteUserDialog({ open, onOpenChange }) {
         orgId = profile?.org_id;
       }
       if (!orgId) return setError('Could not determine your organization.');
+
+      // Enforce plan user limit
+      const { data: org } = await supabase.from('organizations').select('plan').eq('id', orgId).single();
+      const { data: existingUsers } = await supabase.from('users').select('id', { count: 'exact' }).eq('org_id', orgId);
+      const check = canAddUser(org?.plan, existingUsers?.length ?? 0);
+      if (!check.allowed) return setError(check.reason);
 
       const { data: invite, error: invErr } = await supabase
         .from('pending_invites')
