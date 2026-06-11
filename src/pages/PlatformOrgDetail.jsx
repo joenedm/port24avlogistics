@@ -84,11 +84,11 @@ export default function PlatformOrgDetail() {
   };
 
   const removeUser = async (userId, userEmail) => {
-    if (!confirm(`Remove ${userEmail} from ${org?.name}? This cannot be undone.`)) return;
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (error) return toast.error(error.message);
+    if (!confirm(`Permanently delete ${userEmail}? This removes their account entirely and cannot be undone.`)) return;
+    const { error } = await supabase.functions.invoke('delete-user', { body: { user_id: userId } });
+    if (error) return toast.error(error.message || 'Failed to delete user');
     qc.invalidateQueries({ queryKey: ['platform-org-users', orgId] });
-    toast.success('User removed');
+    toast.success('User deleted');
   };
 
   if (!isPlatformAdmin) return <div className="flex items-center justify-center h-64"><p className="text-gray-500">Access denied.</p></div>;
