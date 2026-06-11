@@ -1,0 +1,16 @@
+alter table public.brand_settings
+  add column if not exists accent_color             text,
+  add column if not exists bg_color                 text,
+  add column if not exists card_color               text,
+  add column if not exists sidebar_color            text,
+  add column if not exists border_color             text,
+  add column if not exists login_background_url     text,
+  add column if not exists login_background_color   text,
+  add column if not exists company_email            text,
+  add column if not exists company_phone            text,
+  add column if not exists invoice_header_note      text,
+  add column if not exists invoice_footer_note      text,
+  add column if not exists quote_footer_note        text,
+  add column if not exists default_tax_pct          numeric default 0,
+  add column if not exists default_payment_terms    text,
+  add column if not exists org_id                   uuid;
