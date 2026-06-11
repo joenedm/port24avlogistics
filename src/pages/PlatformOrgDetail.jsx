@@ -54,7 +54,7 @@ export default function PlatformOrgDetail() {
     setInviting(true);
     try {
       const { data: invite, error: invErr } = await supabase
-        .from('invites')
+        .from('pending_invites')
         .insert({ email: inviteForm.email.trim().toLowerCase(), full_name: inviteForm.full_name || null, org_id: orgId, role: inviteForm.role })
         .select().single();
       if (invErr) throw invErr;
