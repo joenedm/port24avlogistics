@@ -49,6 +49,17 @@ export default function PlatformOrgDetail() {
     },
   });
 
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteOrg = async () => {
+    if (!confirm(`PERMANENTLY DELETE ${org?.name}?\n\nThis will remove all users, data, and the company account. They will need to contact Port 24 to reactivate.\n\nType the company name to confirm.`) ) return;
+    setDeleting(true);
+    const { error } = await supabase.functions.invoke('delete-organization', { body: { org_id: orgId } });
+    if (error) { toast.error(error.message || 'Failed to delete company'); setDeleting(false); return; }
+    toast.success(`${org?.name} has been deleted`);
+    navigate('/platform');
+  };
+
   const handleInvite = async (e) => {
     e.preventDefault();
     setInviting(true);
@@ -103,18 +114,27 @@ export default function PlatformOrgDetail() {
       </button>
 
       {/* Header */}
-      <div className="flex items-start gap-4 mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-[#1FB8A0]/10 flex items-center justify-center">
-          <Building2 className="w-7 h-7 text-[#1FB8A0]" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-white">{org.name}</h1>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs text-gray-500 capitalize">{org.plan} plan</span>
-            <span className="text-xs text-gray-500 capitalize">{org.status}</span>
-            {org.created_at && <span className="text-xs text-gray-600">Created {new Date(org.created_at).toLocaleDateString()}</span>}
+      <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-[#1FB8A0]/10 flex items-center justify-center">
+            <Building2 className="w-7 h-7 text-[#1FB8A0]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">{org.name}</h1>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-xs text-gray-500 capitalize">{org.plan} plan</span>
+              <span className="text-xs text-gray-500 capitalize">{org.status}</span>
+              {org.created_at && <span className="text-xs text-gray-600">Created {new Date(org.created_at).toLocaleDateString()}</span>}
+            </div>
           </div>
         </div>
+        <button
+          onClick={handleDeleteOrg}
+          disabled={deleting}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+        >
+          {deleting ? 'Deleting…' : '🗑 Delete Company'}
+        </button>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">
