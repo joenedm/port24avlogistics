@@ -88,6 +88,14 @@ export default function PlatformOrgDetail() {
     toast.success('Role updated');
   };
 
+  const removeUser = async (userId, userEmail) => {
+    if (!confirm(`Remove ${userEmail} from ${org?.name}? This cannot be undone.`)) return;
+    const { error } = await supabase.from('users').delete().eq('id', userId);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ['platform-org-users', orgId] });
+    toast.success('User removed');
+  };
+
   if (orgLoading) return <div className="text-center py-20 text-gray-500">Loading…</div>;
   if (!org) return <div className="text-center py-20 text-gray-500">Organization not found.</div>;
 
@@ -183,6 +191,9 @@ export default function PlatformOrgDetail() {
                     <option value="manager">Manager</option>
                     <option value="crew">Crew</option>
                   </select>
+                  <button onClick={() => removeUser(u.id, u.email)} className="text-red-400 hover:text-red-300 transition-colors p-1 rounded" title="Remove user">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             ))}
