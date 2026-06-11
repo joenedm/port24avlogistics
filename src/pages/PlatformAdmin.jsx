@@ -148,6 +148,18 @@ function AddPlatformStaffDialog({ onClose }) {
       const link = `${window.location.origin}/platform/join?token=${invite.token}`;
       setInviteLink(link);
       qc.invalidateQueries({ queryKey: ['platform-staff-invites'] });
+
+      // Send email
+      supabase.functions.invoke('send-invite-email', {
+        body: {
+          to_email: email.trim().toLowerCase(),
+          to_name: name || null,
+          invite_link: link,
+          org_name: 'Port 24 Platform',
+          role: 'Platform Admin',
+          invited_by_name: userRecord?.full_name || userRecord?.email || 'Port 24',
+        },
+      }).catch(() => {});
     } catch (err) {
       toast.error(err.message);
     } finally {
