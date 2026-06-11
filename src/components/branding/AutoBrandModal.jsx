@@ -354,9 +354,9 @@ function ContrastBadge({ ratio, label }) {
 }
 
 const THEME_META = {
-  dark:   { Icon: Moon,     label: 'Dark Theme',   hint: 'Logo-inspired · Dark background · Easy on the eyes' },
-  light:  { Icon: Sun,      label: 'Light Theme',  hint: 'Logo-inspired · Clean white background · Professional' },
-  unique: { Icon: Sparkles, label: 'Unique Theme',  hint: 'Logo-inspired · Creative palette · Polished & distinct' },
+  dark:   { Icon: Moon,     label: 'Dark Theme',   hint: 'Brand-inspired · Soft dark backgrounds · Easy on the eyes' },
+  light:  { Icon: Sun,      label: 'Light Theme',  hint: 'Brand-inspired · Clean near-white · Professional & airy' },
+  unique: { Icon: Sparkles, label: 'Unique Theme',  hint: 'Creative · Bold unexpected palette · Stands out from your brand' },
 };
 
 function PaletteCard({ palette, mode, selected, onSelect }) {
@@ -502,32 +502,65 @@ export default function AutoBrandModal({ open, onClose, onApply, logoUrl }) {
       if (!colors.length) colors = ['#1FB8A0', '#3DC9C0', '#0E9E8A']; // fallback to Port 24 teal
 
       const primary = colors[0];
-      const secondary = colors[1] || shiftHue(primary, 30);
-      const tertiary = colors[2] || shiftHue(primary, 180);
+      const secondary = colors[1] || shiftHue(primary, 28);
 
       setLogoColors(colors);
 
+      // Muted, eye-comfortable version of the brand color for backgrounds
+      const { h: pH, s: pS } = rgbToHsl(hexToRgb(primary));
+      // Dark bg: very dark, barely-tinted slate — low sat so it doesn't feel harsh
+      const bgDark     = hslToHex(pH, Math.min(pS * 0.18, 12), 8);
+      const cardDark   = hslToHex(pH, Math.min(pS * 0.18, 12), 12);
+      const sidebarDk  = hslToHex(pH, Math.min(pS * 0.18, 12), 6);
+      const borderDk   = hslToHex(pH, Math.min(pS * 0.22, 16), 17);
+      // Comfortable primary: pull saturation back to ~55%, lightness to ~58%
+      const softPrimary  = hslToHex(pH, Math.min(pS * 0.65, 55), 58);
+      const { h: sH, s: sS } = rgbToHsl(hexToRgb(secondary));
+      const softAccent   = hslToHex(sH, Math.min(sS * 0.65, 55), 63);
+
+      // Light bg: clean near-white with the faintest brand tint
+      const bgLight    = hslToHex(pH, Math.min(pS * 0.08, 6), 97);
+      const cardLight  = hslToHex(pH, Math.min(pS * 0.06, 4), 100);
+      const sidebarLt  = hslToHex(pH, Math.min(pS * 0.10, 8), 94);
+      const borderLt   = hslToHex(pH, Math.min(pS * 0.12, 9), 88);
+      // Primary for light mode: darker so it pops on white
+      const lightPrimary = hslToHex(pH, Math.min(pS * 0.70, 58), 40);
+      const lightAccent  = hslToHex(sH, Math.min(sS * 0.70, 58), 45);
+
+      // Unique: pick a bold unexpected hue — rotate 135° from brand, then build a
+      // rich jewel-tone dark theme (deep indigo/emerald/amber depending on starting hue)
+      const uH = (pH + 135) % 360;
+      const uPrimary  = hslToHex(uH, 62, 60);
+      const uAccent   = hslToHex((uH + 38) % 360, 58, 65);
+      const uBg       = hslToHex(uH, 18, 7);
+      const uCard     = hslToHex(uH, 20, 11);
+      const uSidebar  = hslToHex(uH, 22, 5);
+      const uBorder   = hslToHex(uH, 24, 16);
+
       const rawThemes = {
         dark: {
-          raw_primary: primary, primary_color: primary, accent_color: secondary,
-          bg_color: darken(primary, 8), card_color: darken(primary, 13),
-          sidebar_color: darken(primary, 5), border_color: darken(primary, 18),
-          login_background_color: darken(primary, 6),
-          rationale: 'Dark theme derived from your primary logo color.',
+          raw_primary: primary,
+          primary_color: softPrimary, accent_color: softAccent,
+          bg_color: bgDark, card_color: cardDark,
+          sidebar_color: sidebarDk, border_color: borderDk,
+          login_background_color: bgDark,
+          rationale: 'Comfortable dark theme — brand color softened for easy reading.',
         },
         light: {
-          raw_primary: primary, primary_color: primary, accent_color: secondary,
-          bg_color: lighten(primary, 96), card_color: '#fafafa',
-          sidebar_color: lighten(primary, 92), border_color: lighten(primary, 87),
-          login_background_color: lighten(primary, 94),
-          rationale: 'Light theme with brand-tinted backgrounds.',
+          raw_primary: primary,
+          primary_color: lightPrimary, accent_color: lightAccent,
+          bg_color: bgLight, card_color: cardLight,
+          sidebar_color: sidebarLt, border_color: borderLt,
+          login_background_color: bgLight,
+          rationale: 'Clean light theme — near-white with a subtle brand tint.',
         },
         unique: {
-          raw_primary: tertiary, primary_color: tertiary, accent_color: primary,
-          bg_color: darken(tertiary, 9), card_color: darken(tertiary, 14),
-          sidebar_color: darken(tertiary, 6), border_color: darken(tertiary, 19),
-          login_background_color: darken(tertiary, 7),
-          rationale: 'Creative theme using a complementary palette from your logo.',
+          raw_primary: primary,
+          primary_color: uPrimary, accent_color: uAccent,
+          bg_color: uBg, card_color: uCard,
+          sidebar_color: uSidebar, border_color: uBorder,
+          login_background_color: uBg,
+          rationale: 'Bold creative palette — unexpected hue shift for a distinctive look.',
         },
       };
 
