@@ -45,6 +45,19 @@ function CreateOrgDialog({ onClose, onCreated }) {
       if (invErr) throw invErr;
 
       const link = `${window.location.origin}/accept-invite?token=${invite.token}`;
+
+      // Send invite email (non-blocking)
+      supabase.functions.invoke('send-invite-email', {
+        body: {
+          to_email: form.admin_email.trim().toLowerCase(),
+          to_name: form.admin_name || null,
+          invite_link: link,
+          org_name: form.name,
+          role: 'admin',
+          invited_by_name: userRecord?.full_name || userRecord?.email || 'Port 24',
+        },
+      }).catch(() => {});
+
       setInviteLink(link);
       onCreated(org);
     } catch (err) {
@@ -325,8 +338,8 @@ export default function PlatformAdmin() {
     <div className="p-6 max-w-7xl mx-auto">
       {showCreate && (
         <CreateOrgDialog
-          onClose={() => setShowCreate(false)}
-          onCreated={() => { setShowCreate(false); qc.invalidateQueries({ queryKey: ['platform-orgs'] }); }}
+          onClose={() => { setShowCreate(false); qc.invalidateQueries({ queryKey: ['platform-orgs'] }); }}
+          onCreated={() => qc.invalidateQueries({ queryKey: ['platform-orgs'] })}
         />
       )}
       {showAddStaff && <AddPlatformStaffDialog onClose={() => setShowAddStaff(false)} />}
