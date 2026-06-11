@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay,
 } from '@dnd-kit/core';
 import {
-  SortableContext, rectSortingStrategy, useSortable, arrayMove,
+  SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
@@ -15,52 +15,43 @@ import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-// Width classes based on widget w value (out of 12 columns)
-function widthClass(w) {
+function colSpan(w) {
   if (w >= 12) return 'col-span-12';
   if (w >= 9)  return 'col-span-9';
   if (w >= 8)  return 'col-span-8';
   if (w >= 6)  return 'col-span-6';
   if (w >= 4)  return 'col-span-4';
-  if (w >= 3)  return 'col-span-3';
   return 'col-span-3';
-}
-
-function heightStyle(h) {
-  return { minHeight: `${h * 80}px` };
 }
 
 function SortableWidget({ item, editMode, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.i });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-    ...heightStyle(item.h),
-  };
-
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        minHeight: `${item.h * 80}px`,
+      }}
       className={cn(
-        widthClass(item.w),
+        colSpan(item.w),
         'bg-card rounded-lg border border-border shadow-sm flex flex-col',
         editMode && 'ring-2 ring-primary/20',
-        isDragging && 'z-50'
+        isDragging && 'opacity-30 border-dashed border-primary/50'
       )}
     >
-      {/* Header — drag handle */}
+      {/* Header */}
       <div
         className={cn(
-          'flex items-center justify-between px-3 py-3 border-b border-border shrink-0',
-          editMode && 'cursor-grab active:cursor-grabbing select-none'
+          'flex items-center justify-between px-3 py-3 border-b border-border shrink-0 rounded-t-lg',
+          editMode && 'cursor-grab active:cursor-grabbing select-none bg-muted/30'
         )}
         {...(editMode ? { ...attributes, ...listeners } : {})}
       >
         <div className="flex items-center gap-2">
-          {editMode && <GripVertical className="w-4 h-4 text-muted-foreground/50 shrink-0" />}
+          {editMode && <GripVertical className="w-4 h-4 text-primary/60 shrink-0" />}
           <span className="font-semibold text-sm">{WIDGET_REGISTRY[item.i]?.name ?? item.i}</span>
         </div>
         {editMode && (
@@ -76,7 +67,7 @@ function SortableWidget({ item, editMode, onRemove }) {
 
       {/* Content */}
       <div className={cn('flex-1 overflow-auto p-4', editMode && 'pointer-events-none select-none')}>
-        <WidgetSlot widgetId={item.i} editMode={false} onRemove={onRemove} />
+        <WidgetSlot widgetId={item.i} />
       </div>
     </div>
   );
@@ -90,9 +81,10 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
   const [syncing, setSyncing] = useState(false);
   const [activeId, setActiveId] = useState(null);
   const queryClient = useQueryClient();
+  const gridRef = useRef(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
   const handleSync = async () => {
@@ -101,7 +93,7 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
       await queryClient.invalidateQueries();
       toast.success('All data refreshed');
     } catch {
-      toast.error('Refresh failed — check your connection');
+      toast.error('Refresh failed');
     } finally {
       setSyncing(false);
     }
@@ -112,12 +104,15 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
   const handleDragEnd = ({ active, over }) => {
     setActiveId(null);
     if (!over || active.id === over.id) return;
-    const oldIndex = layout.findIndex(i => i.i === active.id);
-    const newIndex = layout.findIndex(i => i.i === over.id);
-    const newLayout = arrayMove(layout, oldIndex, newIndex);
-    setLayout(newLayout);
+    setLayout(prev => {
+      const oldIndex = prev.findIndex(i => i.i === active.id);
+      const newIndex = prev.findIndex(i => i.i === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
     setUnsavedChanges(true);
   };
+
+  const handleDragCancel = () => setActiveId(null);
 
   const handleAddWidget = (widgetId) => {
     if (layout.some(item => item.i === widgetId)) return;
@@ -144,6 +139,15 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
   };
 
   const activeItem = layout.find(i => i.i === activeId);
+
+  // Measure actual pixel width of one grid column for the overlay
+  const getOverlayWidth = (w) => {
+    if (!gridRef.current) return 'auto';
+    const gridWidth = gridRef.current.offsetWidth;
+    const gap = 12; // gap-3 = 12px
+    const colWidth = (gridWidth - gap * 11) / 12;
+    return `${colWidth * w + gap * (w - 1)}px`;
+  };
 
   return (
     <div className="space-y-4">
@@ -188,9 +192,10 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
-        <SortableContext items={layout.map(i => i.i)} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-12 gap-3 px-2">
+        <SortableContext items={layout.map(i => i.i)} strategy={verticalListSortingStrategy}>
+          <div ref={gridRef} className="grid grid-cols-12 gap-3 px-2">
             {layout.map(item => (
               <SortableWidget
                 key={item.i}
@@ -202,15 +207,18 @@ export default function DashboardGrid({ userRole, initialLayout, onLayoutChange 
           </div>
         </SortableContext>
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
           {activeItem && (
             <div
-              className={cn(widthClass(activeItem.w), 'bg-card rounded-lg border-2 border-primary shadow-2xl opacity-90')}
-              style={heightStyle(activeItem.h)}
+              style={{ width: getOverlayWidth(activeItem.w), minHeight: `${activeItem.h * 80}px` }}
+              className="bg-card rounded-lg border-2 border-primary shadow-2xl flex flex-col opacity-95 rotate-1"
             >
-              <div className="px-3 py-3 border-b border-border flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-3 border-b border-border bg-muted/30 rounded-t-lg">
                 <GripVertical className="w-4 h-4 text-primary" />
                 <span className="font-semibold text-sm">{WIDGET_REGISTRY[activeItem.i]?.name}</span>
+              </div>
+              <div className="flex-1 p-4 opacity-40">
+                <WidgetSlot widgetId={activeItem.i} />
               </div>
             </div>
           )}
