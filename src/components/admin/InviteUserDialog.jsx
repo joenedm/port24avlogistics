@@ -73,7 +73,10 @@ export default function InviteUserDialog({ open, onOpenChange }) {
           role: form.role,
           invited_by_name: userRecord?.full_name || userRecord?.email || null,
         },
-      }).catch(() => {}); // silent — user still gets the link
+      }).then(({ error: fnErr, data: fnData }) => {
+        if (fnErr) console.error('send-invite-email error:', fnErr);
+        else console.log('send-invite-email result:', fnData);
+      }).catch(e => console.error('send-invite-email exception:', e));
 
       setInviteLink(link);
       queryClient.invalidateQueries({ queryKey: ['users'] });
