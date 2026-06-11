@@ -75,6 +75,7 @@ export default function PlatformOrgDetail() {
     const { error } = await supabase.functions.invoke('delete-organization', { body: { org_id: orgId } });
     if (error) { toast.error(error.message || 'Failed to delete company'); setDeleting(false); return; }
     toast.success(`${org?.name} has been deleted`);
+    qc.removeQueries({ queryKey: ['platform-orgs'] });
     navigate('/platform');
   };
 
