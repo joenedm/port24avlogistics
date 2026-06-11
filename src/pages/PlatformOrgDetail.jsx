@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
-import { ArrowLeft, Building2, Users, Mail, Shield, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Mail, Shield, ToggleLeft, ToggleRight, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ROLE_COLORS = {
@@ -48,6 +48,38 @@ export default function PlatformOrgDetail() {
       return data;
     },
   });
+
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'admin' });
+  const [inviting, setInviting] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    setInviting(true);
+    try {
+      const { data: invite, error: invErr } = await supabase
+        .from('invites')
+        .insert({ email: inviteForm.email.trim().toLowerCase(), full_name: inviteForm.full_name || null, org_id: orgId, role: inviteForm.role })
+        .select().single();
+      if (invErr) throw invErr;
+
+      const link = `${window.location.origin}/accept-invite?token=${invite.token}`;
+      const { error: fnErr, data: fnData } = await supabase.functions.invoke('send-invite-email', {
+        body: { to_email: inviteForm.email.trim().toLowerCase(), to_name: inviteForm.full_name || null, invite_link: link, org_name: org?.name || '', role: inviteForm.role, invited_by_name: 'Port 24 Admin' },
+      });
+      if (fnErr) console.error('Email error:', fnErr);
+      else console.log('Email sent:', fnData);
+
+      setInviteLink(link);
+      qc.invalidateQueries({ queryKey: ['platform-org-users', orgId] });
+      toast.success('Invite created' + (!fnErr ? ' & email sent' : ' (email failed — use link below)'));
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setInviting(false);
+    }
+  };
 
   const updateUserRole = async (userId, role) => {
     const { error } = await supabase.from('users').update({ role }).eq('id', userId);
@@ -94,11 +126,44 @@ export default function PlatformOrgDetail() {
         ))}
       </div>
 
+      {/* Invite Modal */}
+      {showInvite && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="bg-[#131920] border border-white/10 rounded-2xl p-6 w-full max-w-sm relative">
+            <button onClick={() => { setShowInvite(false); setInviteLink(''); }} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X className="w-4 h-4" /></button>
+            <h3 className="text-white font-bold text-lg mb-4">Invite User to {org?.name}</h3>
+            {inviteLink ? (
+              <div>
+                <p className="text-sm text-[#1FB8A0] mb-3">✓ Invite created! Share this link:</p>
+                <div className="bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-gray-300 break-all mb-4">{inviteLink}</div>
+                <button onClick={() => { navigator.clipboard.writeText(inviteLink); toast.success('Copied!'); }} className="w-full py-2.5 rounded-xl bg-[#1FB8A0] text-black font-semibold text-sm">Copy Link</button>
+              </div>
+            ) : (
+              <form onSubmit={handleInvite} className="space-y-3">
+                <input required type="email" placeholder="Email address" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white outline-none" />
+                <input type="text" placeholder="Full name (optional)" value={inviteForm.full_name} onChange={e => setInviteForm(f => ({ ...f, full_name: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white outline-none" />
+                <select value={inviteForm.role} onChange={e => setInviteForm(f => ({ ...f, role: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-300 outline-none">
+                  <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
+                  <option value="crew">Crew</option>
+                </select>
+                <button type="submit" disabled={inviting} className="w-full py-2.5 rounded-xl bg-[#1FB8A0] text-black font-semibold text-sm disabled:opacity-50">{inviting ? 'Sending…' : 'Send Invite'}</button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Users */}
       <div className="bg-[#131920] border border-white/5 rounded-xl p-5 mb-6">
-        <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2"><Users className="w-4 h-4 text-[#1FB8A0]" /> Users</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2"><Users className="w-4 h-4 text-[#1FB8A0]" /> Users</h2>
+          <button onClick={() => { setShowInvite(true); setInviteLink(''); setInviteForm({ email: '', full_name: '', role: 'admin' }); }} className="flex items-center gap-1.5 text-xs font-medium text-[#1FB8A0] hover:text-white transition-colors border border-[#1FB8A0]/30 hover:border-white/20 rounded-lg px-3 py-1.5">
+            <UserPlus className="w-3.5 h-3.5" /> Invite User
+          </button>
+        </div>
         {usersLoading ? <p className="text-gray-500 text-sm">Loading…</p> : users.length === 0 ? (
-          <p className="text-gray-500 text-sm">No users yet.</p>
+          <p className="text-gray-500 text-sm">No users yet. Use the Invite User button above to add the first user.</p>
         ) : (
           <div className="space-y-2">
             {users.map(u => (
