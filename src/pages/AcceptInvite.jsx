@@ -113,16 +113,20 @@ export default function AcceptInvite() {
       });
       if (signUpErr) throw signUpErr;
 
-      // If email confirmation is required, the session won't exist yet.
-      // Try to sign in immediately.
+      // Try to sign in immediately (works if email already confirmed or auto-confirmed)
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: invite.email, password });
       if (signInErr) {
-        // Email confirmation might be required
         setStep('confirm_email');
         return;
       }
 
       await claimInvite({ ...invite, full_name: fullName });
+
+      // Verify the row was actually created (RLS can silently block)
+      const { data: { user: claimedUser } } = await supabase.auth.getUser();
+      const { data: userRow } = await supabase.from('users').select('id').eq('id', claimedUser.id).single();
+      if (!userRow) throw new Error('Account setup failed — please contact support.');
+
       setStep('company');
     } catch (err) {
       setError(err.message);
