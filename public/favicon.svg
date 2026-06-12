@@ -1,10 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56">
-  <!-- Left bracket [ -->
-  <rect x="4"  y="4"  width="14" height="6"  fill="#1FB8A0"/>
-  <rect x="4"  y="4"  width="6"  height="48" fill="#1FB8A0"/>
-  <rect x="4"  y="46" width="14" height="6"  fill="#1FB8A0"/>
-  <!-- Right bracket ] -->
-  <rect x="38" y="4"  width="14" height="6"  fill="#1FB8A0"/>
-  <rect x="46" y="4"  width="6"  height="48" fill="#1FB8A0"/>
-  <rect x="38" y="46" width="14" height="6"  fill="#1FB8A0"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Top-left corner -->
+  <rect x="8"  y="8"  width="34" height="12" fill="#1FB8A0"/>
+  <rect x="8"  y="8"  width="12" height="34" fill="#1FB8A0"/>
+  <!-- Top-right corner -->
+  <rect x="78" y="8"  width="34" height="12" fill="#1FB8A0"/>
+  <rect x="100" y="8" width="12" height="34" fill="#1FB8A0"/>
+  <!-- Bottom-left corner -->
+  <rect x="8"  y="100" width="34" height="12" fill="#1FB8A0"/>
+  <rect x="8"  y="78"  width="12" height="34" fill="#1FB8A0"/>
+  <!-- Bottom-right corner -->
+  <rect x="78"  y="100" width="34" height="12" fill="#1FB8A0"/>
+  <rect x="100" y="78"  width="12" height="34" fill="#1FB8A0"/>
 </svg>

@@ -5,13 +5,13 @@ import { Eye, EyeOff, ArrowRight, Cpu, Network, Layers, ShieldCheck, Mail, Refre
 import { useAuth } from '@/lib/AuthContext';
 
 function Port24BracketIcon() {
-  return <img src="/port24-logo.png" alt="Port 24" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />;
+  return <img src="/port24-logo.svg" alt="Port 24" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />;
 }
 
 function Port24Wordmark() {
   return (
     <div className="flex items-center">
-      <img src="/port24-logo.png" alt="Port 24" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+      <img src="/port24-logo.svg" alt="Port 24" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
     </div>
   );
 }

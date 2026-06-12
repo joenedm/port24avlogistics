@@ -14,13 +14,13 @@ import { Badge } from '@/components/ui/badge';
 
 
 function Port24Icon() {
-  return <img src="/port24-logo.png" alt="Port 24" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />;
+  return <img src="/port24-logo.svg" alt="Port 24" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />;
 }
 
 function Port24Logo() {
   return (
     <div className="flex items-center min-w-0">
-      <img src="/port24-logo.png" alt="Port 24" style={{ height: 28, width: 'auto', objectFit: 'contain', maxWidth: 140 }} />
+      <img src="/port24-logo.svg" alt="Port 24" style={{ height: 28, width: 'auto', objectFit: 'contain', maxWidth: 140 }} />
     </div>
   );
 }

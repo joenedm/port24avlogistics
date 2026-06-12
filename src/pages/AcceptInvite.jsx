@@ -13,7 +13,7 @@ const BORDER_DIM = 'rgba(255,255,255,0.07)';
 const TEXT_MUTED = '#7B8EA8';
 
 function Port24Logo() {
-  return <img src="/port24-logo.png" alt="Port 24" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />;
+  return <img src="/port24-logo.svg" alt="Port 24" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />;
 }
 
 // Step 1: load & validate the token from the DB (no auth required)
