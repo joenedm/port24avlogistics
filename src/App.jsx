@@ -73,6 +73,12 @@ import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import ThemeProvider from './lib/ThemeProvider';
 
+function RootRedirect() {
+  const { isPlatformAdmin } = useAuth();
+  if (isPlatformAdmin) return <Navigate to="/platform" replace />;
+  return <Dashboard />;
+}
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -135,7 +141,7 @@ const AuthenticatedApp = () => {
 
       {/* Main app with sidebar layout */}
       <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/assets" element={<Assets />} />
         <Route path="/shows" element={<Shows />} />
         <Route path="/shows/:id" element={<ShowDetail />} />
