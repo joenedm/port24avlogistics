@@ -4,24 +4,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, Cpu, Network, Layers, ShieldCheck, Mail, RefreshCw, X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
-function Port24BracketIcon({ size = 20 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M4 4h10v4H8v8H4V4z" fill="#3DC9C0"/>
-      <path d="M36 4h-10v4h8v8h4V4z" fill="#1FB8A0"/>
-      <path d="M4 36h10v-4H8v-8H4V36z" fill="#3DC9C0"/>
-      <path d="M36 36h-10v-4h8v-8h4V36z" fill="#1FB8A0"/>
-    </svg>
-  );
+function Port24BracketIcon() {
+  return <img src="/port24-logo.png" alt="Port 24" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />;
 }
 
 function Port24Wordmark() {
   return (
-    <div className="flex items-center gap-2.5">
-      <Port24BracketIcon size={28} />
-      <span style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '0.12em', fontWeight: 700, fontSize: '0.9rem', color: '#3DC9C0' }}>
-        PORT <span style={{ color: '#1FB8A0' }}>24</span>
-      </span>
+    <div className="flex items-center">
+      <img src="/port24-logo.png" alt="Port 24" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
     </div>
   );
 }

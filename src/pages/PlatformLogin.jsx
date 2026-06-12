@@ -12,14 +12,7 @@ const BORDER_DIM = 'rgba(255,255,255,0.07)';
 const TEXT_MUTED = '#6B7A92';
 
 function Port24Mark() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-      <path d="M4 4h10v4H8v8H4V4z" fill="#3DC9C0"/>
-      <path d="M36 4h-10v4h8v8h4V4z" fill="#1FB8A0"/>
-      <path d="M4 36h10v-4H8v-8H4V36z" fill="#3DC9C0"/>
-      <path d="M36 36h-10v-4h8v-8h4V36z" fill="#1FB8A0"/>
-    </svg>
-  );
+  return <img src="/port24-logo.png" alt="Port 24" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />;
 }
 
 export default function PlatformLogin() {

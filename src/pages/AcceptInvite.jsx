@@ -13,19 +13,7 @@ const BORDER_DIM = 'rgba(255,255,255,0.07)';
 const TEXT_MUTED = '#7B8EA8';
 
 function Port24Logo() {
-  return (
-    <div className="flex items-center gap-2.5">
-      <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-        <path d="M4 4h10v4H8v8H4V4z" fill="#3DC9C0"/>
-        <path d="M36 4h-10v4h8v8h4V4z" fill="#1FB8A0"/>
-        <path d="M4 36h10v-4H8v-8H4V36z" fill="#3DC9C0"/>
-        <path d="M36 36h-10v-4h8v-8h4V36z" fill="#1FB8A0"/>
-      </svg>
-      <span style={{ letterSpacing: '0.12em', fontWeight: 700, fontSize: '0.9rem', color: '#3DC9C0' }}>
-        PORT <span style={{ color: T }}>24</span>
-      </span>
-    </div>
-  );
+  return <img src="/port24-logo.png" alt="Port 24" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />;
 }
 
 // Step 1: load & validate the token from the DB (no auth required)
