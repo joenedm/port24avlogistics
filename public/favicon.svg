@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Top-left bracket -->
+  <rect x="10" y="10" width="30" height="12" fill="#1FB8A0"/>
+  <rect x="10" y="10" width="12" height="30" fill="#1FB8A0"/>
+  <!-- Top-right bracket -->
+  <rect x="60" y="10" width="30" height="12" fill="#1FB8A0"/>
+  <rect x="78" y="10" width="12" height="30" fill="#1FB8A0"/>
+  <!-- Bottom-left bracket -->
+  <rect x="10" y="78" width="30" height="12" fill="#1FB8A0"/>
+  <rect x="10" y="60" width="12" height="30" fill="#1FB8A0"/>
+  <!-- Bottom-right bracket -->
+  <rect x="60" y="78" width="30" height="12" fill="#1FB8A0"/>
+  <rect x="78" y="60" width="12" height="30" fill="#1FB8A0"/>
+</svg>
