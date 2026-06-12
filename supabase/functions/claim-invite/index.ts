@@ -42,14 +42,16 @@ serve(async (req) => {
     if (invite.status !== 'pending') throw new Error(`Invite already ${invite.status}`);
     if (new Date(invite.expires_at) < new Date()) throw new Error('Invite expired');
 
+    const isPlatformAdmin = invite.role === 'platform_admin';
+
     // Upsert the user row with the correct org_id — service role bypasses RLS
     const { error: upsertErr } = await adminClient.from('users').upsert({
       id: user.id,
       email: user.email,
       full_name: full_name || invite.full_name || user.user_metadata?.full_name || '',
       org_id: invite.org_id,
-      role: invite.role,
-      is_platform_admin: false,
+      role: isPlatformAdmin ? 'admin' : invite.role,
+      is_platform_admin: isPlatformAdmin,
     }, { onConflict: 'id' });
 
     if (upsertErr) throw upsertErr;

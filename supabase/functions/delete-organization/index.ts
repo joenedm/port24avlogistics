@@ -22,30 +22,29 @@ serve(async (req) => {
     const { data: { user: caller } } = await userClient.auth.getUser();
     if (!caller) throw new Error('Unauthorized');
 
-    const { data: callerProfile } = await userClient.from('users').select('is_platform_admin').eq('id', caller.id).single();
-    if (!callerProfile?.is_platform_admin) throw new Error('Access denied. Platform admin only.');
-
-    const { org_id } = await req.json();
-    if (!org_id) throw new Error('org_id is required');
-
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Get all users in this org
+    // Verify caller is platform admin using service role (bypasses RLS)
+    const { data: callerProfile } = await adminClient.from('users').select('is_platform_admin').eq('id', caller.id).single();
+    if (!callerProfile?.is_platform_admin) throw new Error('Access denied. Platform admin only.');
+
+    const { org_id } = await req.json();
+    if (!org_id) throw new Error('org_id is required');
+
+    // Get all users in this org so we can delete them from auth too
     const { data: orgUsers } = await adminClient.from('users').select('id').eq('org_id', org_id);
 
-    // Delete each user from auth
+    // Delete the organization — all related data cascades automatically via FK ON DELETE CASCADE
+    const { error: deleteOrgErr } = await adminClient.from('organizations').delete().eq('id', org_id);
+    if (deleteOrgErr) throw deleteOrgErr;
+
+    // Delete each user from Supabase Auth (not covered by cascade)
     for (const u of orgUsers ?? []) {
       await adminClient.auth.admin.deleteUser(u.id);
     }
-
-    // Delete org data (users table rows cascade or explicit)
-    await adminClient.from('users').delete().eq('org_id', org_id);
-    await adminClient.from('pending_invites').delete().eq('org_id', org_id);
-    await adminClient.from('brand_settings').delete().eq('org_id', org_id);
-    await adminClient.from('organizations').delete().eq('id', org_id);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

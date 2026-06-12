@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/lib/AuthContext';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
@@ -55,10 +56,12 @@ const navGroups = [
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { orgId } = useAuth();
 
   const { data: alerts = [] } = useQuery({
-    queryKey: ['alerts'],
-    queryFn: () => db.entities.Alert.list('-created_date', 50),
+    queryKey: ['alerts', orgId],
+    queryFn: () => orgId ? db.entities.Alert.filter({ org_id: orgId }, '-created_date') : Promise.resolve([]),
+    enabled: !!orgId,
   });
   const unreadAlerts = alerts.filter(a => !a.is_resolved && !a.is_read).length;
 

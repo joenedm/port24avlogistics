@@ -59,20 +59,12 @@ export default function PlatformJoin() {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: invite.email, password });
       if (signInErr) throw signInErr;
 
-      const { data: { user } } = await supabase.auth.getUser();
-
-      // Upsert user row with platform admin flag
-      await supabase.from('users').upsert({
-        id: user.id,
-        email: user.email,
-        full_name: invite.full_name,
-        is_platform_admin: true,
-        role: 'admin',
-        org_id: invite.org_id,
-      }, { onConflict: 'id' });
-
-      // Mark invite accepted
-      await supabase.from('pending_invites').update({ status: 'accepted', accepted_at: new Date().toISOString() }).eq('id', invite.id);
+      // Use service-role edge function to bypass RLS (same as regular invite flow)
+      const { data: claimData, error: claimErr } = await supabase.functions.invoke('claim-invite', {
+        body: { token, full_name: invite.full_name },
+      });
+      if (claimErr) throw claimErr;
+      if (claimData?.error) throw new Error(claimData.error);
 
       setStatus('done');
     } catch (err) {
@@ -90,17 +82,7 @@ export default function PlatformJoin() {
 
       <div className="relative w-full max-w-sm">
         <div className="flex flex-col items-center mb-10">
-          <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-            <path d="M4 4h10v4H8v8H4V4z" fill="#3DC9C0"/>
-            <path d="M36 4h-10v4h8v8h4V4z" fill="#1FB8A0"/>
-            <path d="M4 36h10v-4H8v-8H4V36z" fill="#3DC9C0"/>
-            <path d="M36 36h-10v-4h8v-8h4V36z" fill="#1FB8A0"/>
-          </svg>
-          <div className="mt-3 text-center">
-            <span style={{ letterSpacing: '0.18em', fontWeight: 800, fontSize: '0.75rem', color: '#3DC9C0' }}>
-              PORT <span style={{ color: T }}>24</span>
-            </span>
-          </div>
+          <img src="/port24-logo.svg" alt="Port 24" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
         </div>
 
         <div className="rounded-2xl p-8 border" style={{ backgroundColor: CARD, borderColor: BORDER }}>

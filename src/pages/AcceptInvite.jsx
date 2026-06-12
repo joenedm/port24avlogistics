@@ -80,21 +80,22 @@ export default function AcceptInvite() {
 
     setLoading(true);
     try {
-      // Sign up with Supabase Auth
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+      // Attempt sign-up (may return user_already_exists if account was partially created before)
+      await supabase.auth.signUp({
         email: invite.email,
         password,
         options: { data: { full_name: fullName } },
       });
-      if (signUpErr) throw signUpErr;
 
-      // Try to sign in immediately (works if email already confirmed or auto-confirmed)
+      // Always attempt sign-in with the provided password
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: invite.email, password });
       if (signInErr) {
+        // Sign-in failed — email needs confirmation or wrong password
         setStep('confirm_email');
         return;
       }
 
+      // Claim the invite via service-role edge function — sets org_id on public.users
       await claimInvite(token, fullName);
 
       setStep('company');

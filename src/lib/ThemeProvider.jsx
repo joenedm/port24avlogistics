@@ -94,7 +94,7 @@ export default function ThemeProvider({ children }) {
     queryKey: ['brand', orgId],
     queryFn: () => orgId
       ? db.entities.BrandSettings.filter({ org_id: orgId })
-      : db.entities.BrandSettings.list(),
+      : Promise.resolve([]),
     staleTime: 0,
     enabled: isAuthed,
     retry: false,

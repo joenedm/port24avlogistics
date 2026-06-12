@@ -15,11 +15,23 @@ export const AuthProvider = ({ children }) => {
   const PLATFORM_ADMIN_EMAILS = ['joe@nedm.com'];
 
   const loadProfile = async (authUser) => {
+    // Fetch user row first without the join — avoids organizations RLS
+    // causing the entire query to return null on first sign-in
     const { data: profile } = await supabase
       .from('users')
-      .select('*, organizations(*)')
+      .select('*')
       .eq('id', authUser.id)
       .single();
+
+    // Separately fetch the org so a missing/inaccessible org doesn't block login
+    if (profile?.org_id) {
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', profile.org_id)
+        .single();
+      if (org) profile.organizations = org;
+    }
 
     // Guarantee platform admin emails always have full rights — DB is best-effort only
     if (PLATFORM_ADMIN_EMAILS.includes(authUser.email?.toLowerCase())) {
@@ -34,8 +46,64 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // No users row means no invite was accepted — block access
+    // No users row by UUID — could be a new Google OAuth sign-in for an existing email account
     if (!profile) {
+      // 1. Try to find an existing account by email (handles Google OAuth linking)
+      const { data: emailProfile } = await supabase
+        .from('users')
+        .select('*, organizations(*)')
+        .eq('email', authUser.email?.toLowerCase())
+        .single();
+
+      if (emailProfile) {
+        // Found account by email — create a new row for the Google auth UUID
+        // copying org_id and role so both providers share the same workspace
+        await supabase.from('users').upsert({
+          id: authUser.id,
+          email: authUser.email,
+          full_name: emailProfile.full_name || authUser.user_metadata?.full_name || '',
+          org_id: emailProfile.org_id,
+          role: emailProfile.role,
+          is_platform_admin: emailProfile.is_platform_admin ?? false,
+        }, { onConflict: 'id' });
+        const { data: linkedProfile } = await supabase
+          .from('users')
+          .select('*, organizations(*)')
+          .eq('id', authUser.id)
+          .single();
+        setUserRecord(linkedProfile || { ...emailProfile, id: authUser.id });
+        return;
+      }
+
+      // 2. Check for a pending invite for this email (first-time Google OAuth invite claim)
+      const { data: invite } = await supabase
+        .from('pending_invites')
+        .select('token')
+        .eq('email', authUser.email?.toLowerCase())
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (invite?.token) {
+        const { data: claimData, error: claimErr } = await supabase.functions.invoke('claim-invite', {
+          body: { token: invite.token, full_name: authUser.user_metadata?.full_name || '' },
+        });
+        if (!claimErr && !claimData?.error) {
+          const { data: newProfile } = await supabase
+            .from('users')
+            .select('*, organizations(*)')
+            .eq('id', authUser.id)
+            .single();
+          if (newProfile) {
+            setUserRecord(newProfile);
+            return;
+          }
+        }
+      }
+
+      // 3. No account, no invite — block access
       await supabase.auth.signOut();
       setUser(null);
       setUserRecord(null);

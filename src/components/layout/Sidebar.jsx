@@ -43,6 +43,7 @@ export default function Sidebar() {
     });
   };
   const location = useLocation();
+  const { orgId } = useAuth();
   const { role, canAccessAdmin, canAccessFinance, canAccessMissionControl, canManageCrew, canViewInventory, canAccessBusiness, canAccessPrintTemplates, canViewOwnProfile, canAccessRoundtable } = usePermissions();
 
   if (import.meta.env.DEV) {
@@ -160,20 +161,28 @@ export default function Sidebar() {
     return groups;
   })();
 
-  const { data: brandList = [] } = useQuery({ queryKey: ['brand'], queryFn: () => db.entities.BrandSettings.list(), staleTime: 10 * 60 * 1000 });
+  // Share cache key with ThemeProvider so they don't double-fetch; filter by orgId to prevent cross-company bleed
+  const { data: brandList = [] } = useQuery({
+    queryKey: ['brand', orgId],
+    queryFn: () => orgId ? db.entities.BrandSettings.filter({ org_id: orgId }) : Promise.resolve([]),
+    staleTime: 10 * 60 * 1000,
+    enabled: !!orgId,
+  });
   const brand = brandList[0] || {};
 
   const { data: alerts = [] } = useQuery({
-    queryKey: ['alerts'],
-    queryFn: () => db.entities.Alert.list('-created_date', 50),
+    queryKey: ['alerts', orgId],
+    queryFn: () => orgId ? db.entities.Alert.filter({ org_id: orgId }, '-created_date') : Promise.resolve([]),
     staleTime: 2 * 60 * 1000,
+    enabled: !!orgId,
   });
   const unreadAlerts = alerts.filter(a => !a.is_resolved && !a.is_read).length;
 
   const { data: hospitalRecords = [] } = useQuery({
-    queryKey: ['avhospital'],
-    queryFn: () => db.entities.AVHospital.list('-created_date', 50),
+    queryKey: ['avhospital', orgId],
+    queryFn: () => orgId ? db.entities.AVHospital.filter({ org_id: orgId }, '-created_date') : Promise.resolve([]),
     staleTime: 2 * 60 * 1000,
+    enabled: !!orgId,
   });
   const activeHospital = hospitalRecords.filter(r => r.is_active).length;
 
