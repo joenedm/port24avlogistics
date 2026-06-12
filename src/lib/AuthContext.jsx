@@ -19,33 +19,24 @@ export const AuthProvider = ({ children }) => {
   // Core profile loader — called after every auth state change
   // -------------------------------------------------------------------
   const loadProfile = async (authUser) => {
-    // 1. Fetch user row (no join — avoids orgs RLS killing the query)
-    const { data: profile } = await supabase
+    const DEV = import.meta.env.DEV;
+    if (DEV) console.log('[Auth] loadProfile start — uid:', authUser.id, 'email:', authUser.email);
+
+    // 1. Fetch user row by UUID
+    const { data: profileByUUID } = await supabase
       .from('users')
       .select('*')
       .eq('id', authUser.id)
       .single();
 
-    // 2. Guarantee platform-admin emails always have full rights
-    if (PLATFORM_ADMIN_EMAILS.includes(authUser.email?.toLowerCase())) {
-      const orgId = profile?.org_id ?? null;
-      // Keep DB in sync (fire-and-forget)
-      supabase.from('users').upsert({
-        id: authUser.id,
-        email: authUser.email,
-        is_platform_admin: true,
-        role: 'admin',
-        ...(orgId ? { org_id: orgId } : {}),
-      }, { onConflict: 'id' }).then(() => {});
+    if (DEV) console.log('[Auth] profile by UUID:', profileByUUID ? 'found' : 'not found');
 
-      const merged = { ...authUser, ...(profile ?? {}), is_platform_admin: true, role: 'admin' };
-      setUserRecord(merged);
-      await loadMemberships(authUser.id, merged);
-      return;
-    }
+    // 2. Resolve the profile — UUID lookup first, email fallback for OAuth linking
+    let profile = profileByUUID;
 
-    // 3. No users row by UUID — try email-based link (Google OAuth for existing account)
     if (!profile) {
+      if (DEV) console.log('[Auth] no UUID match — trying email lookup for:', authUser.email);
+
       const { data: emailProfile } = await supabase
         .from('users')
         .select('*')
@@ -53,7 +44,8 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (emailProfile) {
-        // Create a new row for the Google auth UUID, copying org/role
+        if (DEV) console.log('[Auth] email match found — linking Google UUID to existing account');
+        // Create a new row for the new auth UUID (Google OAuth → existing email/password account)
         await supabase.from('users').upsert({
           id: authUser.id,
           email: authUser.email,
@@ -62,18 +54,27 @@ export const AuthProvider = ({ children }) => {
           role: emailProfile.role,
           is_platform_admin: emailProfile.is_platform_admin ?? false,
         }, { onConflict: 'id' });
-        const { data: linked } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-        const resolved = linked || { ...emailProfile, id: authUser.id };
-        setUserRecord(resolved);
-        await loadMemberships(authUser.id, resolved);
-        return;
-      }
 
-      // 4. Check for pending invite (first-time Google OAuth invite claim)
+        // Also upsert the company_membership for this new UUID
+        if (emailProfile.org_id) {
+          await supabase.from('company_memberships').upsert({
+            user_id: authUser.id,
+            org_id: emailProfile.org_id,
+            role: emailProfile.role ?? 'member',
+            status: 'active',
+          }, { onConflict: 'user_id,org_id' });
+        }
+
+        const { data: linked } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+        profile = linked || { ...emailProfile, id: authUser.id };
+        if (DEV) console.log('[Auth] email linking complete — org_id:', profile?.org_id);
+      }
+    }
+
+    // 3. Still no profile — check for pending invite or block access
+    if (!profile) {
+      if (DEV) console.log('[Auth] no profile after email check — checking pending invites');
+
       const { data: invite } = await supabase
         .from('pending_invites')
         .select('token')
@@ -85,24 +86,23 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (invite?.token) {
+        if (DEV) console.log('[Auth] pending invite found — claiming');
         const { data: claimData, error: claimErr } = await supabase.functions.invoke('claim-invite', {
           body: { token: invite.token, full_name: authUser.user_metadata?.full_name || '' },
         });
         if (!claimErr && !claimData?.error) {
-          const { data: newProfile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
-          if (newProfile) {
-            setUserRecord(newProfile);
-            await loadMemberships(authUser.id, newProfile);
-            return;
+          const { data: claimed } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+          if (claimed) {
+            profile = claimed;
+            if (DEV) console.log('[Auth] invite claimed — org_id:', profile.org_id);
           }
         }
       }
+    }
 
-      // 5. No account, no invite → block access
+    // 4. Absolute block — no account, no invite
+    if (!profile) {
+      if (DEV) console.log('[Auth] BLOCKED — no account found for', authUser.email);
       await supabase.auth.signOut();
       setUser(null);
       setUserRecord(null);
@@ -112,7 +112,22 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // 6. Normal path — profile found by UUID
+    // 5. Apply platform-admin override on top of resolved profile
+    //    This runs AFTER email-linking so Google OAuth for admin emails works correctly
+    if (PLATFORM_ADMIN_EMAILS.includes(authUser.email?.toLowerCase())) {
+      if (DEV) console.log('[Auth] platform admin override applied');
+      profile = { ...profile, is_platform_admin: true, role: 'admin' };
+      // Keep DB in sync (fire-and-forget)
+      supabase.from('users').upsert({
+        id: authUser.id,
+        email: authUser.email,
+        is_platform_admin: true,
+        role: 'admin',
+        ...(profile.org_id ? { org_id: profile.org_id } : {}),
+      }, { onConflict: 'id' }).then(() => {});
+    }
+
+    if (DEV) console.log('[Auth] setUserRecord — org_id:', profile.org_id, 'is_platform_admin:', profile.is_platform_admin);
     setUserRecord(profile);
     await loadMemberships(authUser.id, profile);
   };
@@ -187,7 +202,11 @@ export const AuthProvider = ({ children }) => {
   // Auth state listeners
   // -------------------------------------------------------------------
   useEffect(() => {
+    const DEV = import.meta.env.DEV;
+
+    // Initial session check — runs once on mount
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (DEV) console.log('[Auth] getSession —', session ? `uid:${session.user.id}` : 'no session');
       if (session?.user) {
         setUser(session.user);
         setIsAuthenticated(true);
@@ -201,20 +220,33 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (DEV) console.log('[Auth] onAuthStateChange event:', event, '— session:', session ? `uid:${session.user.id}` : 'null');
+
       if (session?.user) {
-        setUser(session.user);
-        setIsAuthenticated(true);
-        setAuthError(null);
-        await loadProfile(session.user);
+        // Only run full profile load on sign-in events, not token refreshes
+        // TOKEN_REFRESHED keeps the existing state to avoid re-flashing the UI
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          setUser(session.user);
+          setIsAuthenticated(true);
+          setAuthError(null);
+          await loadProfile(session.user);
+          setIsLoadingAuth(false);
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Token refresh — user is still authenticated, just update the user object
+          setUser(session.user);
+        }
+        // PASSWORD_RECOVERY and other events do nothing here
       } else {
+        // SIGNED_OUT or null session — clear everything
+        if (DEV) console.log('[Auth] signed out — clearing all state');
         setUser(null);
         setUserRecord(null);
         setCompanyMemberships([]);
         setIsAuthenticated(false);
         setAuthError({ type: 'auth_required' });
+        setIsLoadingAuth(false);
       }
-      setIsLoadingAuth(false);
     });
 
     return () => subscription.unsubscribe();

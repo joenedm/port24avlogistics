@@ -695,35 +695,34 @@ export default function SignIn() {
   const urlParams = new URLSearchParams(window.location.search);
   const justVerified = urlParams.get('verified') === '1';
 
-  // Check if a signed-in auth user actually has a users table row
-  const checkUserExists = async (authUser) => {
-    const { data } = await supabase.from('users').select('id').eq('id', authUser.id).single();
-    return !!data;
-  };
-
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const exists = await checkUserExists(session.user);
-      if (!exists) {
-        await supabase.auth.signOut();
-        setNoAccountEmail(session.user.email);
+      // If returning from a failed OAuth (Supabase puts error in URL hash), do NOT auto-redirect
+      const hash = window.location.hash;
+      if (hash.includes('error=')) {
+        const params = new URLSearchParams(hash.replace(/^#/, ''));
+        const desc = params.get('error_description') || params.get('error') || 'Google sign-in failed.';
+        setError(decodeURIComponent(desc.replace(/\+/g, ' ')));
+        // Clear the hash so it doesn't persist on refresh
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
         return;
       }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Existing valid session — let AuthContext handle validation, just navigate
       navigate('/dashboard');
     };
     init();
 
-    // Catch OAuth redirect — fires after hash is processed
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Only catch SIGNED_IN events so we don't accidentally navigate on TOKEN_REFRESHED
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event !== 'SIGNED_IN') return;
       if (!session) return;
-      const exists = await checkUserExists(session.user);
-      if (!exists) {
-        await supabase.auth.signOut();
-        setNoAccountEmail(session.user.email);
-        return;
-      }
+      // AuthContext's onAuthStateChange runs loadProfile and validates the user.
+      // If it blocks the user (no_account), it calls signOut which App.jsx picks up.
+      // If valid, navigate to dashboard.
       navigate('/dashboard');
     });
     return () => subscription.unsubscribe();
@@ -736,17 +735,8 @@ export default function SignIn() {
     try {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
       if (signInErr) throw signInErr;
-
-      // Check if this auth user actually has a portal account
-      const { data: { user } } = await supabase.auth.getUser();
-      const exists = await checkUserExists(user);
-      if (!exists) {
-        await supabase.auth.signOut();
-        setLoading(false);
-        setNoAccountEmail(email);
-        return;
-      }
-
+      // AuthContext's onAuthStateChange handles profile validation and no_account blocking.
+      // Just navigate — if the account is invalid, AuthContext will sign out and show the error.
       window.location.href = '/dashboard';
       return;
     } catch (err) {
@@ -958,6 +948,8 @@ export default function SignIn() {
           <button
             type="button"
             onClick={async () => {
+              // Sign out any stale session first so a failed OAuth doesn't auto-login the old account
+              await supabase.auth.signOut();
               await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo: `${window.location.origin}/signin` },
