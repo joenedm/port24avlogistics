@@ -84,6 +84,21 @@ const AuthenticatedApp = () => {
     );
   }
 
+  if (authError?.type === 'no_account') {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#0E1117] px-4">
+        <div className="max-w-md w-full text-center rounded-2xl border border-red-500/20 bg-red-500/5 p-10">
+          <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-5">
+            <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"/></svg>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-3">No Account Found</h2>
+          <p className="text-sm text-gray-400 mb-6">You need an invite link to access Port 24. Contact your company admin or Port 24 support.</p>
+          <button onClick={() => window.location.href = '/signin'} className="w-full py-3 rounded-xl font-semibold text-sm bg-[#1FB8A0] text-black">Back to Sign In</button>
+        </div>
+      </div>
+    );
+  }
+
   if (authError?.type === 'auth_required') {
     // Show public routes without sidebar; all others redirect to sign-in
     return (

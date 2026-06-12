@@ -21,24 +21,31 @@ export const AuthProvider = ({ children }) => {
       .eq('id', authUser.id)
       .single();
 
-    const base = profile ?? authUser;
-
     // Guarantee platform admin emails always have full rights — DB is best-effort only
     if (PLATFORM_ADMIN_EMAILS.includes(authUser.email?.toLowerCase())) {
-      // Try to fix DB row (may be blocked by RLS — that's ok, state is the source of truth here)
       supabase.from('users').upsert({
         id: authUser.id,
         email: authUser.email,
         is_platform_admin: true,
         role: 'admin',
-        org_id: base.org_id ?? '00000000-0000-0000-0000-000000000001',
+        org_id: profile?.org_id ?? '00000000-0000-0000-0000-000000000001',
       }, { onConflict: 'id' }).then(() => {});
-
-      // Force correct values — profile fields take priority over raw authUser, then force admin flags on top
       setUserRecord({ ...authUser, ...(profile ?? {}), is_platform_admin: true, role: 'admin' });
-    } else {
-      setUserRecord(base);
+      return;
     }
+
+    // No users row means no invite was accepted — block access
+    if (!profile) {
+      await supabase.auth.signOut();
+      setUser(null);
+      setUserRecord(null);
+      setIsAuthenticated(false);
+      setAuthError({ type: 'no_account', message: 'No account found. You need an invite link to access Port 24.' });
+      setIsLoadingAuth(false);
+      return;
+    }
+
+    setUserRecord(profile);
   };
 
   useEffect(() => {
