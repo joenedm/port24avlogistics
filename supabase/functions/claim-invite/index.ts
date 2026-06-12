@@ -56,6 +56,16 @@ serve(async (req) => {
 
     if (upsertErr) throw upsertErr;
 
+    // Upsert company_membership so the user shows up in membership-based routing
+    if (invite.org_id) {
+      await adminClient.from('company_memberships').upsert({
+        user_id: user.id,
+        org_id: invite.org_id,
+        role: isPlatformAdmin ? 'admin' : invite.role,
+        status: 'active',
+      }, { onConflict: 'user_id,org_id' });
+    }
+
     // Mark invite accepted
     await adminClient.from('pending_invites').update({
       status: 'accepted',

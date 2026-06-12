@@ -70,7 +70,7 @@ export default function BrandingSettings() {
       ? db.entities.BrandSettings.update(existing.id, { ...data, org_id: orgId })
       : db.entities.BrandSettings.create({ ...data, org_id: orgId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['brand'] });
+      queryClient.invalidateQueries({ queryKey: ['brand', orgId] });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     },
