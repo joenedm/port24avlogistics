@@ -74,8 +74,6 @@ import VerifyEmail from './pages/VerifyEmail';
 import ThemeProvider from './lib/ThemeProvider';
 
 function RootRedirect() {
-  const { isPlatformAdmin } = useAuth();
-  if (isPlatformAdmin) return <Navigate to="/platform" replace />;
   return <Dashboard />;
 }
 
