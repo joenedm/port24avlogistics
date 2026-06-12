@@ -140,6 +140,8 @@ const AuthenticatedApp = () => {
       {/* Public pages — always accessible, even when authenticated */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/landing" element={<LandingPage />} />
+      <Route path="/workspace-picker" element={<WorkspacePicker />} />
+      <Route path="/create-company" element={<CreateCompany />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

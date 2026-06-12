@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, CalendarDays, ScanBarcode,
   Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Boxes, History,
-  LogOut, Archive, Bell, TrendingUp, Upload, Users, FileText, DollarSign, Palette, CalendarRange, HeartPulse, Briefcase, Telescope, UserCircle, Handshake, Tag, ClipboardList, Building2, MapPin, Truck, Printer
+  LogOut, Archive, Bell, TrendingUp, Upload, Users, FileText, DollarSign, Palette, CalendarRange, HeartPulse, Briefcase, Telescope, UserCircle, Handshake, Tag, ClipboardList, Building2, MapPin, Truck, Printer, ChevronsUpDown
 } from 'lucide-react';
 import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
@@ -43,7 +43,8 @@ export default function Sidebar() {
     });
   };
   const location = useLocation();
-  const { orgId } = useAuth();
+  const navigate = useNavigate();
+  const { orgId, organization, companyMemberships, logout } = useAuth();
   const { role, canAccessAdmin, canAccessFinance, canAccessMissionControl, canManageCrew, canViewInventory, canAccessBusiness, canAccessPrintTemplates, canViewOwnProfile, canAccessRoundtable } = usePermissions();
 
   if (import.meta.env.DEV) {
@@ -191,24 +192,52 @@ export default function Sidebar() {
       "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground z-40 flex flex-col transition-all duration-300 border-r border-sidebar-border",
       collapsed ? "w-16" : "w-60"
     )}>
-      <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
-        {!collapsed ? (
-          <>
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              {brand.logo_url
-                ? <img src={brand.logo_url} alt="Logo" className="h-8 max-w-[120px] object-contain" />
-                : <Port24Logo />
+      <div className="border-b border-sidebar-border">
+        {/* Logo row */}
+        <div className="flex items-center justify-between p-4 pb-2">
+          {!collapsed ? (
+            <>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                {brand.logo_url
+                  ? <img src={brand.logo_url} alt="Logo" className="h-8 max-w-[120px] object-contain" />
+                  : <Port24Logo />
                 }
+              </div>
+              <button onClick={() => setCollapsed(true)} className="p-1 rounded-md hover:bg-sidebar-accent transition-colors shrink-0">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mx-auto cursor-pointer" onClick={() => setCollapsed(false)}>
+              {brand.logo_url
+                ? <img src={brand.logo_url} alt="" className="w-6 h-6 object-contain" />
+                : <Port24Icon />}
             </div>
-            <button onClick={() => setCollapsed(true)} className="p-1 rounded-md hover:bg-sidebar-accent transition-colors shrink-0">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          </>
-        ) : (
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mx-auto cursor-pointer" onClick={() => setCollapsed(false)}>
-            {brand.logo_url
-              ? <img src={brand.logo_url} alt="" className="w-6 h-6 object-contain" />
-              : <Port24Icon />}
+          )}
+        </div>
+
+        {/* Workspace indicator */}
+        {!collapsed && organization?.name && (
+          <div className="px-3 pb-3">
+            {companyMemberships && companyMemberships.length > 1 ? (
+              <button
+                onClick={() => navigate('/workspace-picker')}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors hover:bg-sidebar-accent group"
+                style={{ border: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <Building2 className="w-3.5 h-3.5 shrink-0 text-primary" />
+                <span className="text-xs font-medium text-sidebar-foreground/80 truncate flex-1">{organization.name}</span>
+                <ChevronsUpDown className="w-3 h-3 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60 shrink-0" />
+              </button>
+            ) : (
+              <div
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
+                style={{ border: '1px solid rgba(255,255,255,0.07)', backgroundColor: 'rgba(31,184,160,0.05)' }}
+              >
+                <Building2 className="w-3.5 h-3.5 shrink-0 text-primary" />
+                <span className="text-xs font-medium text-sidebar-foreground/80 truncate">{organization.name}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -277,7 +306,7 @@ export default function Sidebar() {
           </button>
         )}
         <button
-          onClick={() => db.auth.logout()}
+          onClick={logout}
           className={cn("flex items-center gap-3 px-3 py-2 rounded-lg transition-colors w-full text-sidebar-foreground hover:bg-sidebar-accent", collapsed && "justify-center")}
         >
           <LogOut className="w-4 h-4 shrink-0" />

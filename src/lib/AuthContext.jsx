@@ -127,7 +127,17 @@ export const AuthProvider = ({ children }) => {
       .eq('user_id', userId)
       .eq('status', 'active');
 
-    const list = memberships ?? [];
+    let list = memberships ?? [];
+
+    // If any membership is missing its org record (RLS edge case), fetch the active org directly
+    const activeOrgId = profile?.org_id;
+    if (activeOrgId && list.some(m => m.org_id === activeOrgId && !m.organizations)) {
+      const { data: org } = await supabase.from('organizations').select('*').eq('id', activeOrgId).single();
+      if (org) {
+        list = list.map(m => m.org_id === activeOrgId ? { ...m, organizations: org } : m);
+      }
+    }
+
     setCompanyMemberships(list);
 
     if (list.length === 0) {
