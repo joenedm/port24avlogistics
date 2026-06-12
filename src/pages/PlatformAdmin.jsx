@@ -539,23 +539,21 @@ export default function PlatformAdmin() {
 
                 <div className="flex items-center gap-2">
                   {!isPort24 && (
-                    <>
-                      <button
-                        onClick={() => updateOrgStatus(org.id, org.status === 'active' ? 'suspended' : 'active')}
-                        className="p-2 rounded-lg hover:bg-white/5 transition-colors"
-                        title={org.status === 'active' ? 'Suspend' : 'Activate'}
-                      >
-                        {org.status === 'active'
-                          ? <XCircle className="w-4 h-4 text-red-400" />
-                          : <CheckCircle className="w-4 h-4 text-emerald-400" />}
-                      </button>
-                    </>
+                    <button
+                      onClick={() => updateOrgStatus(org.id, org.status === 'active' ? 'suspended' : 'active')}
+                      className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+                      title={org.status === 'active' ? 'Suspend' : 'Activate'}
+                    >
+                      {org.status === 'active'
+                        ? <XCircle className="w-4 h-4 text-red-400" />
+                        : <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                    </button>
                   )}
                   <button
                     onClick={() => navigate(`/platform/org/${org.id}`)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xs font-medium transition-colors"
                   >
-                    <Eye className="w-3.5 h-3.5" /> View Workspace
+                    <Eye className="w-3.5 h-3.5" /> Manage
                   </button>
                 </div>
               </div>
