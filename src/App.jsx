@@ -126,7 +126,8 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      {/* Public pages */}
+      {/* Public pages — always accessible, even when authenticated */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -139,7 +140,7 @@ const AuthenticatedApp = () => {
 
       {/* Main app with sidebar layout */}
       <Route element={<AppLayout />}>
-        <Route path="/" element={<RootRedirect />} />
+        <Route path="/dashboard" element={<RootRedirect />} />
         <Route path="/assets" element={<Assets />} />
         <Route path="/shows" element={<Shows />} />
         <Route path="/shows/:id" element={<ShowDetail />} />

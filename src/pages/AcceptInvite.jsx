@@ -118,11 +118,11 @@ export default function AcceptInvite() {
         }).eq('id', invite.org_id);
       }
       setDone(true);
-      setTimeout(() => { window.location.href = '/'; }, 1500);
+      setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
     } catch {
       // non-fatal — columns may not exist yet
       setDone(true);
-      setTimeout(() => { window.location.href = '/'; }, 1500);
+      setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
     } finally {
       setLoading(false);
     }
@@ -209,7 +209,7 @@ export default function AcceptInvite() {
                   value={companyInfo.address} onChange={e => setCompanyInfo(p => ({ ...p, address: e.target.value }))} placeholder="123 Main St, City, State" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" disabled={loading} onClick={() => { setDone(true); setTimeout(() => { window.location.href = '/'; }, 1000); }}
+                <button type="button" disabled={loading} onClick={() => { setDone(true); setTimeout(() => { window.location.href = '/dashboard'; }, 1000); }}
                   className="flex-1 py-3 rounded-xl text-sm font-medium transition-colors" style={{ border: `1px solid ${BORDER_DIM}`, color: TEXT_MUTED }}>
                   Skip for now
                 </button>

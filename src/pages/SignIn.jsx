@@ -711,7 +711,7 @@ export default function SignIn() {
         setNoAccountEmail(session.user.email);
         return;
       }
-      navigate('/');
+      navigate('/dashboard');
     };
     init();
 
@@ -724,7 +724,7 @@ export default function SignIn() {
         setNoAccountEmail(session.user.email);
         return;
       }
-      navigate('/');
+      navigate('/dashboard');
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -747,7 +747,7 @@ export default function SignIn() {
         return;
       }
 
-      window.location.href = '/';
+      window.location.href = '/dashboard';
       return;
     } catch (err) {
       setLoading(false);
@@ -767,7 +767,7 @@ export default function SignIn() {
 
   // Called by VerifyModal after successful verification + auto-login
   const handleVerified = () => {
-    window.location.href = '/';
+    window.location.href = '/dashboard';
   };
 
   return (
