@@ -41,7 +41,6 @@ export const AuthProvider = ({ children }) => {
       setUserRecord(null);
       setIsAuthenticated(false);
       setAuthError({ type: 'no_account', message: 'No account found. You need an invite link to access Port 24.' });
-      setIsLoadingAuth(false);
       return;
     }
 
@@ -49,12 +48,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
         setIsAuthenticated(true);
         setAuthError(null);
-        loadProfile(session.user);
+        await loadProfile(session.user);
       } else {
         setAuthError({ type: 'auth_required' });
         setIsAuthenticated(false);
@@ -62,12 +61,12 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser(session.user);
         setIsAuthenticated(true);
         setAuthError(null);
-        loadProfile(session.user);
+        await loadProfile(session.user);
       } else {
         setUser(null);
         setUserRecord(null);
