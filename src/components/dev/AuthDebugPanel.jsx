@@ -6,6 +6,7 @@
  */
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Bug } from 'lucide-react';
 
 export default function AuthDebugPanel() {
@@ -53,20 +54,40 @@ export default function AuthDebugPanel() {
   );
 }
 
+const PUBLIC_LANDING_PATHS = new Set(['/', '/landing']);
+
 function PanelContent() {
   const {
     user, userRecord, companyMemberships, isAuthenticated, isLoadingAuth,
     isPlatformAdmin, orgId, organization, needsCompany, needsWorkspacePick,
-    membershipsLoaded, authError, routingSource,
+    membershipsLoaded, authError, routingSource, trialFlow,
   } = useAuth();
+  const location = useLocation();
 
   const isNEDM = orgId === '7da320de-241c-48a2-98ab-acd1fd215386';
+  const isPublicPath = PUBLIC_LANDING_PATHS.has(location.pathname);
 
-  // Routing reason: prefer AuthContext routingSource, fall back to derived value
+  // Auth state label
+  const authState = isLoadingAuth ? 'loading' : isAuthenticated ? 'authenticated' : 'unauthenticated';
+
+  // Route decision
+  let routeDecision;
+  if (isLoadingAuth || (isAuthenticated && !membershipsLoaded)) routeDecision = 'Loading spinner';
+  else if (authError?.type === 'no_account') routeDecision = 'No Account Found';
+  else if (!isAuthenticated) routeDecision = isPublicPath ? 'Landing Page' : 'Login (redirect)';
+  else if (needsCompany && !isPublicPath) routeDecision = trialFlow ? 'Create Workspace (trial)' : 'No Workspace Access';
+  else if (needsWorkspacePick) routeDecision = 'Workspace Picker';
+  else if (isAuthenticated && !needsCompany) routeDecision = 'Workspace / Dashboard';
+  else routeDecision = routingSource ?? 'unknown';
+
+  // Show why NoWorkspaceAccess is shown, if it is
+  const showingNoAccess = isAuthenticated && needsCompany && !isPublicPath && !trialFlow;
+
+  // Routing reason for the "Routing Decision" section
   let routingReason;
   if (!isAuthenticated) routingReason = 'not authenticated';
   else if (isLoadingAuth || !membershipsLoaded) routingReason = 'loading…';
-  else if (needsCompany) routingReason = 'no memberships → CreateCompany';
+  else if (needsCompany) routingReason = trialFlow ? 'trial flow → CreateCompany' : 'no memberships → NoWorkspaceAccess';
   else if (needsWorkspacePick) routingReason = 'no valid active org → WorkspacePicker';
   else routingReason = routingSource ?? 'unknown';
 
@@ -90,6 +111,20 @@ function PanelContent() {
           ⚠️ ACTIVE ORG IS NEDM — {routingReason}
         </div>
       )}
+
+      {showingNoAccess && (
+        <div style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid #fbbf24', borderRadius: 6, padding: '6px 10px', marginBottom: 10, color: '#fbbf24', fontWeight: 700, fontSize: 11 }}>
+          ⚠️ No Workspace Access shown because: authenticated user has zero memberships.
+        </div>
+      )}
+
+      <Section label="Route &amp; Auth State">
+        <Row k="current_path" v={location.pathname} />
+        <Row k="is_public_path" v={String(isPublicPath)} />
+        <Row k="auth_state" v={authState} highlight={authState === 'loading'} />
+        <Row k="route_decision" v={routeDecision} highlight={showingNoAccess} />
+        <Row k="trial_flow" v={String(trialFlow)} />
+      </Section>
 
       <Section label="Authenticated User">
         <Row k="user_id" v={user?.id ?? 'none'} />

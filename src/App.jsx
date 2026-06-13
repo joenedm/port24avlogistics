@@ -2,7 +2,7 @@ import React from 'react';
 import { Toaster } from 'sonner';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import AppLayout from './components/layout/AppLayout';
@@ -75,6 +75,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import ThemeProvider from './lib/ThemeProvider';
+import AuthDebugPanel from '@/components/dev/AuthDebugPanel';
 import { supabase } from '@/api/supabaseClient';
 
 const BtnStyle = (bg, fg) => ({
@@ -168,7 +169,12 @@ function NoWorkspaceAccess() {
   );
 }
 
+// Routes that must render the public landing/marketing page regardless of auth state.
+// NoWorkspaceAccess must NOT intercept these — they are not protected workspace routes.
+const PUBLIC_LANDING_PATHS = new Set(['/', '/landing']);
+
 const AuthenticatedApp = () => {
+  const location = useLocation();
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, membershipsLoaded, needsCompany, needsWorkspacePick, trialFlow, isPlatformAdmin, user, userRecord, companyMemberships } = useAuth();
 
   if (isLoadingPublicSettings || isLoadingAuth || (isAuthenticated && !membershipsLoaded)) {
@@ -205,11 +211,11 @@ const AuthenticatedApp = () => {
     return <Navigate to="/platform" replace />;
   }
 
-  // Authenticated but no company membership
-  if (isAuthenticated && needsCompany) {
-    // Only allow workspace creation when the user arrived via the trial or invite flow
+  // Authenticated but no company membership.
+  // Skip this guard for public landing/marketing paths so the marketing site is always
+  // reachable regardless of auth state — NoWorkspaceAccess is for protected routes only.
+  if (isAuthenticated && needsCompany && !PUBLIC_LANDING_PATHS.has(location.pathname)) {
     if (trialFlow) return <CreateCompany />;
-    // All other cases: show the no-access message (do NOT offer company creation)
     return <NoWorkspaceAccess />;
   }
 
@@ -219,10 +225,10 @@ const AuthenticatedApp = () => {
   }
 
   if (authError?.type === 'auth_required') {
-    // Show public routes without sidebar; all others redirect to sign-in
+    // Show public routes without sidebar; protected routes redirect to sign-in
     return (
       <Routes>
-        <Route path="/" element={<Navigate to="/signin" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -241,7 +247,7 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      {/* / redirects authenticated users to the app; /landing is the marketing page */}
+      {/* / → dashboard for users with a workspace; /landing always shows the marketing page */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/workspace-picker" element={<WorkspacePicker />} />
@@ -335,6 +341,7 @@ function App() {
           <ThemeProvider>
             <Router>
               <AuthenticatedApp />
+              <AuthDebugPanel />
             </Router>
             <Toaster />
           </ThemeProvider>
