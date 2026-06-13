@@ -84,8 +84,9 @@ const AuthenticatedApp = () => {
 
   if (isLoadingPublicSettings || isLoadingAuth || (isAuthenticated && (!membershipsLoaded || !userRecord))) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: 'hsl(var(--muted))', borderTopColor: 'hsl(var(--primary))' }}></div>
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E1117' }}>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid rgba(31,184,160,0.2)', borderTopColor: '#1FB8A0', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }

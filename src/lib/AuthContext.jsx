@@ -301,6 +301,10 @@ export const AuthProvider = ({ children }) => {
 
       try {
         await loadProfile(session.user);
+      } catch (err) {
+        if (DEV) console.error('[Auth] loadProfile threw:', err);
+        // If loadProfile crashed, memberships may still be null → loading guard loops forever.
+        setCompanyMemberships(prev => prev ?? []);
       } finally {
         profileLoadingRef.current = false;
         setIsLoadingAuth(false);
