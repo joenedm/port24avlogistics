@@ -65,7 +65,8 @@ function PanelContent() {
   const {
     user, userRecord, companyMemberships, isAuthenticated, isLoadingAuth,
     isPlatformAdmin, orgId, organization, needsCompany, needsWorkspacePick,
-    membershipsLoaded, authError, routingSource, trialFlow,
+    membershipsLoaded, authError, routingSource, trialFlow, loginSource,
+    sessionWarning,
   } = useAuth();
   const location = useLocation();
 
@@ -129,14 +130,21 @@ function PanelContent() {
         <Row k="auth_state" v={authState} highlight={authState === 'loading'} />
         <Row k="route_decision" v={routeDecision} highlight={showingNoAccess} />
         <Row k="trial_flow" v={String(trialFlow)} />
+        <Row k="login_source" v={loginSource ?? 'company_login'} highlight={loginSource === 'platform_admin'} />
+      </Section>
+
+      <Section label="Session">
+        <Row k="session_warning" v={String(sessionWarning)} highlight={sessionWarning} />
+        <Row k="timeout" v="60 min inactivity" />
       </Section>
 
       <Section label="Authenticated User">
         <Row k="user_id" v={user?.id ?? 'none'} />
         <Row k="email" v={user?.email ?? 'none'} />
+        <Row k="provider" v={user?.app_metadata?.provider ?? 'none'} />
         <Row k="is_authenticated" v={String(isAuthenticated)} />
         <Row k="is_loading_auth" v={String(isLoadingAuth)} />
-        <Row k="is_platform_admin" v={String(isPlatformAdmin)} />
+        <Row k="is_platform_admin" v={String(isPlatformAdmin)} highlight={isPlatformAdmin} />
         <Row k="auth_error" v={authError ? JSON.stringify(authError) : 'none'} />
       </Section>
 

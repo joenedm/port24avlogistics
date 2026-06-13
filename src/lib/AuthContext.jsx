@@ -1,37 +1,118 @@
-import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/api/supabaseClient';
 
 const AuthContext = createContext();
 
-// Emails that always have platform-admin rights regardless of DB state
 const PLATFORM_ADMIN_EMAILS = ['port24avlogistics@gmail.com'];
 
-// localStorage keys that belong to workspace/company state — cleared on logout
-const WORKSPACE_STORAGE_KEYS = ['sidebar_collapsed_groups'];
+// All localStorage keys that belong to workspace/session state — cleared on logout
+const WORKSPACE_LS_KEYS = [
+  'sidebar_collapsed_groups',
+  'active_company_id',
+  'selected_workspace',
+  'port24_company',
+  'port24_org',
+];
+
+// Inactivity timeout: warn at 55 min, log out at 60 min
+const WARN_MS    = 55 * 60 * 1000;
+const TIMEOUT_MS = 60 * 60 * 1000;
+const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userRecord, setUserRecord] = useState(null);
-  const [companyMemberships, setCompanyMemberships] = useState(null); // null = not yet loaded
+  const [companyMemberships, setCompanyMemberships] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [routingSource, setRoutingSource] = useState(null);
 
-  // True when the user arrived via the "Start Free Trial" landing-page button.
-  // Persisted in sessionStorage so it survives the OAuth redirect.
+  // Set by landing page "Start Free Trial" button; survives OAuth redirect via sessionStorage
   const [trialFlow] = useState(() => sessionStorage.getItem('port24_flow') === 'trial');
 
-  const profileLoadingRef = useRef(false);
-  const authDoneRef = useRef(false);
+  // Tracks where the sign-in originated:
+  //   'platform_admin' — set by PlatformLogin before Google/email OAuth
+  //   'company_login'  — everything else (default)
+  // When 'platform_admin': company membership routing is skipped entirely.
+  const [loginSource] = useState(() => sessionStorage.getItem('port24_login_source') ?? 'company_login');
+
+  // Session warning modal state
+  const [sessionWarning, setSessionWarning] = useState(false);
+
+  // Refs
+  const profileLoadingRef  = useRef(false);
+  const authDoneRef        = useRef(false);
+  const sessionWarningRef  = useRef(false);
+  const lastActivityRef    = useRef(Date.now());
+  const warnTimerRef       = useRef(null);
+  const logoutTimerRef     = useRef(null);
+  const logoutRef          = useRef(null); // stable ref so timer can call logout
+
+  // -------------------------------------------------------------------
+  // Inactivity timer — schedules warn + auto-logout
+  // -------------------------------------------------------------------
+  const scheduleSessionTimers = useCallback(() => {
+    clearTimeout(warnTimerRef.current);
+    clearTimeout(logoutTimerRef.current);
+    warnTimerRef.current = setTimeout(() => {
+      sessionWarningRef.current = true;
+      setSessionWarning(true);
+    }, WARN_MS);
+    logoutTimerRef.current = setTimeout(() => {
+      sessionWarningRef.current = false;
+      setSessionWarning(false);
+      logoutRef.current?.();
+    }, TIMEOUT_MS);
+  }, []);
+
+  // Start/stop timer whenever auth state changes
+  useEffect(() => {
+    if (!isAuthenticated) {
+      clearTimeout(warnTimerRef.current);
+      clearTimeout(logoutTimerRef.current);
+      return;
+    }
+
+    scheduleSessionTimers();
+
+    const handleActivity = () => {
+      if (sessionWarningRef.current) return; // don't reset once warning is showing
+      lastActivityRef.current = Date.now();
+      scheduleSessionTimers();
+    };
+
+    ACTIVITY_EVENTS.forEach(e => window.addEventListener(e, handleActivity, { passive: true }));
+    return () => {
+      ACTIVITY_EVENTS.forEach(e => window.removeEventListener(e, handleActivity));
+      clearTimeout(warnTimerRef.current);
+      clearTimeout(logoutTimerRef.current);
+    };
+  }, [isAuthenticated, scheduleSessionTimers]);
+
+  // -------------------------------------------------------------------
+  // Safety valve — if loading hasn't resolved after 12s, clear state
+  // -------------------------------------------------------------------
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!authDoneRef.current) {
+        console.warn('[Auth] Loading timeout — clearing auth state');
+        profileLoadingRef.current = false;
+        setUser(null); setUserRecord(null); setCompanyMemberships([]);
+        setIsAuthenticated(false); setAuthError({ type: 'auth_required' });
+        setIsLoadingAuth(false); setRoutingSource(null);
+      }
+    }, 12000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // -------------------------------------------------------------------
   // Core profile loader — called after every auth state change
   // -------------------------------------------------------------------
   const loadProfile = async (authUser) => {
     const DEV = import.meta.env.DEV;
-    if (DEV) console.log('[Auth] loadProfile start — uid:', authUser.id, 'email:', authUser.email);
+    if (DEV) console.log('[Auth] loadProfile start — uid:', authUser.id, 'email:', authUser.email, 'loginSource:', loginSource);
 
     // 1. Fetch user row by UUID
     const { data: profileByUUID } = await supabase
@@ -57,15 +138,12 @@ export const AuthProvider = ({ children }) => {
       if (emailProfile) {
         if (DEV) console.log('[Auth] email match found — linking UUID', authUser.id, 'to existing account', emailProfile.id);
 
-        // Check if this new UUID already has memberships (e.g. from a previous partial link)
         const { data: newUUIDMemberships } = await supabase
           .from('company_memberships')
           .select('org_id, role, status, joined_at')
           .eq('user_id', authUser.id)
           .eq('status', 'active');
 
-        // Migrate ALL memberships from the old UUID to the new UUID.
-        // This is safer than inheriting org_id from users.org_id (which may be stale/NEDM).
         if (!newUUIDMemberships?.length) {
           const { data: oldMemberships } = await supabase
             .from('company_memberships')
@@ -87,7 +165,6 @@ export const AuthProvider = ({ children }) => {
           }
         }
 
-        // Re-fetch memberships for the new UUID after migration
         const { data: resolvedMemberships } = await supabase
           .from('company_memberships')
           .select('org_id, role')
@@ -96,10 +173,9 @@ export const AuthProvider = ({ children }) => {
           .order('joined_at', { ascending: false })
           .limit(1);
 
-        // org_id: use the first real membership; null if no memberships exist.
         // Do NOT fall back to emailProfile.org_id — that may be stale or point to NEDM.
         const resolvedOrgId = resolvedMemberships?.[0]?.org_id ?? null;
-        const resolvedRole = resolvedMemberships?.[0]?.role ?? emailProfile.role;
+        const resolvedRole  = resolvedMemberships?.[0]?.role ?? emailProfile.role;
 
         if (DEV) console.log('[Auth] email linking — resolved org_id:', resolvedOrgId);
 
@@ -121,7 +197,7 @@ export const AuthProvider = ({ children }) => {
     // 3. No profile — auto-claim pending invite (OAuth only)
     if (!profile) {
       const isOAuth = authUser.app_metadata?.provider !== 'email';
-      if (DEV) console.log('[Auth] no profile after email check — provider:', authUser.app_metadata?.provider, 'isOAuth:', isOAuth);
+      if (DEV) console.log('[Auth] no profile after email check — isOAuth:', isOAuth);
 
       if (isOAuth) {
         const { data: invite } = await supabase
@@ -163,8 +239,8 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
-    // 3.6. Start Free Trial — brand-new Google/OAuth user who clicked "Start Free Trial".
-    // Create a minimal users record so they can reach CreateCompany and pass the
+    // 3.6. Start Free Trial — brand-new OAuth user who clicked "Start Free Trial".
+    // Create a minimal record so they can reach CreateCompany and pass the
     // create-company edge function gate ("user must exist in public.users").
     if (!profile && trialFlow && authUser.app_metadata?.provider !== 'email') {
       if (DEV) console.log('[Auth] trial flow — creating minimal profile for new OAuth user:', authUser.email);
@@ -210,8 +286,23 @@ export const AuthProvider = ({ children }) => {
       }, { onConflict: 'id' }).then(() => {});
     }
 
-    if (DEV) console.log('[Auth] setUserRecord — org_id:', profile.org_id, 'is_platform_admin:', profile.is_platform_admin);
     setUserRecord(profile);
+
+    // 6. Platform admin path — skip ALL company membership routing.
+    //    loginSource 'platform_admin' means the user came through PlatformLogin.
+    //    PLATFORM_ADMIN_EMAILS is a belt-and-suspenders check for the email-based admin.
+    //    Either way: they go to /platform, not a company workspace.
+    const isAdminLogin = loginSource === 'platform_admin'
+      || PLATFORM_ADMIN_EMAILS.includes(authUser.email?.toLowerCase());
+
+    if (isAdminLogin) {
+      if (DEV) console.log('[Auth] platform admin path — skipping company membership routing');
+      setCompanyMemberships([]);
+      setRoutingSource('platform_admin');
+      return;
+    }
+
+    if (DEV) console.log('[Auth] setUserRecord — org_id:', profile.org_id, 'is_platform_admin:', profile.is_platform_admin);
     await loadMemberships(authUser.id, profile);
   };
 
@@ -240,13 +331,11 @@ export const AuthProvider = ({ children }) => {
     setCompanyMemberships(list);
 
     if (list.length === 0) {
-      // No memberships — needs_company state is derived in context value
       setRoutingSource('no_memberships');
       if (DEV) console.log('[Auth] loadMemberships — no memberships found');
       return;
     }
 
-    // Check if the saved org_id is valid (exists in memberships list)
     const activeOrgValid = profile?.org_id && list.some(m => m.org_id === profile.org_id);
 
     if (activeOrgValid) {
@@ -255,23 +344,18 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // org_id is null OR points to an org not in the membership list
     if (!profile?.org_id) {
-      // No saved org — route depends on membership count
       if (list.length === 1) {
-        // Exactly 1 membership — auto-select it
         const autoOrgId = list[0].org_id;
         if (DEV) console.log('[Auth] loadMemberships — 1 membership, auto-selecting:', autoOrgId);
         await supabase.from('users').update({ org_id: autoOrgId }).eq('id', userId);
         setUserRecord(prev => ({ ...prev, org_id: autoOrgId }));
         setRoutingSource('membership_auto_select');
       } else {
-        // Multiple memberships — show workspace picker, do NOT auto-select
         if (DEV) console.log('[Auth] loadMemberships — multiple memberships, showing workspace picker');
         setRoutingSource('workspace_picker');
       }
     } else {
-      // org_id is set but not in the membership list — clear it and re-route
       if (DEV) console.log('[Auth] loadMemberships — org_id', profile.org_id, 'not in membership list — clearing and re-routing');
       await supabase.from('users').update({ org_id: null }).eq('id', userId);
       setUserRecord(prev => ({ ...prev, org_id: null }));
@@ -285,22 +369,6 @@ export const AuthProvider = ({ children }) => {
       }
     }
   };
-
-  // -------------------------------------------------------------------
-  // Safety valve — if loading hasn't resolved after 12s, clear state
-  // -------------------------------------------------------------------
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!authDoneRef.current) {
-        console.warn('[Auth] Loading timeout — clearing auth state');
-        profileLoadingRef.current = false;
-        setUser(null); setUserRecord(null); setCompanyMemberships([]);
-        setIsAuthenticated(false); setAuthError({ type: 'auth_required' });
-        setIsLoadingAuth(false); setRoutingSource(null);
-      }
-    }, 12000);
-    return () => clearTimeout(timer);
-  }, []);
 
   // -------------------------------------------------------------------
   // Auth state listener — single source of truth
@@ -372,25 +440,52 @@ export const AuthProvider = ({ children }) => {
   // -------------------------------------------------------------------
   // Switch workspace
   // -------------------------------------------------------------------
-  const switchWorkspace = async (orgId) => {
+  const switchWorkspace = async (targetOrgId) => {
     if (!user?.id) return;
     const { error } = await supabase
       .from('users')
-      .update({ org_id: orgId })
+      .update({ org_id: targetOrgId })
       .eq('id', user.id);
     if (error) throw error;
-    setUserRecord(prev => ({ ...prev, org_id: orgId }));
+    setUserRecord(prev => ({ ...prev, org_id: targetOrgId }));
     setRoutingSource('workspace_picker');
     window.location.href = '/dashboard';
   };
 
+  // -------------------------------------------------------------------
+  // Logout — clears ALL session/workspace state then redirects
+  // -------------------------------------------------------------------
   const logout = async () => {
+    clearTimeout(warnTimerRef.current);
+    clearTimeout(logoutTimerRef.current);
+    setSessionWarning(false);
+    sessionWarningRef.current = false;
+
     await supabase.auth.signOut();
-    // Clear workspace-specific localStorage keys
-    WORKSPACE_STORAGE_KEYS.forEach(k => {
+
+    WORKSPACE_LS_KEYS.forEach(k => {
       try { localStorage.removeItem(k); } catch {}
     });
-    window.location.href = '/signin';
+    try { sessionStorage.clear(); } catch {}
+
+    window.location.href = '/';
+  };
+  // Keep ref in sync on every render so the timer callback always calls the latest version
+  logoutRef.current = logout;
+
+  // -------------------------------------------------------------------
+  // Extend session after warning modal "Stay Signed In"
+  // -------------------------------------------------------------------
+  const extendSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      logout();
+      return;
+    }
+    sessionWarningRef.current = false;
+    setSessionWarning(false);
+    lastActivityRef.current = Date.now();
+    scheduleSessionTimers();
   };
 
   const navigateToLogin = () => { window.location.href = '/signin'; };
@@ -443,8 +538,11 @@ export const AuthProvider = ({ children }) => {
       needsWorkspacePick,
       membershipsLoaded,
       trialFlow,
+      loginSource,
       routingSource,
+      sessionWarning,
       logout,
+      extendSession,
       navigateToLogin,
       checkAppState,
       switchWorkspace,

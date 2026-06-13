@@ -76,6 +76,7 @@ import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import ThemeProvider from './lib/ThemeProvider';
 import AuthDebugPanel from '@/components/dev/AuthDebugPanel';
+import SessionExpiringModal from '@/components/shared/SessionExpiringModal';
 import { supabase } from '@/api/supabaseClient';
 
 const BtnStyle = (bg, fg) => ({
@@ -337,12 +338,19 @@ const AuthenticatedApp = () => {
   );
 };
 
+function SessionWarningModal() {
+  const { sessionWarning, extendSession, logout } = useAuth();
+  if (!sessionWarning) return null;
+  return <SessionExpiringModal onStaySignedIn={extendSession} onSignOut={logout} />;
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
           <ThemeProvider>
+            <SessionWarningModal />
             <Router>
               <AuthenticatedApp />
               <AuthDebugPanel />

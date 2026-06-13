@@ -83,6 +83,7 @@ export default function PlatformLogin() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    sessionStorage.setItem('port24_login_source', 'platform_admin');
     try {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (signInErr) throw signInErr;
@@ -166,6 +167,9 @@ export default function PlatformLogin() {
             onClick={async () => {
               setError('');
               setOAuthChecking(true);
+              // Mark this as a platform admin login so AuthContext skips company
+              // membership routing after the OAuth redirect completes.
+              sessionStorage.setItem('port24_login_source', 'platform_admin');
               await supabase.auth.signOut();
               await supabase.auth.signInWithOAuth({
                 provider: 'google',
