@@ -325,6 +325,10 @@ export default function LandingPage() {
   }, []);
 
   const goSignIn = () => navigate('/signin');
+  const goTrial = () => {
+    sessionStorage.setItem('port24_flow', 'trial');
+    navigate('/signin');
+  };
   const goAcceptInvite = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('token')) navigate(`/accept-invite?token=${params.get('token')}`);
@@ -381,10 +385,10 @@ export default function LandingPage() {
               onMouseLeave={e => e.target.style.color = TEXT_MUTED}>
               Sign In
             </button>
-            <button onClick={goSignIn} style={{ background: T, color: BG, border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, padding: '9px 18px', cursor: 'pointer', transition: 'background 0.15s' }}
+            <button onClick={goTrial} style={{ background: T, color: BG, border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, padding: '9px 18px', cursor: 'pointer', transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = T_DIM}
               onMouseLeave={e => e.currentTarget.style.background = T}>
-              Request Access
+              Start Free Trial
             </button>
             <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: 'none', border: 'none', color: TEXT_MUTED, cursor: 'pointer', padding: 4, display: 'none' }} className="show-mobile">
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -428,10 +432,10 @@ export default function LandingPage() {
             </p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <button onClick={goSignIn} style={{ display: 'flex', alignItems: 'center', gap: 8, background: T, color: BG, border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, padding: '14px 28px', cursor: 'pointer', transition: 'background 0.15s' }}
+              <button onClick={goTrial} style={{ display: 'flex', alignItems: 'center', gap: 8, background: T, color: BG, border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, padding: '14px 28px', cursor: 'pointer', transition: 'background 0.15s' }}
                 onMouseEnter={e => e.currentTarget.style.background = T_DIM}
                 onMouseLeave={e => e.currentTarget.style.background = T}>
-                Get Started <ArrowRight size={16} />
+                Start Free Trial <ArrowRight size={16} />
               </button>
               <button onClick={goSignIn} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', color: '#fff', border: `1px solid ${BORDER_DIM}`, borderRadius: 12, fontWeight: 600, fontSize: 15, padding: '14px 28px', cursor: 'pointer', transition: 'all 0.15s' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
@@ -626,10 +630,15 @@ export default function LandingPage() {
             Join production companies using Port 24 to track every asset, book every crew member, and know their margins before the truck leaves the dock.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={goSignIn} style={{ display: 'flex', alignItems: 'center', gap: 8, background: T, color: BG, border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 16, padding: '16px 32px', cursor: 'pointer', transition: 'background 0.15s' }}
+            <button onClick={goTrial} style={{ display: 'flex', alignItems: 'center', gap: 8, background: T, color: BG, border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 16, padding: '16px 32px', cursor: 'pointer', transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = T_DIM}
               onMouseLeave={e => e.currentTarget.style.background = T}>
-              Get Started <ArrowRight size={16} />
+              Start Free Trial <ArrowRight size={16} />
+            </button>
+            <button onClick={goSignIn} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', color: '#fff', border: `1px solid ${BORDER_DIM}`, borderRadius: 12, fontWeight: 600, fontSize: 16, padding: '16px 32px', cursor: 'pointer', transition: 'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER_DIM; e.currentTarget.style.background = 'transparent'; }}>
+              Sign In
             </button>
           </div>
         </div>

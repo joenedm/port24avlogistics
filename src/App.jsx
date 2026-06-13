@@ -133,8 +133,43 @@ function RootRedirect() {
   return <Dashboard />;
 }
 
+function NoWorkspaceAccess() {
+  const { logout } = useAuth();
+  return (
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E1117', padding: '2rem', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ maxWidth: 460, width: '100%', textAlign: 'center' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#F87171" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"/></svg>
+        </div>
+        <h2 style={{ color: '#fff', fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.75rem' }}>No Workspace Access</h2>
+        <p style={{ color: '#9AA3B0', fontSize: '0.875rem', lineHeight: 1.7, marginBottom: '2rem', maxWidth: 380, margin: '0 auto 2rem' }}>
+          Your account is not connected to a Port 24 company workspace.
+          Please contact your company admin and ask them to send you an invite.
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => { window.location.href = '/signin'; }}
+            style={{ padding: '0.65rem 1.4rem', backgroundColor: '#1FB8A0', color: '#000', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem' }}>
+            Back to Login
+          </button>
+          <button
+            onClick={logout}
+            style={{ padding: '0.65rem 1.4rem', backgroundColor: 'rgba(255,255,255,0.07)', color: '#9AA3B0', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem' }}>
+            Sign Out
+          </button>
+          <a
+            href="mailto:support@port24av.com"
+            style={{ padding: '0.65rem 1.4rem', color: '#6B7A92', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, fontWeight: 500, cursor: 'pointer', fontSize: '0.875rem', textDecoration: 'none' }}>
+            Contact Support
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, membershipsLoaded, needsCompany, needsWorkspacePick, isPlatformAdmin, user, userRecord, companyMemberships } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, membershipsLoaded, needsCompany, needsWorkspacePick, trialFlow, isPlatformAdmin, user, userRecord, companyMemberships } = useAuth();
 
   if (isLoadingPublicSettings || isLoadingAuth || (isAuthenticated && !membershipsLoaded)) {
     return (
@@ -170,9 +205,12 @@ const AuthenticatedApp = () => {
     return <Navigate to="/platform" replace />;
   }
 
-  // Authenticated but no company membership → create company onboarding
+  // Authenticated but no company membership
   if (isAuthenticated && needsCompany) {
-    return <CreateCompany />;
+    // Only allow workspace creation when the user arrived via the trial or invite flow
+    if (trialFlow) return <CreateCompany />;
+    // All other cases: show the no-access message (do NOT offer company creation)
+    return <NoWorkspaceAccess />;
   }
 
   // Authenticated, multiple companies, no active workspace selected → workspace picker

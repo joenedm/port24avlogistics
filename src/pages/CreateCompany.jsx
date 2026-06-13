@@ -26,10 +26,9 @@ export default function CreateCompany() {
       });
       if (fnErr || data?.error) throw new Error(fnErr?.message || data?.error || 'Failed to create company');
 
+      // Clear the trial flow flag — company is now created, no longer in onboarding.
+      sessionStorage.removeItem('port24_flow');
       // Hard-reload so AuthContext re-initialises from scratch with the new org_id.
-      // We do NOT call checkAppState first — that can race with email-linking and produce
-      // stale state. The edge function already committed the DB writes, so getSession()
-      // on the next page load will pick up the correct org_id and membership.
       window.location.href = '/dashboard';
     } catch (err) {
       setError(err.message);
@@ -45,9 +44,9 @@ export default function CreateCompany() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img src="/port24-logo.svg" alt="Port 24" className="w-12 h-12 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white">Create Your Workspace</h1>
+          <h1 className="text-2xl font-bold text-white">Set Up Your Workspace</h1>
           <p className="text-sm mt-1" style={{ color: '#6B7A92' }}>
-            Set up your company workspace to get started with Port 24.
+            Create your company workspace to start your free trial.
           </p>
         </div>
 

@@ -19,6 +19,10 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [routingSource, setRoutingSource] = useState(null);
 
+  // True when the user arrived via the "Start Free Trial" landing-page button.
+  // Persisted in sessionStorage so it survives the OAuth redirect.
+  const [trialFlow] = useState(() => sessionStorage.getItem('port24_flow') === 'trial');
+
   const profileLoadingRef = useRef(false);
   const authDoneRef = useRef(false);
 
@@ -416,6 +420,7 @@ export const AuthProvider = ({ children }) => {
       needsCompany,
       needsWorkspacePick,
       membershipsLoaded,
+      trialFlow,
       routingSource,
       logout,
       navigateToLogin,
