@@ -1,3 +1,4 @@
+import React from 'react';
 import { Toaster } from 'sonner';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -75,6 +76,27 @@ import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import ThemeProvider from './lib/ThemeProvider';
 
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E1117', padding: '2rem', fontFamily: 'monospace' }}>
+          <div style={{ maxWidth: 600, width: '100%', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, padding: '2rem', backgroundColor: 'rgba(239,68,68,0.05)' }}>
+            <p style={{ color: '#F87171', fontWeight: 700, marginBottom: '0.75rem' }}>Application error</p>
+            <p style={{ color: '#9AA3B0', fontSize: '0.8rem', marginBottom: '1.5rem', wordBreak: 'break-all' }}>{this.state.error?.message}</p>
+            <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1.25rem', backgroundColor: '#1FB8A0', color: '#000', borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
+              Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function RootRedirect() {
   return <Dashboard />;
 }
@@ -82,7 +104,7 @@ function RootRedirect() {
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, membershipsLoaded, needsCompany, needsWorkspacePick, isPlatformAdmin, user, userRecord, companyMemberships } = useAuth();
 
-  if (isLoadingPublicSettings || isLoadingAuth || (isAuthenticated && (!membershipsLoaded || !userRecord))) {
+  if (isLoadingPublicSettings || isLoadingAuth || (isAuthenticated && !membershipsLoaded)) {
     return (
       <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E1117' }}>
         <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid rgba(31,184,160,0.2)', borderTopColor: '#1FB8A0', animation: 'spin 0.8s linear infinite' }} />
@@ -237,16 +259,18 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <ThemeProvider>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </ThemeProvider>
-      </QueryClientProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <ThemeProvider>
+            <Router>
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

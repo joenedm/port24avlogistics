@@ -303,8 +303,14 @@ export const AuthProvider = ({ children }) => {
         await loadProfile(session.user);
       } catch (err) {
         if (DEV) console.error('[Auth] loadProfile threw:', err);
-        // If loadProfile crashed, memberships may still be null → loading guard loops forever.
-        setCompanyMemberships(prev => prev ?? []);
+        // Unexpected crash — sign out so the user sees the sign-in page instead of infinite spinner.
+        // Do NOT call supabase.auth.signOut() here (it fires another SIGNED_OUT event which re-enters
+        // this handler). Instead, clear state directly to reach the auth_required error UI.
+        setUser(null);
+        setUserRecord(null);
+        setCompanyMemberships([]);
+        setIsAuthenticated(false);
+        setAuthError({ type: 'auth_required' });
       } finally {
         profileLoadingRef.current = false;
         setIsLoadingAuth(false);
