@@ -10,6 +10,7 @@ const T_DIM = '#17907C';
 const BORDER = 'rgba(31,184,160,0.2)';
 const BORDER_DIM = 'rgba(255,255,255,0.07)';
 const TEXT_MUTED = '#6B7A92';
+const PLATFORM_ADMIN_EMAILS = ['port24avlogistics@gmail.com'];
 
 function Port24Mark() {
   return <img src="/port24-logo.svg" alt="Port 24" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />;
@@ -23,20 +24,60 @@ export default function PlatformLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // If already logged in as platform admin, go straight to platform
+  // Detect if we're processing an OAuth redirect (code= in URL) so we can show a spinner
+  const isOAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
+  const [oauthChecking, setOAuthChecking] = useState(isOAuthCallback);
+
+  // If already logged in as platform admin, go straight to platform.
+  // Also handles the OAuth redirect — onAuthStateChange fires SIGNED_IN after code exchange.
   useEffect(() => {
+    // Safety valve: if OAuth check hasn't resolved in 15s, give up and show the form
+    let safetyTimer = null;
+    if (isOAuthCallback) {
+      safetyTimer = setTimeout(() => setOAuthChecking(false), 15000);
+    }
+
+    // Check existing session first (handles direct nav to /platform/login while already logged in)
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session?.user) return;
-      const { data: profile } = await supabase
-        .from('users')
-        .select('is_platform_admin')
-        .eq('id', session.user.id)
-        .single();
-      if (profile?.is_platform_admin) navigate('/platform', { replace: true });
+      clearTimeout(safetyTimer);
+      await verifyAndRoute(session.user);
     });
+
+    // Listen for auth events — this fires after Google OAuth code exchange
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        clearTimeout(safetyTimer);
+        await verifyAndRoute(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        clearTimeout(safetyTimer);
+        setOAuthChecking(false);
+      }
+    });
+
+    return () => {
+      clearTimeout(safetyTimer);
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const PLATFORM_ADMIN_EMAILS = ['port24avlogistics@gmail.com'];
+  const verifyAndRoute = async (authUser) => {
+    const normalizedEmail = authUser.email?.toLowerCase() ?? '';
+    if (PLATFORM_ADMIN_EMAILS.includes(normalizedEmail)) {
+      // Ensure the DB row is marked as platform admin then go to the panel
+      const { data: existing } = await supabase.from('users').select('org_id').eq('id', authUser.id).single();
+      await supabase.from('users').upsert(
+        { id: authUser.id, email: authUser.email, is_platform_admin: true, role: 'admin', org_id: existing?.org_id ?? null },
+        { onConflict: 'id' }
+      );
+      navigate('/platform', { replace: true });
+      return;
+    }
+    // Not a platform admin — sign them out and show an error on this page
+    await supabase.auth.signOut();
+    setOAuthChecking(false);
+    setError('Access denied. This portal is for Port 24 staff only.');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,6 +115,15 @@ export default function PlatformLogin() {
       setLoading(false);
     }
   };
+
+  if (oauthChecking) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ backgroundColor: BG, fontFamily: 'Inter, sans-serif' }}>
+        <Loader2 className="w-7 h-7 animate-spin" style={{ color: T }} />
+        <p className="text-sm" style={{ color: TEXT_MUTED }}>Verifying access…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: BG, fontFamily: 'Inter, sans-serif' }}>
@@ -115,10 +165,11 @@ export default function PlatformLogin() {
             type="button"
             onClick={async () => {
               setError('');
+              setOAuthChecking(true);
               await supabase.auth.signOut();
               await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: `${window.location.origin}/signin` },
+                options: { redirectTo: `${window.location.origin}/platform/login` },
               });
             }}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-sm font-medium transition-all mb-5"
