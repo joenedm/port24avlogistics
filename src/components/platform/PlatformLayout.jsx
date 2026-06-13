@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
-import { useAuth } from '@/lib/AuthContext';
-import { Building2, LogOut, ChevronRight, ShieldCheck, Loader2 } from 'lucide-react';
+import { Building2, LogOut, ShieldCheck, Loader2 } from 'lucide-react';
 
 const BG = '#070B11';
 const SIDEBAR = '#0D1219';
@@ -30,36 +29,60 @@ export default function PlatformLayout() {
   const [denied, setDenied] = useState(false);
   const [userEmail, setUserEmail] = useState('');
 
-  // Use AuthContext session when available (faster, avoids redundant getSession call).
-  // Fall back to supabase.auth.getSession() for direct URL navigation where AuthContext
-  // may not have loaded yet.
-  const auth = useAuth();
-
   useEffect(() => {
-    // If AuthContext already resolved the session, use it directly
-    if (!auth.isLoadingAuth) {
-      const email = auth.user?.email?.toLowerCase() ?? '';
-      if (!auth.isAuthenticated || !email) {
-        navigate('/platform/login', { replace: true });
-        return;
-      }
-      if (DEV_ADMIN_EMAILS.includes(email)) {
+    let cancelled = false;
+
+    // Timeout: if session check hangs for 8s, send to login
+    const timeout = setTimeout(() => {
+      if (!cancelled) navigate('/platform/login', { replace: true });
+    }, 8000);
+
+    const verify = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled) return;
+        clearTimeout(timeout);
+
+        if (!session?.user) {
+          navigate('/platform/login', { replace: true });
+          return;
+        }
+
+        const email = session.user.email?.toLowerCase() ?? '';
         setUserEmail(email);
+
+        // Hardcoded platform admins always get through
+        if (DEV_ADMIN_EMAILS.includes(email)) {
+          setChecking(false);
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('users')
+          .select('is_platform_admin, email')
+          .eq('id', session.user.id)
+          .single();
+
+        if (cancelled) return;
+
+        if (!profile?.is_platform_admin) {
+          setDenied(true);
+          setChecking(false);
+          return;
+        }
+        setUserEmail(profile.email || email);
         setChecking(false);
-        return;
+      } catch {
+        if (!cancelled) navigate('/platform/login', { replace: true });
       }
-      if (auth.isPlatformAdmin) {
-        setUserEmail(auth.userRecord?.email || email);
-        setChecking(false);
-        return;
-      }
-      // Authenticated but not a platform admin
-      setDenied(true);
-      setChecking(false);
-      return;
-    }
-    // AuthContext still loading — wait for it (the dependency will re-run this effect)
-  }, [auth.isLoadingAuth, auth.isAuthenticated, auth.isPlatformAdmin, auth.user?.email]);
+    };
+
+    verify();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

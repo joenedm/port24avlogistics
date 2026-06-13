@@ -75,20 +75,52 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import ThemeProvider from './lib/ThemeProvider';
+import { supabase } from '@/api/supabaseClient';
+
+const BtnStyle = (bg, fg) => ({
+  padding: '0.6rem 1.25rem', backgroundColor: bg, color: fg,
+  borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer',
+  fontSize: '0.85rem', fontFamily: 'Inter, sans-serif',
+});
 
 class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { error: null }; }
+  constructor(props) { super(props); this.state = { error: null, clearing: false }; }
   static getDerivedStateFromError(error) { return { error }; }
+
+  clearSession = async () => {
+    this.setState({ clearing: true });
+    try { await supabase.auth.signOut(); } catch {}
+    try {
+      // Clear all localStorage (workspace caches, React Query persisted state, etc.)
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
+    window.location.href = '/signin';
+  };
+
   render() {
     if (this.state.error) {
+      const { error, clearing } = this.state;
       return (
-        <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E1117', padding: '2rem', fontFamily: 'monospace' }}>
-          <div style={{ maxWidth: 600, width: '100%', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, padding: '2rem', backgroundColor: 'rgba(239,68,68,0.05)' }}>
-            <p style={{ color: '#F87171', fontWeight: 700, marginBottom: '0.75rem' }}>Application error</p>
-            <p style={{ color: '#9AA3B0', fontSize: '0.8rem', marginBottom: '1.5rem', wordBreak: 'break-all' }}>{this.state.error?.message}</p>
-            <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1.25rem', backgroundColor: '#1FB8A0', color: '#000', borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
-              Reload
-            </button>
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E1117', padding: '2rem', fontFamily: 'Inter, sans-serif' }}>
+          <div style={{ maxWidth: 520, width: '100%', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 16, padding: '2rem', backgroundColor: 'rgba(239,68,68,0.04)' }}>
+            <p style={{ color: '#F87171', fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+              Port 24 ran into a loading issue.
+            </p>
+            <p style={{ color: '#9AA3B0', fontSize: '0.8rem', marginBottom: '1.75rem', wordBreak: 'break-all', fontFamily: 'monospace', lineHeight: 1.5 }}>
+              {error?.message || 'Unknown error'}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button onClick={() => window.location.reload()} style={BtnStyle('#1FB8A0', '#000')}>
+                Retry
+              </button>
+              <button onClick={this.clearSession} disabled={clearing} style={BtnStyle('rgba(239,68,68,0.15)', '#F87171')}>
+                {clearing ? 'Clearing…' : 'Clear Session and Return to Login'}
+              </button>
+              <button onClick={() => { window.location.href = '/landing'; }} style={BtnStyle('rgba(255,255,255,0.07)', '#9AA3B0')}>
+                Go to Landing Page
+              </button>
+            </div>
           </div>
         </div>
       );
