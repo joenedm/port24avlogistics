@@ -36,7 +36,7 @@ export default function PlatformLogin() {
     });
   }, []);
 
-  const PLATFORM_ADMIN_EMAILS = ['joe@nedm.com'];
+  const PLATFORM_ADMIN_EMAILS = ['port24avlogistics@gmail.com'];
 
   const handleSubmit = async (e) => {
     e.preventDefault();

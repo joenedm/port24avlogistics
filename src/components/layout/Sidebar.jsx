@@ -3,14 +3,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, CalendarDays, ScanBarcode,
   Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Boxes, History,
-  LogOut, Archive, Bell, TrendingUp, Upload, Users, FileText, DollarSign, Palette, CalendarRange, HeartPulse, Briefcase, Telescope, UserCircle, Handshake, Tag, ClipboardList, Building2, MapPin, Truck, Printer, ChevronsUpDown
+  LogOut, Archive, Bell, TrendingUp, Upload, Users, FileText, DollarSign, Palette, CalendarRange, HeartPulse, Briefcase, Telescope, UserCircle, Handshake, Tag, ClipboardList, Building2, MapPin, Truck, Printer, ChevronsUpDown, Lock, Zap
 } from 'lucide-react';
 import { db } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/lib/usePermissions';
+import { usePlan } from '@/lib/usePlan';
+import { PLANS } from '@/lib/planLimits';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import UpgradeModal from '@/components/shared/UpgradeModal';
 
 
 function Port24Icon() {
@@ -34,6 +37,11 @@ function loadCollapsedGroups() {
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState(loadCollapsedGroups);
+  const [upgradeModal, setUpgradeModal] = useState(null); // { featureKey, requiredPlan, message }
+
+  const openUpgrade = (featureKey, requiredPlan, message) =>
+    setUpgradeModal({ featureKey, requiredPlan, message });
+  const closeUpgrade = () => setUpgradeModal(null);
 
   const toggleGroup = (label) => {
     setCollapsedGroups(prev => {
@@ -46,6 +54,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { orgId, organization, companyMemberships, logout } = useAuth();
   const { role, canAccessAdmin, canAccessFinance, canAccessMissionControl, canManageCrew, canViewInventory, canAccessBusiness, canAccessPrintTemplates, canViewOwnProfile, canAccessRoundtable } = usePermissions();
+  const { can, requiredPlan, requiredPlanLabel } = usePlan();
 
   if (import.meta.env.DEV) {
     console.log('[Sidebar] rendering for role:', role);
@@ -53,66 +62,117 @@ export default function Sidebar() {
   const isAdmin = role === 'admin';
   const level = { admin: 5, director: 4, manager: 3, coordinator: 2, crew: 1 }[role] || 1;
 
+  // Helper: make a locked nav item that opens the upgrade modal instead of navigating
+  const locked = (icon, label, featureKey) => {
+    const rPlan = requiredPlan(featureKey);
+    return {
+      icon,
+      label,
+      lockedFeature: featureKey,
+      requiredPlan: requiredPlanLabel(featureKey),
+      onClick: () => openUpgrade(featureKey, rPlan, undefined),
+    };
+  };
+
   const navGroups = (() => {
     const groups = [];
 
-    // Operations — everyone gets access to scan portal (permissions handled inside the page)
-    const opsItems = [
-      { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-      { path: '/shows', icon: CalendarDays, label: 'Projects' },
-      { path: '/scan', icon: ScanBarcode, label: 'Scan' },
-    ];
-    if (level >= 2) opsItems.push({ path: '/av-hospital', icon: HeartPulse, label: 'AV Hospital', badge: 'hospital' });
-    if (role !== 'crew') groups.push({ label: 'Operations', items: opsItems });
-    else groups.push({ label: 'Operations', items: [{ path: '/scan', icon: ScanBarcode, label: 'Scan' }] });
-
-    // Crew management — manager+
-    if (canManageCrew) {
+    // ── Operations ────────────────────────────────────────────────────────────
+    if (role !== 'crew') {
+      const opsItems = [
+        { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+        { path: '/shows', icon: CalendarDays, label: 'Projects' },
+      ];
+      // QR Scanning — locked for trial
+      if (can('qr_scanning')) {
+        opsItems.push({ path: '/scan', icon: ScanBarcode, label: 'Scan' });
+      } else {
+        opsItems.push(locked(ScanBarcode, 'Scan', 'qr_scanning'));
+      }
+      // AV Hospital — locked for trial + starter
+      if (level >= 2) {
+        if (can('av_hospital')) {
+          opsItems.push({ path: '/av-hospital', icon: HeartPulse, label: 'AV Hospital', badge: 'hospital' });
+        } else {
+          opsItems.push(locked(HeartPulse, 'AV Hospital', 'av_hospital'));
+        }
+      }
+      groups.push({ label: 'Operations', items: opsItems });
+    } else {
+      // Crew role: scan only
       groups.push({
-        label: 'Crew',
+        label: 'Operations',
         items: [
-          { path: '/crew-members', icon: Users, label: 'Employees' },
-          { path: '/crew-bookings', icon: Briefcase, label: 'Crew Bookings' },
-        ]
-      });
-    } else if (canViewOwnProfile) {
-      // Crew/coordinator: only see own profile
-      groups.push({
-        label: 'My Portal',
-        items: [
-          { path: '/my-profile', icon: UserCircle, label: 'My Profile' },
-        ]
+          can('qr_scanning')
+            ? { path: '/scan', icon: ScanBarcode, label: 'Scan' }
+            : locked(ScanBarcode, 'Scan', 'qr_scanning'),
+        ],
       });
     }
 
-    // Inventory — coordinator+
+    // ── Crew ──────────────────────────────────────────────────────────────────
+    if (canManageCrew) {
+      // Role allows crew management — check plan
+      if (can('crew_management')) {
+        groups.push({
+          label: 'Crew',
+          items: [
+            { path: '/crew-members', icon: Users, label: 'Employees' },
+            { path: '/crew-bookings', icon: Briefcase, label: 'Crew Bookings' },
+          ],
+        });
+      } else {
+        groups.push({
+          label: 'Crew',
+          items: [
+            locked(Users, 'Employees', 'crew_management'),
+            locked(Briefcase, 'Crew Bookings', 'crew_management'),
+          ],
+        });
+      }
+    } else if (canViewOwnProfile) {
+      groups.push({
+        label: 'My Portal',
+        items: [{ path: '/my-profile', icon: UserCircle, label: 'My Profile' }],
+      });
+    }
+
+    // ── Inventory ─────────────────────────────────────────────────────────────
     if (canViewInventory) {
-    groups.push({
-      label: 'Inventory',
-      items: [
+      const invItems = [
         { path: '/assets', icon: Package, label: 'Assets' },
         { path: '/kits', icon: Archive, label: 'Kits' },
-        { path: '/assign-barcode', icon: Tag, label: 'Assign Barcodes' },
         { path: '/categories', icon: Boxes, label: 'Categories' },
         { path: '/movements', icon: History, label: 'Movement Log' },
         { path: '/containers', icon: Archive, label: 'Containers' },
-        { path: '/yearly-review', icon: ClipboardList, label: 'Asset Reviews' },
-      ]
-    });
+      ];
+      // Assign Barcodes — QR scanning feature
+      if (can('qr_scanning')) {
+        invItems.splice(2, 0, { path: '/assign-barcode', icon: Tag, label: 'Assign Barcodes' });
+      } else {
+        invItems.splice(2, 0, locked(Tag, 'Assign Barcodes', 'qr_scanning'));
+      }
+      // Asset Reviews — yearly_review feature
+      if (can('yearly_review')) {
+        invItems.push({ path: '/yearly-review', icon: ClipboardList, label: 'Asset Reviews' });
+      } else {
+        invItems.push(locked(ClipboardList, 'Asset Reviews', 'yearly_review'));
+      }
+      groups.push({ label: 'Inventory', items: invItems });
     }
 
-    // CRM — manager+
+    // ── CRM ───────────────────────────────────────────────────────────────────
     if (level >= 3) {
       groups.push({
         label: 'CRM',
         items: [
           { path: '/clients', icon: Building2, label: 'Clients' },
           { path: '/venues', icon: MapPin, label: 'Venues' },
-        ]
+        ],
       });
     }
 
-    // Business — director+ (Mission Control + Roundtable only)
+    // ── Business ──────────────────────────────────────────────────────────────
     if (canAccessBusiness) {
       const businessItems = [
         { path: '/availability', icon: CalendarRange, label: 'Availability' },
@@ -127,35 +187,65 @@ export default function Sidebar() {
       groups.push({ label: 'Business', items: businessItems });
     }
 
-    // Quotes & Invoices — director+
+    // ── Quotes & Invoices ─────────────────────────────────────────────────────
     if (canAccessFinance) {
-      groups.push({
-        label: 'Quotes & Invoices',
-        items: [
-          { path: '/quotes', icon: FileText, label: 'Quotes' },
-          { path: '/invoices', icon: DollarSign, label: 'Invoices' },
-          { path: '/billing', icon: TrendingUp, label: 'Billing Dashboard' },
-        ]
-      });
+      if (can('quotes_invoices')) {
+        groups.push({
+          label: 'Quotes & Invoices',
+          items: [
+            { path: '/quotes', icon: FileText, label: 'Quotes' },
+            { path: '/invoices', icon: DollarSign, label: 'Invoices' },
+            { path: '/billing', icon: TrendingUp, label: 'Billing Dashboard' },
+          ],
+        });
+      } else {
+        groups.push({
+          label: 'Quotes & Invoices',
+          items: [
+            locked(FileText, 'Quotes', 'quotes_invoices'),
+            locked(DollarSign, 'Invoices', 'quotes_invoices'),
+          ],
+        });
+      }
     }
 
-    // Admin — admin only
+    // ── Financial Reports ─────────────────────────────────────────────────────
+    if (canAccessFinance) {
+      if (can('financial_reports')) {
+        groups.push({
+          label: 'Reports',
+          items: [{ path: '/reports', icon: TrendingUp, label: 'Financial Reports' }],
+        });
+      } else {
+        groups.push({
+          label: 'Reports',
+          items: [locked(TrendingUp, 'Financial Reports', 'financial_reports')],
+        });
+      }
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────────────────
     if (canAccessAdmin) {
-      groups.push({
-        label: 'Admin',
-        items: [
-          { path: '/print-templates', icon: FileText, label: 'Print Templates' },
-          { path: '/document-settings', icon: Printer, label: 'Documents & PDFs' },
-          { path: '/admin', icon: Settings, label: 'Settings' },
-        ]
-      });
+      const adminItems = [
+        { path: '/print-templates', icon: FileText, label: 'Print Templates' },
+        { path: '/document-settings', icon: Printer, label: 'Documents & PDFs' },
+        { path: '/admin', icon: Settings, label: 'Settings' },
+        { path: '/plan-usage', icon: Zap, label: 'Plan & Usage' },
+      ];
+      // API / Integrations
+      if (can('api_integrations')) {
+        adminItems.push({ path: '/integrations', icon: Upload, label: 'Integrations' });
+      } else {
+        adminItems.push(locked(Upload, 'Integrations', 'api_integrations'));
+      }
+      groups.push({ label: 'Admin', items: adminItems });
     } else if (canAccessPrintTemplates) {
       groups.push({
         label: 'Admin',
         items: [
           { path: '/print-templates', icon: FileText, label: 'Print Templates' },
           { path: '/document-settings', icon: Printer, label: 'Documents & PDFs' },
-        ]
+        ],
       });
     }
 
@@ -188,6 +278,7 @@ export default function Sidebar() {
   const activeHospital = hospitalRecords.filter(r => r.is_active).length;
 
   return (
+    <>
     <aside className={cn(
       "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground z-40 flex flex-col transition-all duration-300 border-r border-sidebar-border",
       collapsed ? "w-16" : "w-60"
@@ -263,7 +354,29 @@ export default function Sidebar() {
               )}
               {!isGroupCollapsed && (
                 <div className="space-y-0.5">
-                  {group.items.map((item) => {
+                  {group.items.map((item, idx) => {
+                    // Locked plan-gated item
+                    if (item.lockedFeature) {
+                      const lockedCls = cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 w-full cursor-pointer",
+                        "text-sidebar-foreground/40 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground/60"
+                      );
+                      return (
+                        <button key={`${item.lockedFeature}-${idx}`} className={lockedCls} onClick={item.onClick}>
+                          <item.icon className="w-4 h-4 shrink-0" />
+                          {!collapsed && (
+                            <>
+                              <span className="text-sm font-medium truncate flex-1">{item.label}</span>
+                              <span className="flex items-center gap-1 shrink-0">
+                                <Lock className="w-3 h-3" />
+                                <span className="text-xs">{item.requiredPlan}</span>
+                              </span>
+                            </>
+                          )}
+                        </button>
+                      );
+                    }
+
                     const isActive = location.pathname === item.path ||
                       (item.path !== '/' && location.pathname.startsWith(item.path));
                     const alertCount = item.badge === true ? unreadAlerts : item.badge === 'hospital' ? activeHospital : 0;
@@ -314,5 +427,16 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+
+    {upgradeModal && (
+      <UpgradeModal
+        open={true}
+        onClose={closeUpgrade}
+        featureKey={upgradeModal.featureKey}
+        requiredPlan={upgradeModal.requiredPlan}
+        message={upgradeModal.message}
+      />
+    )}
+  </>
   );
 }

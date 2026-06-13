@@ -132,7 +132,7 @@ function CreateOrgDialog({ onClose, onCreated }) {
   );
 }
 
-const DEV_ADMIN_EMAILS = ['joe@nedm.com'];
+const DEV_ADMIN_EMAILS = ['port24avlogistics@gmail.com'];
 
 function AddPlatformStaffDialog({ onClose }) {
   const { userRecord } = useAuth();

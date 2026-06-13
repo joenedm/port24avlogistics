@@ -5,6 +5,7 @@ import RouteGuard from './RouteGuard';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import BackButton from '@/components/shared/BackButton';
+import AuthDebugPanel from '@/components/dev/AuthDebugPanel';
 
 const HOME_ROUTES = ['/', '/dashboard'];
 
@@ -39,6 +40,7 @@ export default function AppLayout() {
           </RouteGuard>
         </div>
       </main>
+      <AuthDebugPanel />
     </div>
   );
 }

@@ -16,6 +16,7 @@ import Scan from './pages/Scan.jsx';
 import Movements from './pages/Movements';
 import Categories from './pages/Categories';
 import Admin from './pages/Admin';
+import PlanUsage from './pages/PlanUsage';
 import Kits from './pages/Kits';
 import Alerts from './pages/Alerts';
 import ImportInventory from './pages/ImportInventory';
@@ -79,9 +80,9 @@ function RootRedirect() {
 }
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, membershipsLoaded, needsCompany, needsWorkspacePick } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, membershipsLoaded, needsCompany, needsWorkspacePick, isPlatformAdmin, user, userRecord, companyMemberships } = useAuth();
 
-  if (isLoadingPublicSettings || isLoadingAuth || (isAuthenticated && !membershipsLoaded)) {
+  if (isLoadingPublicSettings || isLoadingAuth || (isAuthenticated && (!membershipsLoaded || !userRecord))) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: 'hsl(var(--muted))', borderTopColor: 'hsl(var(--primary))' }}></div>
@@ -104,6 +105,16 @@ const AuthenticatedApp = () => {
     );
   }
 
+  // Platform admin redirect — always fires for users whose email is in PLATFORM_ADMIN_EMAILS.
+  // These are pure platform admins with no workspace; they always go to /platform.
+  // Users who have is_platform_admin=true via DB (e.g. joe@nedm.com) but are NOT in
+  // PLATFORM_ADMIN_EMAILS are workspace users with elevated DB flags — they skip this
+  // and land in their workspace normally.
+  const isPureAdmin = user?.email && ['port24avlogistics@gmail.com'].includes(user.email.toLowerCase());
+  if (isAuthenticated && isPureAdmin && membershipsLoaded) {
+    return <Navigate to="/platform" replace />;
+  }
+
   // Authenticated but no company membership → create company onboarding
   if (isAuthenticated && needsCompany) {
     return <CreateCompany />;
@@ -118,7 +129,7 @@ const AuthenticatedApp = () => {
     // Show public routes without sidebar; all others redirect to sign-in
     return (
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<Navigate to="/signin" replace />} />
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -137,8 +148,8 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      {/* Public pages — always accessible, even when authenticated */}
-      <Route path="/" element={<LandingPage />} />
+      {/* / redirects authenticated users to the app; /landing is the marketing page */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/workspace-picker" element={<WorkspacePicker />} />
       <Route path="/create-company" element={<CreateCompany />} />
@@ -173,6 +184,7 @@ const AuthenticatedApp = () => {
         <Route path="/utilization" element={<Navigate to="/mission-control" replace />} />
         <Route path="/import" element={<ImportInventory />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/plan-usage" element={<PlanUsage />} />
         <Route path="/branding" element={<BrandingSettings />} />
         <Route path="/availability" element={<AvailabilityCalendar />} />
         <Route path="/av-hospital" element={<AVHospital />} />

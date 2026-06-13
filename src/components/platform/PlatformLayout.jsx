@@ -20,7 +20,7 @@ function Port24Mark() {
   );
 }
 
-const DEV_ADMIN_EMAILS = ['joe@nedm.com'];
+const DEV_ADMIN_EMAILS = ['joe@nedm.com', 'port24avlogistics@gmail.com'];
 
 export default function PlatformLayout() {
   const navigate = useNavigate();

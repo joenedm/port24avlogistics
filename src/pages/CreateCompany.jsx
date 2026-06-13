@@ -9,7 +9,7 @@ const TEAL = '#1FB8A0';
 const BORDER_DIM = 'rgba(255,255,255,0.07)';
 
 export default function CreateCompany() {
-  const { user, checkAppState, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,11 +22,14 @@ export default function CreateCompany() {
     try {
       // Create org via edge function so service role can bypass RLS
       const { data, error: fnErr } = await supabase.functions.invoke('create-company', {
-        body: { name: name.trim(), user_id: user.id },
+        body: { name: name.trim() },
       });
       if (fnErr || data?.error) throw new Error(fnErr?.message || data?.error || 'Failed to create company');
-      // Reload auth state so org_id and memberships are populated
-      await checkAppState();
+
+      // Hard-reload so AuthContext re-initialises from scratch with the new org_id.
+      // We do NOT call checkAppState first — that can race with email-linking and produce
+      // stale state. The edge function already committed the DB writes, so getSession()
+      // on the next page load will pick up the correct org_id and membership.
       window.location.href = '/dashboard';
     } catch (err) {
       setError(err.message);

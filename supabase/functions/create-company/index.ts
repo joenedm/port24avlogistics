@@ -30,6 +30,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // Gate: user must already exist in public.users (i.e. they were invited).
+    // This prevents anyone with a raw Supabase JWT (e.g. fresh Google OAuth) from
+    // calling this endpoint directly and creating a company without an invite.
+    const { data: existingUser } = await adminClient
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+    if (!existingUser) throw new Error('No account found. You need an invite link to access Port 24.');
+
     // Create the organization
     const { data: org, error: orgErr } = await adminClient
       .from('organizations')
@@ -39,21 +49,30 @@ serve(async (req) => {
 
     if (orgErr) throw orgErr;
 
-    // Set the user's org_id and role
+    // UPSERT (not just update) so we create the public.users row if it doesn't exist yet.
     const { error: userUpdateErr } = await adminClient
       .from('users')
-      .update({ org_id: org.id, role: 'admin' })
-      .eq('id', user.id);
+      .upsert({
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || '',
+        org_id: org.id,
+        role: 'admin',
+      }, { onConflict: 'id' });
 
     if (userUpdateErr) throw userUpdateErr;
 
     // Insert company_membership
-    await adminClient.from('company_memberships').insert({
-      user_id: user.id,
-      org_id: org.id,
-      role: 'admin',
-      status: 'active',
-    });
+    const { error: membershipErr } = await adminClient
+      .from('company_memberships')
+      .upsert({
+        user_id: user.id,
+        org_id: org.id,
+        role: 'admin',
+        status: 'active',
+      }, { onConflict: 'user_id,org_id' });
+
+    if (membershipErr) throw membershipErr;
 
     return new Response(JSON.stringify({ ok: true, org_id: org.id, org }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
