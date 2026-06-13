@@ -245,6 +245,23 @@ export const AuthProvider = ({ children }) => {
   // Auth state listener — single source of truth.
   // Uses INITIAL_SESSION to eliminate the getSession() / onAuthStateChange race.
   // -------------------------------------------------------------------
+  // Safety valve: if the app is still loading after 12 seconds, something went wrong
+  // (e.g. PKCE OAuth code expired, Supabase query hung). Clear state → sign-in page.
+  // Uses a ref to avoid stale closure — authDoneRef becomes true as soon as auth resolves.
+  const authDoneRef = useRef(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!authDoneRef.current) {
+        console.warn('[Auth] Loading timeout — clearing auth state');
+        profileLoadingRef.current = false;
+        setUser(null); setUserRecord(null); setCompanyMemberships([]);
+        setIsAuthenticated(false); setAuthError({ type: 'auth_required' });
+        setIsLoadingAuth(false); setRoutingSource(null);
+      }
+    }, 12000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const DEV = import.meta.env.DEV;
 
@@ -274,6 +291,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
         if (DEV) console.log('[Auth] clearing all auth state — event:', event);
+        authDoneRef.current = true;
         setUser(null);
         setUserRecord(null);
         setCompanyMemberships([]);
@@ -312,6 +330,7 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
         setAuthError({ type: 'auth_required' });
       } finally {
+        authDoneRef.current = true;
         profileLoadingRef.current = false;
         setIsLoadingAuth(false);
       }
