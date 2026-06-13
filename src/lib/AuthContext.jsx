@@ -163,6 +163,28 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
+    // 3.6. Start Free Trial — brand-new Google/OAuth user who clicked "Start Free Trial".
+    // Create a minimal users record so they can reach CreateCompany and pass the
+    // create-company edge function gate ("user must exist in public.users").
+    if (!profile && trialFlow && authUser.app_metadata?.provider !== 'email') {
+      if (DEV) console.log('[Auth] trial flow — creating minimal profile for new OAuth user:', authUser.email);
+      await supabase.from('users').upsert({
+        id: authUser.id,
+        email: authUser.email,
+        full_name: authUser.user_metadata?.full_name || '',
+        org_id: null,
+        role: 'admin',
+      }, { onConflict: 'id' });
+      const { data: newProfile } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+      profile = newProfile || {
+        id: authUser.id,
+        email: authUser.email,
+        full_name: authUser.user_metadata?.full_name || '',
+        org_id: null,
+        role: 'admin',
+      };
+    }
+
     // 4. No account found — block access
     if (!profile) {
       if (DEV) console.log('[Auth] BLOCKED — no account found for', authUser.email);

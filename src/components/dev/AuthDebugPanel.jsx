@@ -54,7 +54,12 @@ export default function AuthDebugPanel() {
   );
 }
 
-const PUBLIC_LANDING_PATHS = new Set(['/', '/landing']);
+const PUBLIC_PATHS = new Set([
+  '/', '/landing',
+  '/signin', '/forgot-password', '/reset-password', '/verify-email',
+  '/accept-invite', '/crew-confirmation', '/booking-confirmation',
+  '/qb-callback', '/platform/login', '/platform/join',
+]);
 
 function PanelContent() {
   const {
@@ -65,7 +70,7 @@ function PanelContent() {
   const location = useLocation();
 
   const isNEDM = orgId === '7da320de-241c-48a2-98ab-acd1fd215386';
-  const isPublicPath = PUBLIC_LANDING_PATHS.has(location.pathname);
+  const isPublicPath = PUBLIC_PATHS.has(location.pathname);
 
   // Auth state label
   const authState = isLoadingAuth ? 'loading' : isAuthenticated ? 'authenticated' : 'unauthenticated';

@@ -169,9 +169,13 @@ function NoWorkspaceAccess() {
   );
 }
 
-// Routes that must render the public landing/marketing page regardless of auth state.
-// NoWorkspaceAccess must NOT intercept these — they are not protected workspace routes.
-const PUBLIC_LANDING_PATHS = new Set(['/', '/landing']);
+// Public routes — never blocked by NoWorkspaceAccess, regardless of auth state.
+const PUBLIC_PATHS = new Set([
+  '/', '/landing',
+  '/signin', '/forgot-password', '/reset-password', '/verify-email',
+  '/accept-invite', '/crew-confirmation', '/booking-confirmation',
+  '/qb-callback', '/platform/login', '/platform/join',
+]);
 
 const AuthenticatedApp = () => {
   const location = useLocation();
@@ -214,7 +218,7 @@ const AuthenticatedApp = () => {
   // Authenticated but no company membership.
   // Skip this guard for public landing/marketing paths so the marketing site is always
   // reachable regardless of auth state — NoWorkspaceAccess is for protected routes only.
-  if (isAuthenticated && needsCompany && !PUBLIC_LANDING_PATHS.has(location.pathname)) {
+  if (isAuthenticated && needsCompany && !PUBLIC_PATHS.has(location.pathname)) {
     if (trialFlow) return <CreateCompany />;
     return <NoWorkspaceAccess />;
   }
