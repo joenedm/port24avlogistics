@@ -64,10 +64,10 @@ export default function PlatformLogin() {
   const verifyAndRoute = async (authUser) => {
     const normalizedEmail = authUser.email?.toLowerCase() ?? '';
     if (PLATFORM_ADMIN_EMAILS.includes(normalizedEmail)) {
-      // Ensure the DB row is marked as platform admin then go to the panel
-      const { data: existing } = await supabase.from('users').select('org_id').eq('id', authUser.id).single();
+      // Mark as platform admin and force org_id=null so they can never be accidentally
+      // routed into a company workspace (e.g. NEDM) via a stale org_id in the DB.
       await supabase.from('users').upsert(
-        { id: authUser.id, email: authUser.email, is_platform_admin: true, role: 'admin', org_id: existing?.org_id ?? null },
+        { id: authUser.id, email: authUser.email, is_platform_admin: true, role: 'admin', org_id: null },
         { onConflict: 'id' }
       );
       navigate('/platform', { replace: true });

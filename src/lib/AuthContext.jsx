@@ -273,36 +273,38 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // 5. Apply platform-admin override
-    if (PLATFORM_ADMIN_EMAILS.includes(authUser.email?.toLowerCase())) {
-      if (DEV) console.log('[Auth] platform admin override applied');
-      profile = { ...profile, is_platform_admin: true, role: 'admin' };
+    // 5. Apply platform-admin override.
+    //    Force org_id=null so the admin is never accidentally routed into a company
+    //    workspace (e.g. NEDM) due to a stale org_id in the users table.
+    const isEmailAdmin = PLATFORM_ADMIN_EMAILS.includes(authUser.email?.toLowerCase());
+    if (isEmailAdmin) {
+      if (DEV) console.log('[Auth] platform admin override applied — clearing org_id');
+      profile = { ...profile, is_platform_admin: true, role: 'admin', org_id: null };
       supabase.from('users').upsert({
         id: authUser.id,
         email: authUser.email,
         is_platform_admin: true,
         role: 'admin',
-        ...(profile.org_id ? { org_id: profile.org_id } : {}),
+        org_id: null,
       }, { onConflict: 'id' }).then(() => {});
     }
 
-    setUserRecord(profile);
-
     // 6. Platform admin path — skip ALL company membership routing.
-    //    loginSource 'platform_admin' means the user came through PlatformLogin.
-    //    PLATFORM_ADMIN_EMAILS is a belt-and-suspenders check for the email-based admin.
-    //    Either way: they go to /platform, not a company workspace.
-    const isAdminLogin = loginSource === 'platform_admin'
-      || PLATFORM_ADMIN_EMAILS.includes(authUser.email?.toLowerCase());
+    //    loginSource 'platform_admin' = user came through PlatformLogin (Google or email).
+    //    isEmailAdmin = belt-and-suspenders for the hardcoded admin email.
+    //    Either way: they go to /platform, never a company workspace.
+    const isAdminLogin = loginSource === 'platform_admin' || isEmailAdmin;
 
     if (isAdminLogin) {
       if (DEV) console.log('[Auth] platform admin path — skipping company membership routing');
+      setUserRecord({ ...profile, org_id: null }); // guarantee org_id is null
       setCompanyMemberships([]);
       setRoutingSource('platform_admin');
       return;
     }
 
     if (DEV) console.log('[Auth] setUserRecord — org_id:', profile.org_id, 'is_platform_admin:', profile.is_platform_admin);
+    setUserRecord(profile);
     await loadMemberships(authUser.id, profile);
   };
 

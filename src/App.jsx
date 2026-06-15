@@ -211,8 +211,12 @@ const AuthenticatedApp = () => {
   // Users who have is_platform_admin=true via DB (e.g. joe@nedm.com) but are NOT in
   // PLATFORM_ADMIN_EMAILS are workspace users with elevated DB flags — they skip this
   // and land in their workspace normally.
+  // Redirect platform-admin users away from company routes → /platform.
+  // MUST skip this when already on /platform/* — returning <Navigate to="/platform">
+  // while already at /platform creates an infinite render loop that prevents
+  // PlatformAdmin from ever mounting.
   const isPureAdmin = user?.email && ['port24avlogistics@gmail.com'].includes(user.email.toLowerCase());
-  if (isAuthenticated && isPureAdmin && membershipsLoaded) {
+  if (isAuthenticated && isPureAdmin && membershipsLoaded && !location.pathname.startsWith('/platform')) {
     return <Navigate to="/platform" replace />;
   }
 
