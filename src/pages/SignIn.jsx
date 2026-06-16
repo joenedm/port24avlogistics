@@ -952,7 +952,10 @@ export default function SignIn() {
               await supabase.auth.signOut();
               await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: `${window.location.origin}/signin` },
+                options: {
+                  redirectTo: `${window.location.origin}/signin`,
+                  queryParams: { prompt: 'select_account' },
+                },
               });
             }}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-sm font-medium transition-all"
