@@ -70,11 +70,13 @@ export default function PlatformLogin() {
         { id: authUser.id, email: authUser.email, is_platform_admin: true, role: 'admin', org_id: null },
         { onConflict: 'id' }
       );
+      sessionStorage.removeItem('port24_login_source'); // consumed — clear so it doesn't affect future logins
       navigate('/platform', { replace: true });
       return;
     }
     // Not a platform admin — sign them out and show an error on this page
     await supabase.auth.signOut();
+    sessionStorage.removeItem('port24_login_source'); // clear so normal company login works after denial
     setOAuthChecking(false);
     setError('Access denied. This portal is for Port 24 staff only.');
   };
@@ -91,13 +93,13 @@ export default function PlatformLogin() {
       const { data: { user } } = await supabase.auth.getUser();
       const normalizedEmail = user.email?.toLowerCase();
 
-      // Hardcoded super-admins: ensure DB flag is set, then allow through
+      // Hardcoded super-admins: ensure DB flag is set and org_id=null, then allow through
       if (PLATFORM_ADMIN_EMAILS.includes(normalizedEmail)) {
-        const { data: existing } = await supabase.from('users').select('org_id').eq('id', user.id).single();
         await supabase.from('users').upsert(
-          { id: user.id, email: user.email, is_platform_admin: true, role: 'admin', org_id: existing?.org_id ?? null },
+          { id: user.id, email: user.email, is_platform_admin: true, role: 'admin', org_id: null },
           { onConflict: 'id' }
         );
+        sessionStorage.removeItem('port24_login_source');
         navigate('/platform', { replace: true });
         return;
       }
@@ -170,11 +172,22 @@ export default function PlatformLogin() {
               // Mark this as a platform admin login so AuthContext skips company
               // membership routing after the OAuth redirect completes.
               sessionStorage.setItem('port24_login_source', 'platform_admin');
-              await supabase.auth.signOut();
-              await supabase.auth.signInWithOAuth({
+              // Do NOT call signOut() here — it fires SIGNED_OUT which triggers
+              // setOAuthChecking(false) and hides the spinner before the redirect.
+              // signInWithOAuth always starts a fresh Google auth flow regardless
+              // of any existing session.
+              const { error: oauthErr } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: `${window.location.origin}/platform/login` },
+                options: {
+                  redirectTo: `${window.location.origin}/platform/login`,
+                  queryParams: { prompt: 'select_account' }, // Always show account picker
+                },
               });
+              if (oauthErr) {
+                sessionStorage.removeItem('port24_login_source');
+                setOAuthChecking(false);
+                setError(oauthErr.message || 'Google sign-in failed. Please try again.');
+              }
             }}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-sm font-medium transition-all mb-5"
             style={{ backgroundColor: '#060A10', border: `1px solid ${BORDER_DIM}`, color: '#fff' }}

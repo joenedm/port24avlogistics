@@ -36,7 +36,11 @@ export const AuthProvider = ({ children }) => {
   //   'platform_admin' — set by PlatformLogin before Google/email OAuth
   //   'company_login'  — everything else (default)
   // When 'platform_admin': company membership routing is skipped entirely.
-  const [loginSource] = useState(() => sessionStorage.getItem('port24_login_source') ?? 'company_login');
+  //
+  // loginSourceRef — read inside loadProfile (avoids stale closure since useEffect runs once)
+  // loginSource    — state exposed in context for debug panel; kept in sync with the ref
+  const loginSourceRef = useRef(sessionStorage.getItem('port24_login_source') ?? 'company_login');
+  const [loginSource, setLoginSource] = useState(loginSourceRef.current);
 
   // Session warning modal state
   const [sessionWarning, setSessionWarning] = useState(false);
@@ -112,7 +116,7 @@ export const AuthProvider = ({ children }) => {
   // -------------------------------------------------------------------
   const loadProfile = async (authUser) => {
     const DEV = import.meta.env.DEV;
-    if (DEV) console.log('[Auth] loadProfile start — uid:', authUser.id, 'email:', authUser.email, 'loginSource:', loginSource);
+    if (DEV) console.log('[Auth] loadProfile start — uid:', authUser.id, 'email:', authUser.email, 'loginSource:', loginSourceRef.current);
 
     // 1. Fetch user row by UUID
     const { data: profileByUUID } = await supabase
@@ -290,13 +294,17 @@ export const AuthProvider = ({ children }) => {
     }
 
     // 6. Platform admin path — skip ALL company membership routing.
-    //    loginSource 'platform_admin' = user came through PlatformLogin (Google or email).
+    //    loginSourceRef.current 'platform_admin' = user came through PlatformLogin (Google or email).
     //    isEmailAdmin = belt-and-suspenders for the hardcoded admin email.
     //    Either way: they go to /platform, never a company workspace.
-    const isAdminLogin = loginSource === 'platform_admin' || isEmailAdmin;
+    //    Clear the loginSource after consuming it so subsequent company logins aren't affected.
+    const isAdminLogin = loginSourceRef.current === 'platform_admin' || isEmailAdmin;
 
     if (isAdminLogin) {
       if (DEV) console.log('[Auth] platform admin path — skipping company membership routing');
+      loginSourceRef.current = 'company_login'; // consumed — reset for future logins
+      sessionStorage.removeItem('port24_login_source');
+      setLoginSource('company_login');
       setUserRecord({ ...profile, org_id: null }); // guarantee org_id is null
       setCompanyMemberships([]);
       setRoutingSource('platform_admin');
@@ -398,6 +406,9 @@ export const AuthProvider = ({ children }) => {
         }
         if (DEV) console.log('[Auth] clearing all auth state — event:', event);
         authDoneRef.current = true;
+        profileLoadingRef.current = false; // ensure mutex resets so next sign-in isn't silently skipped
+        loginSourceRef.current = 'company_login'; // reset so subsequent company logins work
+        setLoginSource('company_login');
         setUser(null);
         setUserRecord(null);
         setCompanyMemberships([]);
