@@ -35,9 +35,15 @@ export default function PlatformOrgDetail() {
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['platform-org-users', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('users').select('*').eq('org_id', orgId).order('full_name');
+      const { data, error } = await supabase
+        .from('company_memberships')
+        .select('role, status, users(*)')
+        .eq('org_id', orgId)
+        .eq('status', 'active');
       if (error) throw error;
-      return data;
+      return (data ?? [])
+        .map(m => ({ ...m.users, membership_role: m.role }))
+        .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
     },
   });
 
@@ -72,8 +78,16 @@ export default function PlatformOrgDetail() {
   const handleDeleteOrg = async () => {
     if (!confirm(`PERMANENTLY DELETE ${org?.name}?\n\nThis will remove all users, data, and the company account. They will need to contact Port 24 to reactivate.\n\nType the company name to confirm.`) ) return;
     setDeleting(true);
-    const { error } = await supabase.functions.invoke('delete-organization', { body: { org_id: orgId } });
-    if (error) { toast.error(error.message || 'Failed to delete company'); setDeleting(false); return; }
+    const { data, error } = await supabase.functions.invoke('delete-organization', { body: { org_id: orgId } });
+    if (error || data?.error) {
+      let msg = data?.error || error?.message || 'Failed to delete company';
+      if (!data?.error && error) {
+        try { const b = await error.context?.json(); msg = b?.error || msg; } catch {}
+      }
+      toast.error(msg);
+      setDeleting(false);
+      return;
+    }
     toast.success(`${org?.name} has been deleted`);
     qc.removeQueries({ queryKey: ['platform-orgs'] });
     navigate('/platform');
@@ -115,8 +129,14 @@ export default function PlatformOrgDetail() {
 
   const removeUser = async (userId, userEmail) => {
     if (!confirm(`Permanently delete ${userEmail}? This removes their account entirely and cannot be undone.`)) return;
-    const { error } = await supabase.functions.invoke('delete-user', { body: { user_id: userId } });
-    if (error) return toast.error(error.message || 'Failed to delete user');
+    const { data, error } = await supabase.functions.invoke('delete-user', { body: { user_id: userId } });
+    if (error || data?.error) {
+      let msg = data?.error || error?.message || 'Failed to delete user';
+      if (!data?.error && error) {
+        try { const b = await error.context?.json(); msg = b?.error || msg; } catch {}
+      }
+      return toast.error(msg);
+    }
     qc.invalidateQueries({ queryKey: ['platform-org-users', orgId] });
     toast.success('User deleted');
   };
