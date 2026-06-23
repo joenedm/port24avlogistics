@@ -13,12 +13,27 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { to_email, to_name, invite_link, org_name, role, invited_by_name } = await req.json();
+    const { to_email, to_name, invite_link, org_name, role, invited_by_name, invite_type } = await req.json();
 
     const displayName = to_name || to_email.split('@')[0];
-    const roleLabel = role
-      ? role.charAt(0).toUpperCase() + role.slice(1)
-      : 'Team Member';
+    const isCompanyAdmin = invite_type === 'company_admin';
+    const roleLabel = isCompanyAdmin
+      ? 'Workspace Admin'
+      : role
+        ? role.charAt(0).toUpperCase() + role.slice(1)
+        : 'Team Member';
+
+    const headingLabel = isCompanyAdmin ? "You're invited to set up a workspace" : "You're Invited";
+    const heroTitle = isCompanyAdmin
+      ? `Set Up Your ${org_name || 'Company'} Workspace on Port 24`
+      : `Join ${org_name || 'your team'} on Port 24`;
+    const bodyText = isCompanyAdmin
+      ? `${invited_by_name ? `<strong style="color:#fff;">${invited_by_name}</strong> has set up a workspace for` : 'A workspace has been created for'} <strong style="color:#fff;">${org_name || 'your company'}</strong> on Port 24. As <strong style="color:#1FB8A0;">Workspace Admin</strong>, you'll manage your team, inventory, and shows.`
+      : `${invited_by_name ? `<strong style="color:#fff;">${invited_by_name}</strong> has invited you` : "You've been invited"} to join <strong style="color:#fff;">${org_name || 'your workspace'}</strong> on Port 24 as a <strong style="color:#1FB8A0;">${roleLabel}</strong>.`;
+    const ctaText = isCompanyAdmin ? 'Set Up Your Workspace →' : 'Accept Invite &amp; Set Up Account →';
+    const emailSubject = isCompanyAdmin
+      ? `Set up your ${org_name || 'company'} workspace on Port 24`
+      : `You've been invited to join ${org_name || 'Port 24'}`;
 
     const html = `
 <!DOCTYPE html>
@@ -56,15 +71,13 @@ serve(async (req) => {
         <tr>
           <td style="padding:40px;">
 
-            <p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#1FB8A0;">You're Invited</p>
+            <p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#1FB8A0;">${headingLabel}</p>
             <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#ffffff;line-height:1.3;">
-              Join ${org_name || 'your team'} on Port 24
+              ${heroTitle}
             </h1>
             <p style="margin:0 0 24px;font-size:15px;color:#7B8EA8;line-height:1.6;">
               Hi ${displayName},<br/><br/>
-              ${invited_by_name ? `<strong style="color:#fff;">${invited_by_name}</strong> has invited you` : "You've been invited"} to join
-              <strong style="color:#fff;">${org_name || 'your workspace'}</strong> on Port 24 as a
-              <strong style="color:#1FB8A0;">${roleLabel}</strong>.
+              ${bodyText}
             </p>
 
             <!-- What is Port 24 blurb -->
@@ -84,7 +97,7 @@ serve(async (req) => {
               <tr>
                 <td align="center">
                   <a href="${invite_link}" style="display:inline-block;background:#1FB8A0;color:#070B11;font-weight:700;font-size:15px;text-decoration:none;padding:14px 36px;border-radius:10px;letter-spacing:0.02em;">
-                    Accept Invite &amp; Set Up Account →
+                    ${ctaText}
                   </a>
                 </td>
               </tr>
@@ -127,7 +140,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: `${FROM_NAME} <${FROM_EMAIL}>`,
         to: [to_email],
-        subject: `You've been invited to join ${org_name || 'Port 24'}`,
+        subject: emailSubject,
         html,
       }),
     });

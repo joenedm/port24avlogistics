@@ -28,14 +28,18 @@ export default function PlatformJoin() {
     if (!token) { setStatus('invalid'); return; }
     supabase
       .from('pending_invites')
-      .select('*')
+      .select('*, organizations(name)')
       .eq('token', token)
-      .eq('role', 'platform_admin')
       .eq('status', 'pending')
       .gt('expires_at', new Date().toISOString())
       .single()
       .then(({ data, error }) => {
         if (error || !data) { setStatus('invalid'); return; }
+        // Only allow platform-level invite types
+        if (data.invite_type !== 'platform_staff' && data.invite_type !== 'company_admin' && data.role !== 'platform_admin') {
+          setStatus('invalid');
+          return;
+        }
         setInvite(data);
         setStatus('valid');
       });
@@ -67,6 +71,9 @@ export default function PlatformJoin() {
       if (claimData?.error) throw new Error(claimData.error);
 
       setStatus('done');
+      // Route based on invite type — company_admin goes to their workspace, platform_staff to /platform
+      const dest = invite.invite_type === 'company_admin' ? '/dashboard' : '/platform';
+      setTimeout(() => { window.location.href = dest; }, 1500);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -111,13 +118,14 @@ export default function PlatformJoin() {
               <div className="w-12 h-12 rounded-full bg-[#1FB8A0]/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-6 h-6 text-[#1FB8A0]" />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Access Granted</h2>
-              <p className="text-sm mb-6" style={{ color: TEXT_MUTED }}>Your platform admin account is ready.</p>
-              <button onClick={() => navigate('/platform')}
-                className="w-full flex items-center justify-center gap-2 font-semibold py-3.5 rounded-xl text-sm"
-                style={{ backgroundColor: T, color: BG }}>
-                Enter Platform <ArrowRight className="w-4 h-4" />
-              </button>
+              <h2 className="text-xl font-bold text-white mb-2">
+                {invite?.invite_type === 'company_admin' ? 'Workspace Ready!' : 'Access Granted'}
+              </h2>
+              <p className="text-sm mb-6" style={{ color: TEXT_MUTED }}>
+                {invite?.invite_type === 'company_admin'
+                  ? 'Your workspace is set up. Taking you there…'
+                  : 'Your platform admin account is ready. Taking you there…'}
+              </p>
             </div>
           )}
 
@@ -126,13 +134,19 @@ export default function PlatformJoin() {
               <div className="flex items-center justify-center gap-2 mb-6">
                 <div className="flex items-center gap-2 border rounded-full px-3 py-1.5" style={{ borderColor: BORDER, backgroundColor: 'rgba(31,184,160,0.08)' }}>
                   <ShieldCheck className="w-3.5 h-3.5" style={{ color: T }} />
-                  <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: T }}>Platform Invite</span>
+                  <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: T }}>
+                    {invite?.invite_type === 'company_admin' ? 'Workspace Invite' : 'Platform Invite'}
+                  </span>
                 </div>
               </div>
 
-              <h1 className="text-xl font-bold text-white text-center mb-1">Set Up Your Account</h1>
+              <h1 className="text-xl font-bold text-white text-center mb-1">
+                {invite?.invite_type === 'company_admin' ? 'Set Up Your Workspace' : 'Set Up Your Account'}
+              </h1>
               <p className="text-sm text-center mb-7" style={{ color: TEXT_MUTED }}>
-                Joining as <span className="text-white font-medium">{invite?.email}</span>
+                {invite?.invite_type === 'company_admin'
+                  ? <>Setting up <span className="text-white font-medium">{invite?.organizations?.name || 'your company'}</span> as <span className="text-white font-medium">{invite?.email}</span></>
+                  : <>Joining as <span className="text-white font-medium">{invite?.email}</span></>}
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">

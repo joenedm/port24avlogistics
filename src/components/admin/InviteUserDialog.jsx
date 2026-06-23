@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 const ROLE_LABELS = { admin: 'Admin', director: 'Director', manager: 'Manager', coordinator: 'Coordinator', crew: 'Crew' };
 
 export default function InviteUserDialog({ open, onOpenChange }) {
-  const { userRecord } = useAuth();
+  const { userRecord, orgId: activeOrgId } = useAuth();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ email: '', full_name: '', role: 'crew' });
   const [creating, setCreating] = useState(false);
@@ -36,19 +36,14 @@ export default function InviteUserDialog({ open, onOpenChange }) {
     if (!form.email) return setError('Email is required.');
     setCreating(true);
     try {
-      // Resolve org_id — fall back to direct DB lookup if not in state
-      let orgId = userRecord?.org_id;
-      if (!orgId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data: profile } = await supabase.from('users').select('org_id').eq('id', user.id).single();
-        orgId = profile?.org_id;
-      }
-      if (!orgId) return setError('Could not determine your organization.');
+      // Use the active company from AuthContext (source of truth for the current workspace)
+      let orgId = activeOrgId || userRecord?.org_id;
+      if (!orgId) return setError('Could not determine your organization. Make sure you are inside a company workspace.');
 
-      // Enforce plan user limit and fetch org info in one query
+      // Enforce plan user limit
       const { data: orgData } = await supabase.from('organizations').select('plan, name').eq('id', orgId).single();
-      const { data: existingUsers } = await supabase.from('users').select('id', { count: 'exact' }).eq('org_id', orgId);
-      const check = canAddUser(orgData?.plan, existingUsers?.length ?? 0);
+      const { count: memberCount } = await supabase.from('company_memberships').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'active');
+      const check = canAddUser(orgData?.plan, memberCount ?? 0);
       if (!check.allowed) return setError(check.reason);
 
       const { data: invite, error: invErr } = await supabase
@@ -58,6 +53,7 @@ export default function InviteUserDialog({ open, onOpenChange }) {
           full_name: form.full_name || null,
           org_id: orgId,
           role: form.role,
+          invite_type: 'team_member',
           invited_by: userRecord?.id,
         })
         .select()
@@ -75,6 +71,7 @@ export default function InviteUserDialog({ open, onOpenChange }) {
           invite_link: link,
           org_name: orgData?.name || '',
           role: form.role,
+          invite_type: 'team_member',
           invited_by_name: userRecord?.full_name || userRecord?.email || null,
         },
       }).then(({ error: fnErr, data: fnData }) => {
@@ -83,6 +80,7 @@ export default function InviteUserDialog({ open, onOpenChange }) {
       }).catch(e => console.error('send-invite-email exception:', e));
 
       setInviteLink(link);
+      queryClient.invalidateQueries({ queryKey: ['pending-invites'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (err) {
       setError(err?.message || 'Failed to create invite.');

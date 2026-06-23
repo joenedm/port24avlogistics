@@ -720,9 +720,12 @@ export default function SignIn() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event !== 'SIGNED_IN') return;
       if (!session) return;
-      // AuthContext's onAuthStateChange runs loadProfile and validates the user.
-      // If it blocks the user (no_account), it calls signOut which App.jsx picks up.
-      // If valid, navigate to dashboard.
+      // If a pending invite token was preserved, resume the accept-invite flow.
+      const pendingToken = sessionStorage.getItem('pending_invite_token');
+      if (pendingToken) {
+        window.location.href = `/accept-invite?token=${pendingToken}`;
+        return;
+      }
       navigate('/dashboard');
     });
     return () => subscription.unsubscribe();
@@ -735,8 +738,12 @@ export default function SignIn() {
     try {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
       if (signInErr) throw signInErr;
-      // AuthContext's onAuthStateChange handles profile validation and no_account blocking.
-      // Just navigate — if the account is invalid, AuthContext will sign out and show the error.
+      // If a pending invite token was preserved, resume accept-invite flow.
+      const pendingToken = sessionStorage.getItem('pending_invite_token');
+      if (pendingToken) {
+        window.location.href = `/accept-invite?token=${pendingToken}`;
+        return;
+      }
       window.location.href = '/dashboard';
       return;
     } catch (err) {
@@ -757,6 +764,8 @@ export default function SignIn() {
 
   // Called by VerifyModal after successful verification + auto-login
   const handleVerified = () => {
+    const pendingToken = sessionStorage.getItem('pending_invite_token');
+    if (pendingToken) { window.location.href = `/accept-invite?token=${pendingToken}`; return; }
     window.location.href = '/dashboard';
   };
 

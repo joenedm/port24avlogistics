@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { db } from '@/api/db';
+import { supabase } from '@/api/supabaseClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Users, Layers, GripVertical, Eye, EyeOff, Lock, Star, Briefcase, ChevronDown, ChevronUp, ChevronRight, Shield, Upload, Mail, Palette, Pencil, UserPlus, Package, Zap, ShieldCheck, Settings, QrCode, BookOpen } from 'lucide-react';
+import { Plus, Trash2, Users, Layers, GripVertical, Eye, EyeOff, Lock, Star, Briefcase, ChevronDown, ChevronUp, ChevronRight, Shield, Upload, Mail, Palette, Pencil, UserPlus, Package, Zap, ShieldCheck, Settings, QrCode, BookOpen, Clock, Copy, X } from 'lucide-react';
 import EmployeeCheckoutPanel from '@/components/employee/EmployeeCheckoutPanel';
 import UserEditDialog from '@/components/admin/UserEditDialog';
 import InviteUserDialog from '@/components/admin/InviteUserDialog';
@@ -135,7 +136,7 @@ function AdminEmployeeGear() {
 
 export default function Admin() {
   const { canAccessAdmin } = usePermissions();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, orgId: activeOrgId } = useAuth();
   // Support ?tab=accounting for QB OAuth callback redirect
   const params = new URLSearchParams(window.location.search);
   const defaultTab = (() => {
@@ -164,7 +165,40 @@ export default function Admin() {
   const queryClient = useQueryClient();
 
   const { data: customFields = [] } = useQuery({ queryKey: ['customFields'], queryFn: () => db.entities.CustomField.list() });
-  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => db.entities.User.list() });
+
+  // Active company members via company_memberships (source of truth)
+  const { data: users = [] } = useQuery({
+    queryKey: ['company-members', activeOrgId],
+    queryFn: async () => {
+      if (!activeOrgId) return [];
+      const { data, error } = await supabase
+        .from('company_memberships')
+        .select('role, status, joined_at, users(id, email, full_name, role, created_at, is_platform_admin)')
+        .eq('org_id', activeOrgId)
+        .eq('status', 'active');
+      if (error) throw error;
+      return (data ?? []).map(m => ({ ...m.users, membership_role: m.role, joined_at: m.joined_at }));
+    },
+    enabled: !!activeOrgId,
+  });
+
+  // Pending invites for this company
+  const { data: pendingInvites = [], refetch: refetchInvites } = useQuery({
+    queryKey: ['pending-invites', activeOrgId],
+    queryFn: async () => {
+      if (!activeOrgId) return [];
+      const { data, error } = await supabase
+        .from('pending_invites')
+        .select('*')
+        .eq('org_id', activeOrgId)
+        .eq('invite_type', 'team_member')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!activeOrgId,
+  });
 
   const saveMutation = useMutation({
     mutationFn: (data) => editingField
@@ -187,6 +221,16 @@ export default function Admin() {
     mutationFn: (id) => db.entities.User.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
+
+  const revokeInvite = async (inviteId) => {
+    const { error } = await supabase.from('pending_invites').update({ status: 'expired' }).eq('id', inviteId);
+    if (error) return;
+    refetchInvites();
+  };
+
+  const copyInviteLink = (token) => {
+    navigator.clipboard.writeText(`${window.location.origin}/accept-invite?token=${token}`);
+  };
 
   const canDeleteUser = (u) => {
     if (u.email === currentUser?.email) return false;
@@ -440,6 +484,38 @@ export default function Admin() {
                   ))}
                 </TableBody>
               </Table>
+
+              {pendingInvites.length > 0 && (
+                <div className="mt-6 border-t pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Clock className="w-4 h-4 text-amber-500" />
+                    <h3 className="text-sm font-semibold">Pending Invites</h3>
+                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs">{pendingInvites.length}</Badge>
+                  </div>
+                  <div className="divide-y">
+                    {pendingInvites.map(inv => (
+                      <div key={inv.id} className="flex items-center justify-between py-2.5">
+                        <div>
+                          <p className="text-sm font-medium">{inv.full_name ? `${inv.full_name} (${inv.email})` : inv.email}</p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {inv.role} · expires {new Date(inv.expires_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Copy invite link"
+                            onClick={() => copyInviteLink(inv.token)}>
+                            <Copy className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Revoke invite"
+                            onClick={() => revokeInvite(inv.id)}>
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
