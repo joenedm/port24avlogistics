@@ -720,10 +720,12 @@ export default function SignIn() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event !== 'SIGNED_IN') return;
       if (!session) return;
-      // If a pending invite token was preserved, resume the accept-invite flow.
+      // If a pending invite token was preserved, resume the invite flow.
       const pendingToken = sessionStorage.getItem('pending_invite_token');
       if (pendingToken) {
-        window.location.href = `/accept-invite?token=${pendingToken}`;
+        const invitePath = sessionStorage.getItem('pending_invite_path') || '/accept-invite';
+        sessionStorage.removeItem('pending_invite_path');
+        window.location.href = `${invitePath}?token=${pendingToken}`;
         return;
       }
       navigate('/dashboard');
@@ -738,10 +740,12 @@ export default function SignIn() {
     try {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
       if (signInErr) throw signInErr;
-      // If a pending invite token was preserved, resume accept-invite flow.
+      // If a pending invite token was preserved, resume the invite flow.
       const pendingToken = sessionStorage.getItem('pending_invite_token');
       if (pendingToken) {
-        window.location.href = `/accept-invite?token=${pendingToken}`;
+        const invitePath = sessionStorage.getItem('pending_invite_path') || '/accept-invite';
+        sessionStorage.removeItem('pending_invite_path');
+        window.location.href = `${invitePath}?token=${pendingToken}`;
         return;
       }
       window.location.href = '/dashboard';
@@ -765,7 +769,12 @@ export default function SignIn() {
   // Called by VerifyModal after successful verification + auto-login
   const handleVerified = () => {
     const pendingToken = sessionStorage.getItem('pending_invite_token');
-    if (pendingToken) { window.location.href = `/accept-invite?token=${pendingToken}`; return; }
+    if (pendingToken) {
+      const invitePath = sessionStorage.getItem('pending_invite_path') || '/accept-invite';
+      sessionStorage.removeItem('pending_invite_path');
+      window.location.href = `${invitePath}?token=${pendingToken}`;
+      return;
+    }
     window.location.href = '/dashboard';
   };
 

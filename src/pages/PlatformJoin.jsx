@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
-import { Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, CheckCircle, XCircle } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, Building2, CheckCircle, XCircle, AlertCircle, LogIn } from 'lucide-react';
 
 const BG = '#070B11';
 const CARD = '#0D1219';
@@ -11,197 +11,390 @@ const BORDER = 'rgba(31,184,160,0.2)';
 const BORDER_DIM = 'rgba(255,255,255,0.07)';
 const TEXT_MUTED = '#6B7A92';
 
+// Phases:
+// loading   — checking invite + session
+// needs_auth — not signed in, show create account / sign in
+// creating  — password form (new account)
+// mismatch  — signed in with wrong email
+// claiming  — auto-claiming (authenticated + email matches)
+// done      — success, auto-redirecting
+// invalid   — invite not found / expired / wrong type
+
+async function loadInvite(token) {
+  const { data, error } = await supabase
+    .from('pending_invites')
+    .select('*, organizations(name)')
+    .eq('token', token)
+    .single();
+  if (error || !data) throw new Error('Invite not found. It may have already been used or the link is incorrect.');
+  if (data.status !== 'pending') throw new Error(`This invite has already been ${data.status}.`);
+  if (new Date(data.expires_at) < new Date()) throw new Error('This invite link has expired. Ask your admin to send a new one.');
+  if (data.invite_type !== 'platform_staff' && data.invite_type !== 'company_admin' && data.role !== 'platform_admin') {
+    throw new Error('This invite link is not valid for this page. Check that you followed the correct link from your email.');
+  }
+  return data;
+}
+
+async function claimInvite(token, fullName) {
+  const { data, error } = await supabase.functions.invoke('claim-invite', {
+    body: { token, full_name: fullName },
+  });
+  if (error) {
+    let msg = error.message;
+    try { const b = await error.context?.json(); msg = b?.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
 export default function PlatformJoin() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const token = params.get('token');
+  const token = params.get('token') || '';
 
+  const [phase, setPhase] = useState('loading');
   const [invite, setInvite] = useState(null);
-  const [status, setStatus] = useState('loading'); // loading | valid | invalid | done
+  const [inviteError, setInviteError] = useState('');
+  const [authedUser, setAuthedUser] = useState(null);
+
   const [password, setPassword] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const isCompanyAdmin = invite?.invite_type === 'company_admin';
+  const successDest = isCompanyAdmin ? '/dashboard' : '/platform';
 
   useEffect(() => {
-    if (!token) { setStatus('invalid'); return; }
-    supabase
-      .from('pending_invites')
-      .select('*, organizations(name)')
-      .eq('token', token)
-      .eq('status', 'pending')
-      .gt('expires_at', new Date().toISOString())
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) { setStatus('invalid'); return; }
-        // Only allow platform-level invite types
-        if (data.invite_type !== 'platform_staff' && data.invite_type !== 'company_admin' && data.role !== 'platform_admin') {
-          setStatus('invalid');
-          return;
-        }
-        setInvite(data);
-        setStatus('valid');
-      });
+    if (!token) {
+      setInviteError('No invite token found. Check the link you were sent.');
+      setPhase('invalid');
+      return;
+    }
+
+    let cancelled = false;
+
+    async function init() {
+      const inv = await loadInvite(token);
+      if (cancelled) return;
+      setInvite(inv);
+      setFullName(inv.full_name || '');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+
+      if (!session?.user) {
+        sessionStorage.setItem('pending_invite_token', token);
+        setPhase('needs_auth');
+        return;
+      }
+
+      const userEmail = session.user.email?.toLowerCase().trim();
+      const inviteEmail = inv.email?.toLowerCase().trim();
+
+      if (userEmail !== inviteEmail) {
+        setAuthedUser(session.user);
+        setPhase('mismatch');
+        return;
+      }
+
+      // Email matches — auto-claim
+      setPhase('claiming');
+      await claimInvite(token, session.user.user_metadata?.full_name || inv.full_name || '');
+      sessionStorage.removeItem('pending_invite_token');
+      setPhase('done');
+      const dest = inv.invite_type === 'company_admin' ? '/dashboard' : '/platform';
+      setTimeout(() => { window.location.href = dest; }, 1500);
+    }
+
+    init().catch(err => {
+      if (!cancelled) {
+        setInviteError(err.message);
+        setPhase('invalid');
+      }
+    });
+
+    return () => { cancelled = true; };
   }, [token]);
 
-  const handleSubmit = async (e) => {
+  const handleCreateAccount = async (e) => {
     e.preventDefault();
-    if (password !== confirmPw) return setError('Passwords do not match');
-    if (password.length < 8) return setError('Password must be at least 8 characters');
-    setError('');
-    setLoading(true);
+    setFormError('');
+    if (!fullName.trim()) return setFormError('Please enter your full name.');
+    if (password.length < 8) return setFormError('Password must be at least 8 characters.');
+    if (password !== confirmPw) return setFormError('Passwords do not match.');
+
+    setSubmitting(true);
     try {
-      // Try sign up first; if account exists, just sign in
-      const { error: signUpErr } = await supabase.auth.signUp({
+      await supabase.auth.signUp({
         email: invite.email,
         password,
-        options: { data: { full_name: invite.full_name } },
+        options: { data: { full_name: fullName } },
       });
 
-      // Sign in (works whether account was just created or already existed)
-      const { error: signInErr } = await supabase.auth.signInWithPassword({ email: invite.email, password });
-      if (signInErr) throw signInErr;
-
-      // Use service-role edge function to bypass RLS (same as regular invite flow)
-      const { data: claimData, error: claimErr } = await supabase.functions.invoke('claim-invite', {
-        body: { token, full_name: invite.full_name },
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: invite.email,
+        password,
       });
-      if (claimErr) throw claimErr;
-      if (claimData?.error) throw new Error(claimData.error);
 
-      setStatus('done');
-      // Route based on invite type — company_admin goes to their workspace, platform_staff to /platform
-      const dest = invite.invite_type === 'company_admin' ? '/dashboard' : '/platform';
-      setTimeout(() => { window.location.href = dest; }, 1500);
+      if (signInErr) {
+        setFormError(signInErr.message);
+        setSubmitting(false);
+        return;
+      }
+
+      setPhase('claiming');
+      await claimInvite(token, fullName);
+      sessionStorage.removeItem('pending_invite_token');
+      setPhase('done');
+      setTimeout(() => { window.location.href = successDest; }, 1500);
     } catch (err) {
-      setError(err.message);
+      setFormError(err.message);
+      setPhase('creating');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: BG, fontFamily: 'Inter, sans-serif' }}>
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full blur-[120px] opacity-20" style={{ backgroundColor: T }} />
-      </div>
+  const goToSignIn = () => {
+    sessionStorage.setItem('pending_invite_token', token);
+    sessionStorage.setItem('pending_invite_path', '/platform/join');
+    navigate('/signin');
+  };
 
-      <div className="relative w-full max-w-sm">
-        <div className="flex flex-col items-center mb-10">
-          <img src="/port24-logo.svg" alt="Port 24" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+  const handleGoogleSignIn = async () => {
+    sessionStorage.setItem('pending_invite_token', token);
+    sessionStorage.setItem('pending_invite_path', '/platform/join');
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/platform/join?token=${token}`,
+        queryParams: { prompt: 'select_account' },
+      },
+    });
+  };
+
+  // ── Shared badge ──
+  const InviteBadge = () => (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${BORDER}`, backgroundColor: 'rgba(31,184,160,0.08)', borderRadius: 9999, padding: '6px 14px' }}>
+        <ShieldCheck style={{ color: T, width: 14, height: 14 }} />
+        <span style={{ color: T, fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          {isCompanyAdmin ? 'Workspace Invite' : 'Platform Invite'}
+        </span>
+      </div>
+    </div>
+  );
+
+  // ── Org badge ──
+  const OrgBadge = () => invite?.organizations?.name ? (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: `1px solid ${BORDER}`, backgroundColor: 'rgba(31,184,160,0.06)', borderRadius: 12, padding: '10px 14px', marginBottom: 24 }}>
+      <Building2 style={{ color: T, width: 18, height: 18, flexShrink: 0 }} />
+      <div>
+        <p style={{ color: '#fff', fontSize: 13, fontWeight: 600, margin: 0 }}>{invite.organizations.name}</p>
+        <p style={{ color: TEXT_MUTED, fontSize: 11, margin: 0, textTransform: 'capitalize' }}>
+          {isCompanyAdmin ? 'Admin access' : invite.role}
+        </p>
+      </div>
+    </div>
+  ) : null;
+
+  // ── Loading / Claiming ──
+  if (phase === 'loading' || phase === 'claiming') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: BG }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <Loader2 style={{ color: T, width: 32, height: 32 }} className="animate-spin" />
+          <p style={{ color: TEXT_MUTED, fontSize: 14, margin: 0 }}>
+            {phase === 'loading' ? 'Verifying your invite…' : 'Setting up your access…'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Done ──
+  if (phase === 'done') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: BG }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <CheckCircle style={{ color: T, width: 40, height: 40 }} />
+          <p style={{ color: '#fff', fontSize: 18, fontWeight: 700, margin: 0 }}>
+            {isCompanyAdmin ? 'Workspace Ready!' : 'Access Granted'}
+          </p>
+          <p style={{ color: TEXT_MUTED, fontSize: 14, margin: 0 }}>Taking you there…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Invalid ──
+  if (phase === 'invalid') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', backgroundColor: BG }}>
+        <div style={{ width: '100%', maxWidth: 420, borderRadius: 20, padding: 40, border: '1px solid rgba(239,68,68,0.2)', backgroundColor: CARD, textAlign: 'center' }}>
+          <XCircle style={{ color: '#EF4444', width: 44, height: 44, margin: '0 auto 16px' }} />
+          <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Invite Issue</h2>
+          <p style={{ color: TEXT_MUTED, fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>{inviteError}</p>
+          <button onClick={() => navigate('/signin')}
+            style={{ width: '100%', padding: '12px', backgroundColor: T, color: BG, border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Email mismatch ──
+  if (phase === 'mismatch') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', backgroundColor: BG }}>
+        <div style={{ width: '100%', maxWidth: 420, borderRadius: 20, padding: 40, border: '1px solid rgba(245,158,11,0.2)', backgroundColor: CARD, textAlign: 'center' }}>
+          <AlertCircle style={{ color: '#F59E0B', width: 44, height: 44, margin: '0 auto 16px' }} />
+          <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Wrong Account</h2>
+          <p style={{ color: TEXT_MUTED, fontSize: 14, lineHeight: 1.6, marginBottom: 8 }}>
+            This invite was sent to <strong style={{ color: '#fff' }}>{invite?.email}</strong>.
+          </p>
+          <p style={{ color: TEXT_MUTED, fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+            You're signed in as <strong style={{ color: '#fff' }}>{authedUser?.email}</strong>. Sign out and sign in with the invited email address.
+          </p>
+          <button onClick={async () => { await supabase.auth.signOut(); sessionStorage.setItem('pending_invite_token', token); navigate('/signin'); }}
+            style={{ width: '100%', padding: '12px', backgroundColor: T, color: BG, border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', marginBottom: 10 }}>
+            Sign Out &amp; Use Correct Account
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── needs_auth: show options ──
+  if (phase === 'needs_auth') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', backgroundColor: BG, fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ width: '100%', maxWidth: 420 }}>
+          <div style={{ marginBottom: 32 }}>
+            <img src="/port24-logo.svg" alt="Port 24" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+          </div>
+
+          <InviteBadge />
+          <OrgBadge />
+
+          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
+            {isCompanyAdmin ? 'Set Up Your Workspace' : 'Platform Access Invite'}
+          </h1>
+          <p style={{ color: TEXT_MUTED, fontSize: 14, lineHeight: 1.6, marginBottom: 28 }}>
+            {isCompanyAdmin
+              ? <>You've been invited to set up the <strong style={{ color: '#fff' }}>{invite?.organizations?.name}</strong> workspace as Admin. Create your account to get started.</>
+              : <>You've been invited to join Port 24 as <strong style={{ color: '#fff' }}>Platform Staff</strong>. Create your account to get started.</>}
+          </p>
+
+          {/* Google */}
+          <button onClick={handleGoogleSignIn}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '12px', backgroundColor: 'rgba(255,255,255,0.05)', border: `1px solid ${BORDER_DIM}`, borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: 12 }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+              <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            Continue with Google
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ flex: 1, height: 1, backgroundColor: BORDER_DIM }} />
+            <span style={{ color: TEXT_MUTED, fontSize: 12 }}>or</span>
+            <div style={{ flex: 1, height: 1, backgroundColor: BORDER_DIM }} />
+          </div>
+
+          <button onClick={goToSignIn}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', backgroundColor: 'rgba(31,184,160,0.08)', border: `1px solid ${BORDER}`, borderRadius: 12, color: T, fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 12 }}>
+            <LogIn style={{ width: 16, height: 16 }} />
+            Sign In with Existing Account
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ flex: 1, height: 1, backgroundColor: BORDER_DIM }} />
+            <span style={{ color: TEXT_MUTED, fontSize: 12 }}>or create account</span>
+            <div style={{ flex: 1, height: 1, backgroundColor: BORDER_DIM }} />
+          </div>
+
+          <button onClick={() => setPhase('creating')}
+            style={{ width: '100%', padding: '12px', backgroundColor: T, color: BG, border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            Create New Account →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── creating: password form ──
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', backgroundColor: BG, fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ marginBottom: 32 }}>
+          <img src="/port24-logo.svg" alt="Port 24" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
         </div>
 
-        <div className="rounded-2xl p-8 border" style={{ backgroundColor: CARD, borderColor: BORDER }}>
-          {status === 'loading' && (
-            <div className="text-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: T }} />
-              <p className="text-sm" style={{ color: TEXT_MUTED }}>Validating invite…</p>
-            </div>
-          )}
+        <InviteBadge />
+        <OrgBadge />
 
-          {status === 'invalid' && (
-            <div className="text-center py-4">
-              <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                <XCircle className="w-6 h-6 text-red-400" />
-              </div>
-              <h2 className="text-xl font-bold text-white mb-2">Invalid Invite</h2>
-              <p className="text-sm mb-6" style={{ color: TEXT_MUTED }}>This invite link is expired, already used, or invalid.</p>
-              <button onClick={() => navigate('/platform/login')} className="text-sm font-medium" style={{ color: T }}>
-                Go to Platform Login →
+        <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Create your account</h1>
+        <p style={{ color: TEXT_MUTED, fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>
+          {isCompanyAdmin
+            ? <>Set a password to set up <strong style={{ color: '#fff' }}>{invite?.organizations?.name}</strong>.</>
+            : 'Set a password to activate your platform access.'}
+        </p>
+
+        {/* Locked email */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(0,0,0,0.4)', border: `1px solid ${BORDER_DIM}`, borderRadius: 10, padding: '10px 14px', marginBottom: 18 }}>
+          <span style={{ color: TEXT_MUTED, fontSize: 12 }}>Email</span>
+          <span style={{ color: '#fff', fontSize: 13, fontWeight: 500 }}>{invite?.email}</span>
+        </div>
+
+        <form onSubmit={handleCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ display: 'block', color: TEXT_MUTED, fontSize: 12, fontWeight: 500, marginBottom: 6 }}>Your Full Name *</label>
+            <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required autoFocus placeholder="Jane Smith"
+              style={{ width: '100%', backgroundColor: CARD, border: `1px solid ${BORDER_DIM}`, borderRadius: 10, padding: '11px 14px', fontSize: 14, color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', color: TEXT_MUTED, fontSize: 12, fontWeight: 500, marginBottom: 6 }}>Password *</label>
+            <div style={{ position: 'relative' }}>
+              <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required placeholder="At least 8 characters"
+                style={{ width: '100%', backgroundColor: CARD, border: `1px solid ${BORDER_DIM}`, borderRadius: 10, padding: '11px 40px 11px 14px', fontSize: 14, color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+              <button type="button" onClick={() => setShowPw(v => !v)}
+                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: TEXT_MUTED, padding: 0 }}>
+                {showPw ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
               </button>
             </div>
-          )}
+          </div>
+          <div>
+            <label style={{ display: 'block', color: TEXT_MUTED, fontSize: 12, fontWeight: 500, marginBottom: 6 }}>Confirm Password *</label>
+            <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} required placeholder="Repeat your password"
+              style={{ width: '100%', backgroundColor: CARD, border: `1px solid ${BORDER_DIM}`, borderRadius: 10, padding: '11px 14px', fontSize: 14, color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
 
-          {status === 'done' && (
-            <div className="text-center py-4">
-              <div className="w-12 h-12 rounded-full bg-[#1FB8A0]/10 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-6 h-6 text-[#1FB8A0]" />
-              </div>
-              <h2 className="text-xl font-bold text-white mb-2">
-                {invite?.invite_type === 'company_admin' ? 'Workspace Ready!' : 'Access Granted'}
-              </h2>
-              <p className="text-sm mb-6" style={{ color: TEXT_MUTED }}>
-                {invite?.invite_type === 'company_admin'
-                  ? 'Your workspace is set up. Taking you there…'
-                  : 'Your platform admin account is ready. Taking you there…'}
-              </p>
+          {formError && (
+            <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 14px', color: '#F87171', fontSize: 13 }}>
+              {formError}
             </div>
           )}
 
-          {status === 'valid' && (
-            <>
-              <div className="flex items-center justify-center gap-2 mb-6">
-                <div className="flex items-center gap-2 border rounded-full px-3 py-1.5" style={{ borderColor: BORDER, backgroundColor: 'rgba(31,184,160,0.08)' }}>
-                  <ShieldCheck className="w-3.5 h-3.5" style={{ color: T }} />
-                  <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: T }}>
-                    {invite?.invite_type === 'company_admin' ? 'Workspace Invite' : 'Platform Invite'}
-                  </span>
-                </div>
-              </div>
+          <button type="submit" disabled={submitting}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', backgroundColor: T, color: BG, border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.6 : 1 }}>
+            {submitting ? <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" /> : <><span>Create Account</span><ArrowRight style={{ width: 16, height: 16 }} /></>}
+          </button>
+        </form>
 
-              <h1 className="text-xl font-bold text-white text-center mb-1">
-                {invite?.invite_type === 'company_admin' ? 'Set Up Your Workspace' : 'Set Up Your Account'}
-              </h1>
-              <p className="text-sm text-center mb-7" style={{ color: TEXT_MUTED }}>
-                {invite?.invite_type === 'company_admin'
-                  ? <>Setting up <span className="text-white font-medium">{invite?.organizations?.name || 'your company'}</span> as <span className="text-white font-medium">{invite?.email}</span></>
-                  : <>Joining as <span className="text-white font-medium">{invite?.email}</span></>}
-              </p>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPw ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      required
-                      placeholder="Min. 8 characters"
-                      className="w-full rounded-xl px-4 py-3 pr-11 text-sm text-white outline-none transition-all"
-                      style={{ backgroundColor: '#060A10', border: `1px solid ${BORDER_DIM}` }}
-                      onFocus={e => e.target.style.borderColor = BORDER}
-                      onBlur={e => e.target.style.borderColor = BORDER_DIM}
-                    />
-                    <button type="button" onClick={() => setShowPw(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: TEXT_MUTED }}>
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Confirm Password</label>
-                  <input
-                    type="password"
-                    value={confirmPw}
-                    onChange={e => setConfirmPw(e.target.value)}
-                    required
-                    placeholder="••••••••"
-                    className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
-                    style={{ backgroundColor: '#060A10', border: `1px solid ${BORDER_DIM}` }}
-                    onFocus={e => e.target.style.borderColor = BORDER}
-                    onBlur={e => e.target.style.borderColor = BORDER_DIM}
-                  />
-                </div>
-
-                {error && (
-                  <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171' }}>
-                    {error}
-                  </div>
-                )}
-
-                <button type="submit" disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 font-semibold py-3.5 rounded-xl text-sm mt-2 disabled:opacity-50 transition-colors"
-                  style={{ backgroundColor: T, color: BG }}
-                  onMouseEnter={e => !loading && (e.currentTarget.style.backgroundColor = T_DIM)}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = T)}>
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><span>Create Account & Enter</span><ArrowRight className="w-4 h-4" /></>}
-                </button>
-              </form>
-            </>
-          )}
-        </div>
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#374151' }}>
+          Already have an account?{' '}
+          <button onClick={goToSignIn} style={{ color: T, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: 13 }}>
+            Sign in
+          </button>
+        </p>
       </div>
     </div>
   );
