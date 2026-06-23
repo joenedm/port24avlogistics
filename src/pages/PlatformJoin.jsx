@@ -114,6 +114,9 @@ export default function PlatformJoin() {
       if (!cancelled) {
         setInviteError(err.message);
         setPhase('invalid');
+        // Clear stale token so future sign-ins aren't hijacked by this dead invite
+        sessionStorage.removeItem('pending_invite_token');
+        sessionStorage.removeItem('pending_invite_path');
       }
     });
 
@@ -261,7 +264,7 @@ export default function PlatformJoin() {
           <p style={{ color: TEXT_MUTED, fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
             You're signed in as <strong style={{ color: '#fff' }}>{authedUser?.email}</strong>. Sign out and sign in with the invited email address.
           </p>
-          <button onClick={async () => { await supabase.auth.signOut(); sessionStorage.setItem('pending_invite_token', token); navigate('/signin'); }}
+          <button onClick={async () => { await supabase.auth.signOut(); sessionStorage.setItem('pending_invite_token', token); sessionStorage.setItem('pending_invite_path', '/platform/join'); navigate('/signin'); }}
             style={{ width: '100%', padding: '12px', backgroundColor: T, color: BG, border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', marginBottom: 10 }}>
             Sign Out &amp; Use Correct Account
           </button>

@@ -124,6 +124,9 @@ export default function AcceptInvite() {
       if (!cancelled) {
         setInviteError(err.message);
         setPhase('error');
+        // Clear stale token so future sign-ins aren't hijacked by this dead invite
+        sessionStorage.removeItem('pending_invite_token');
+        sessionStorage.removeItem('pending_invite_path');
       }
     });
 
