@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
-import { ArrowLeft, Building2, Users, Mail, Shield, ToggleLeft, ToggleRight, UserPlus, X, CreditCard } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Mail, Shield, ToggleLeft, ToggleRight, UserPlus, X, CreditCard, Clock, Copy, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { PLANS } from '@/lib/planLimits';
 
@@ -46,6 +46,33 @@ export default function PlatformOrgDetail() {
         .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
     },
   });
+
+  const { data: pendingInvites = [] } = useQuery({
+    queryKey: ['platform-org-pending-invites', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pending_invites')
+        .select('*')
+        .eq('org_id', orgId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const revokeInvite = async (inviteId) => {
+    const { error } = await supabase.from('pending_invites').update({ status: 'expired' }).eq('id', inviteId);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ['platform-org-pending-invites', orgId] });
+    toast.success('Invite revoked');
+  };
+
+  const copyInviteLink = (invite) => {
+    const path = invite.invite_type === 'company_owner' ? 'accept-company-invite' : 'accept-invite';
+    navigator.clipboard.writeText(`${window.location.origin}/${path}?token=${invite.token}`);
+    toast.success('Invite link copied');
+  };
 
   const { data: shows = [] } = useQuery({
     queryKey: ['platform-org-shows', orgId],
@@ -272,15 +299,24 @@ export default function PlatformOrgDetail() {
       {/* Users */}
       <div className="bg-[#131920] border border-white/5 rounded-xl p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-white flex items-center gap-2"><Users className="w-4 h-4 text-[#1FB8A0]" /> Users</h2>
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+            <Users className="w-4 h-4 text-[#1FB8A0]" /> Users
+            {(users.length + pendingInvites.length) > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-gray-400 font-medium">
+                {users.length} active{pendingInvites.length > 0 ? ` · ${pendingInvites.length} pending` : ''}
+              </span>
+            )}
+          </h2>
           <button onClick={() => { setShowInvite(true); setInviteLink(''); setInviteForm({ email: '', full_name: '', role: 'admin' }); }} className="flex items-center gap-1.5 text-xs font-medium text-[#1FB8A0] hover:text-white transition-colors border border-[#1FB8A0]/30 hover:border-white/20 rounded-lg px-3 py-1.5">
             <UserPlus className="w-3.5 h-3.5" /> Invite User
           </button>
         </div>
-        {usersLoading ? <p className="text-gray-500 text-sm">Loading…</p> : users.length === 0 ? (
+
+        {usersLoading ? <p className="text-gray-500 text-sm">Loading…</p> : (users.length === 0 && pendingInvites.length === 0) ? (
           <p className="text-gray-500 text-sm">No users yet. Use the Invite User button above to add the first user.</p>
         ) : (
           <div className="space-y-2">
+            {/* Active users */}
             {users.map(u => (
               <div key={u.id} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
                 <div>
@@ -299,6 +335,33 @@ export default function PlatformOrgDetail() {
                     <option value="crew">Crew</option>
                   </select>
                   <button onClick={() => removeUser(u.id, u.email)} className="text-red-400 hover:text-red-300 transition-colors p-1 rounded" title="Remove user">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Pending invites */}
+            {pendingInvites.map(inv => (
+              <div key={inv.id} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-white font-medium">{inv.full_name || inv.email}</p>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-400/10 text-yellow-400 font-medium flex items-center gap-1">
+                      <Clock className="w-2.5 h-2.5" /> Invite Pending
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">{inv.email} · {inv.invite_type === 'company_owner' ? 'Owner' : inv.role}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => copyInviteLink(inv)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-xs transition-colors"
+                    title="Copy invite link"
+                  >
+                    <Copy className="w-3 h-3" /> Copy Link
+                  </button>
+                  <button onClick={() => revokeInvite(inv.id)} className="text-red-400 hover:text-red-300 transition-colors p-1 rounded" title="Revoke invite">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
