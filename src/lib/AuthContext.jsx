@@ -198,39 +198,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    // 3. No profile — auto-claim pending invite (OAuth only)
-    if (!profile) {
-      const isOAuth = authUser.app_metadata?.provider !== 'email';
-      if (DEV) console.log('[Auth] no profile after email check — isOAuth:', isOAuth);
-
-      if (isOAuth) {
-        const { data: invite } = await supabase
-          .from('pending_invites')
-          .select('token')
-          .eq('email', authUser.email?.toLowerCase())
-          .eq('status', 'pending')
-          .gt('expires_at', new Date().toISOString())
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (invite?.token) {
-          if (DEV) console.log('[Auth] OAuth — pending invite found — claiming');
-          const { data: claimData, error: claimErr } = await supabase.functions.invoke('claim-invite', {
-            body: { token: invite.token, full_name: authUser.user_metadata?.full_name || '' },
-          });
-          if (!claimErr && !claimData?.error) {
-            const { data: claimed } = await supabase.from('users').select('*').eq('id', authUser.id).single();
-            if (claimed) {
-              profile = claimed;
-              if (DEV) console.log('[Auth] invite claimed — org_id:', profile.org_id);
-            }
-          }
-        }
-      }
-    }
-
-    // 3.5. Platform admin shortcut — build synthetic profile for first sign-in
+    // 3. Platform admin shortcut — build synthetic profile for first sign-in
     if (!profile && PLATFORM_ADMIN_EMAILS.includes(authUser.email?.toLowerCase())) {
       if (DEV) console.log('[Auth] platform admin first sign-in — building synthetic profile');
       profile = {
@@ -265,8 +233,21 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
-    // 4. No account found — block access
+    // 4. No account found — block access.
+    // Exception: if the user is on an invite page OR has a pending invite token in
+    // sessionStorage (they just signed in via /signin and are about to be redirected
+    // to an invite page), let the invite page handle the claim instead of signing out.
     if (!profile) {
+      const INVITE_PATHS = ['/accept-invite', '/accept-company-invite', '/platform/join'];
+      const onInvitePage = INVITE_PATHS.some(p => window.location.pathname.startsWith(p));
+      const hasPendingInvite = !!sessionStorage.getItem('pending_invite_token');
+      if (onInvitePage || hasPendingInvite) {
+        if (DEV) console.log('[Auth] no profile but invite pending — letting invite page handle claim. onInvitePage:', onInvitePage, 'hasPendingInvite:', hasPendingInvite);
+        // Set memberships to [] (not null) so App.jsx membershipsLoaded=true and the
+        // spinner clears — otherwise the invite page is blocked from ever mounting.
+        setCompanyMemberships([]);
+        return;
+      }
       if (DEV) console.log('[Auth] BLOCKED — no account found for', authUser.email);
       await supabase.auth.signOut();
       setUser(null);

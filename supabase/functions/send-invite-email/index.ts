@@ -16,22 +16,21 @@ serve(async (req) => {
     const { to_email, to_name, invite_link, org_name, role, invited_by_name, invite_type } = await req.json();
 
     const displayName = to_name || to_email.split('@')[0];
-    const isCompanyAdmin = invite_type === 'company_admin';
-    const roleLabel = isCompanyAdmin
-      ? 'Workspace Admin'
-      : role
-        ? role.charAt(0).toUpperCase() + role.slice(1)
-        : 'Team Member';
+    const isCompanyOwner = invite_type === 'company_owner' || invite_type === 'company_admin';
+    const isPlatformStaff = invite_type === 'platform_staff';
+    const roleLabel = role
+      ? role.charAt(0).toUpperCase() + role.slice(1)
+      : 'Team Member';
 
-    const headingLabel = isCompanyAdmin ? "You're invited to set up a workspace" : "You're Invited";
-    const heroTitle = isCompanyAdmin
+    const headingLabel = isCompanyOwner ? "You're Invited to Set Up Your Workspace" : "You're Invited";
+    const heroTitle = isCompanyOwner
       ? `Set Up Your ${org_name || 'Company'} Workspace on Port 24`
       : `Join ${org_name || 'your team'} on Port 24`;
-    const bodyText = isCompanyAdmin
-      ? `${invited_by_name ? `<strong style="color:#fff;">${invited_by_name}</strong> has set up a workspace for` : 'A workspace has been created for'} <strong style="color:#fff;">${org_name || 'your company'}</strong> on Port 24. As <strong style="color:#1FB8A0;">Workspace Admin</strong>, you'll manage your team, inventory, and shows.`
+    const bodyText = isCompanyOwner
+      ? `Port 24 has set up a workspace for <strong style="color:#fff;">${org_name || 'your company'}</strong>. As the <strong style="color:#1FB8A0;">Workspace Owner</strong>, you'll manage your team, shows, and inventory — all in one place.`
       : `${invited_by_name ? `<strong style="color:#fff;">${invited_by_name}</strong> has invited you` : "You've been invited"} to join <strong style="color:#fff;">${org_name || 'your workspace'}</strong> on Port 24 as a <strong style="color:#1FB8A0;">${roleLabel}</strong>.`;
-    const ctaText = isCompanyAdmin ? 'Set Up Your Workspace →' : 'Accept Invite &amp; Set Up Account →';
-    const emailSubject = isCompanyAdmin
+    const ctaText = isCompanyOwner ? 'Accept Invite &amp; Set Up Account →' : 'Accept Invite &amp; Set Up Account →';
+    const emailSubject = isCompanyOwner
       ? `Set up your ${org_name || 'company'} workspace on Port 24`
       : `You've been invited to join ${org_name || 'Port 24'}`;
 

@@ -23,7 +23,9 @@ async function loadInvite(token) {
     .eq('token', token)
     .single();
   if (error || !data) throw new Error('Invite not found. It may have already been used or the link is incorrect.');
-  if (data.status !== 'pending') throw new Error(`This invite has already been ${data.status}.`);
+  // 'accepted' is allowed here — the component may remount after auth state settles and the
+  // edge function handles already-accepted invites idempotently (ensures users row + membership).
+  if (data.status !== 'pending' && data.status !== 'accepted') throw new Error(`This invite has already been ${data.status}.`);
   if (new Date(data.expires_at) < new Date()) throw new Error('This invite link has expired. Ask your admin to send a new one.');
   return data;
 }
@@ -35,9 +37,13 @@ async function claimInvite(token, fullName) {
   if (error) {
     let msg = error.message;
     try { const b = await error.context?.json(); msg = b?.error || msg; } catch {}
+    if (msg.toLowerCase().includes('already accepted') || msg.toLowerCase().includes('already claimed')) return { ok: true };
     throw new Error(msg);
   }
-  if (data?.error) throw new Error(data.error);
+  if (data?.error) {
+    if (data.error.toLowerCase().includes('already accepted') || data.error.toLowerCase().includes('already claimed')) return { ok: true };
+    throw new Error(data.error);
+  }
   return data;
 }
 
@@ -82,8 +88,13 @@ export default function AcceptInvite() {
       const inv = await loadInvite(token);
       if (cancelled) return;
 
-      // Platform-level invites use a different acceptance page
-      if (inv.invite_type === 'company_admin' || inv.invite_type === 'platform_staff') {
+      // Route company owner invites to their dedicated page
+      if (inv.invite_type === 'company_owner' || inv.invite_type === 'company_admin') {
+        window.location.replace(`/accept-company-invite?token=${token}`);
+        return;
+      }
+      // Route platform staff invites to the platform join page
+      if (inv.invite_type === 'platform_staff') {
         window.location.replace(`/platform/join?token=${token}`);
         return;
       }
@@ -163,6 +174,19 @@ export default function AcceptInvite() {
       // Claim the invite
       setPhase('claiming');
       await claimInvite(token, fullName);
+
+      // Verify the users row was actually created before redirecting
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        let verified = false;
+        for (let i = 0; i < 12; i++) {
+          const { data: row } = await supabase.from('users').select('id').eq('id', currentUser.id).single();
+          if (row) { verified = true; break; }
+          await new Promise(r => setTimeout(r, 400));
+        }
+        if (!verified) throw new Error('Account setup incomplete. Please refresh and try signing in again.');
+      }
+
       sessionStorage.removeItem('pending_invite_token');
       setPhase('success');
       setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
@@ -180,17 +204,6 @@ export default function AcceptInvite() {
     navigate('/signin');
   };
 
-  // Google sign-in — redirect back to this page so we auto-claim on return
-  const handleGoogleSignIn = async () => {
-    sessionStorage.setItem('pending_invite_token', token);
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/accept-invite?token=${token}`,
-        queryParams: { prompt: 'select_account' },
-      },
-    });
-  };
 
   // ── Shared Org Badge ──
   const OrgBadge = () => invite ? (
@@ -293,24 +306,6 @@ export default function AcceptInvite() {
             You were invited to join <strong style={{ color: '#fff' }}>{invite?.organizations?.name}</strong> as <strong style={{ color: '#fff' }}>{invite?.role}</strong>.
             Sign in or create an account to continue.
           </p>
-
-          {/* Google */}
-          <button onClick={handleGoogleSignIn}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '12px', backgroundColor: CARD2, border: `1px solid ${BORDER_DIM}`, borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: 12 }}>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-              <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-              <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
-              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
-            </svg>
-            Continue with Google
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ flex: 1, height: 1, backgroundColor: BORDER_DIM }} />
-            <span style={{ color: TEXT_MUTED, fontSize: 12 }}>or</span>
-            <div style={{ flex: 1, height: 1, backgroundColor: BORDER_DIM }} />
-          </div>
 
           {/* Sign in with existing account */}
           <button onClick={goToSignIn}

@@ -39,13 +39,13 @@ function CreateOrgDialog({ onClose, onCreated }) {
           full_name: form.admin_name || null,
           org_id: org.id,
           role: 'admin',
-          invite_type: 'company_admin',
+          invite_type: 'company_owner',
           invited_by: userRecord?.id,
         })
         .select().single();
       if (invErr) throw invErr;
 
-      const link = `${window.location.origin}/platform/join?token=${invite.token}`;
+      const link = `${window.location.origin}/accept-company-invite?token=${invite.token}`;
 
       // Send invite email (non-blocking)
       supabase.functions.invoke('send-invite-email', {
@@ -54,8 +54,8 @@ function CreateOrgDialog({ onClose, onCreated }) {
           to_name: form.admin_name || null,
           invite_link: link,
           org_name: form.name,
-          role: 'admin',
-          invite_type: 'company_admin',
+          role: 'owner',
+          invite_type: 'company_owner',
           invited_by_name: userRecord?.full_name || userRecord?.email || 'Port 24',
         },
       }).catch(() => {});
@@ -300,7 +300,7 @@ export default function PlatformAdmin() {
       const { data, error } = await supabase
         .from('pending_invites')
         .select('*, organizations(name)')
-        .eq('invite_type', 'company_admin')
+        .in('invite_type', ['company_owner', 'company_admin'])
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -316,7 +316,7 @@ export default function PlatformAdmin() {
   };
 
   const copyInviteLink = (token) => {
-    navigator.clipboard.writeText(`${window.location.origin}/platform/join?token=${token}`);
+    navigator.clipboard.writeText(`${window.location.origin}/accept-company-invite?token=${token}`);
     toast.success('Invite link copied!');
   };
 

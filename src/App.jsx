@@ -64,6 +64,7 @@ import QRCodeSettings from './pages/QRCodeSettings';
 import TruckPackBuilder from './pages/TruckPackBuilder';
 import DocumentSettings from './pages/DocumentSettings';
 import AcceptInvite from './pages/AcceptInvite';
+import AcceptCompanyInvite from './pages/AcceptCompanyInvite';
 import QuickBooksCallback from './pages/QuickBooksCallback';
 import PlatformLogin from './pages/PlatformLogin';
 import PlatformJoin from './pages/PlatformJoin';
@@ -174,7 +175,7 @@ function NoWorkspaceAccess() {
 const PUBLIC_PATHS = new Set([
   '/', '/landing',
   '/signin', '/forgot-password', '/reset-password', '/verify-email',
-  '/accept-invite', '/crew-confirmation', '/booking-confirmation',
+  '/accept-invite', '/accept-company-invite', '/crew-confirmation', '/booking-confirmation',
   '/qb-callback', '/platform/login', '/platform/join',
 ]);
 
@@ -245,6 +246,7 @@ const AuthenticatedApp = () => {
         <Route path="/crew-confirmation" element={<CrewConfirmation />} />
         <Route path="/booking-confirmation" element={<BookingConfirmation />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
+        <Route path="/accept-company-invite" element={<AcceptCompanyInvite />} />
         <Route path="/qb-callback" element={<QuickBooksCallback />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/platform/login" element={<PlatformLogin />} />
@@ -268,6 +270,7 @@ const AuthenticatedApp = () => {
       <Route path="/crew-confirmation" element={<CrewConfirmation />} />
       <Route path="/booking-confirmation" element={<BookingConfirmation />} />
       <Route path="/accept-invite" element={<AcceptInvite />} />
+      <Route path="/accept-company-invite" element={<AcceptCompanyInvite />} />
       <Route path="/qb-callback" element={<QuickBooksCallback />} />
 
       {/* Main app with sidebar layout */}
