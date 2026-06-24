@@ -147,14 +147,19 @@ export default function AcceptCompanyInvite() {
       });
 
       if (fnError) {
+        let errorCode = null;
         let msg = fnError.message;
-        try { const b = await fnError.context?.json(); msg = b?.error || msg; } catch {}
+        try {
+          const b = await fnError.context?.json();
+          errorCode = b?.error;
+          msg = b?.message || b?.error || msg;
+        } catch {}
+        if (errorCode === 'user_exists') {
+          setFormError('This email already has a Port 24 account. Please use Sign In instead.');
+          setPhase('creating');
+          return;
+        }
         throw new Error(msg);
-      }
-      if (data?.error === 'user_exists') {
-        setFormError('This email already has a Port 24 account. Please use Sign In instead.');
-        setPhase('creating');
-        return;
       }
       if (data?.error) throw new Error(data.error);
 
