@@ -10,26 +10,14 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('Unauthorized');
-
-    // Verify the caller is a real authenticated user
-    const anonClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    const { data: { user }, error: userErr } = await anonClient.auth.getUser();
-    if (userErr || !user) throw new Error('Unauthorized');
-
-    const { token, full_name } = await req.json();
-    if (!token) throw new Error('Missing invite token');
-
-    // Use service role to bypass RLS for all DB operations
+    // Use service role for all DB operations
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
+
+    const { token, full_name, password } = await req.json();
+    if (!token) throw new Error('Missing invite token');
 
     // Load invite (no status filter — handle all states explicitly below)
     const { data: invite, error: invErr } = await adminClient
@@ -41,7 +29,51 @@ serve(async (req) => {
     if (invErr || !invite) throw new Error('Invite not found');
     if (new Date(invite.expires_at) < new Date()) throw new Error('Invite expired');
 
-    // Email match — the invitee must sign in with the invited email
+    // Try to identify caller as an authenticated user
+    let user = null;
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const anonClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user: authUser } } = await anonClient.auth.getUser();
+      user = authUser; // null if called with anon key or no session
+    }
+
+    // ── Create-account mode ──────────────────────────────────────────────
+    // No authenticated user but a password was provided — create the account
+    // server-side (auto-confirmed) so the client can sign in immediately.
+    if (!user && password) {
+      // Email match guard — the invite email must match what we're creating
+      if (!invite.email) throw new Error('Invite has no email address.');
+
+      const { data: { user: newUser }, error: createErr } = await adminClient.auth.admin.createUser({
+        email: invite.email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: full_name || invite.full_name || '' },
+      });
+
+      if (createErr) {
+        // User already exists — tell the client to use Sign In instead
+        const msg = createErr.message?.toLowerCase() ?? '';
+        if (msg.includes('already') || (createErr as any).status === 422) {
+          return new Response(JSON.stringify({
+            error: 'user_exists',
+            message: 'This email already has a Port 24 account. Please sign in instead.',
+          }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        throw createErr;
+      }
+
+      user = newUser;
+    }
+
+    if (!user) throw new Error('Unauthorized');
+
+    // Email match guard
     if (invite.email && invite.email.toLowerCase() !== user.email?.toLowerCase()) {
       throw new Error('This invite was sent to a different email address.');
     }
@@ -49,7 +81,7 @@ serve(async (req) => {
     const isPlatformAdmin = invite.role === 'platform_admin';
     const userRole = isPlatformAdmin ? 'admin' : invite.role;
 
-    // If already accepted — idempotent path: ensure the users row + membership exist
+    // ── Idempotent path: invite already accepted ─────────────────────────
     if (invite.status !== 'pending') {
       const { data: existingProfile } = await adminClient
         .from('users')
@@ -58,8 +90,6 @@ serve(async (req) => {
         .single();
 
       if (!existingProfile) {
-        // Invite was accepted but this user has no profile — something went wrong earlier.
-        // Re-create the users row and membership so they can get in.
         await adminClient.from('users').upsert({
           id: user.id,
           email: user.email,
@@ -84,7 +114,7 @@ serve(async (req) => {
       });
     }
 
-    // Normal pending invite claim
+    // ── Normal pending claim ─────────────────────────────────────────────
     const { error: upsertErr } = await adminClient.from('users').upsert({
       id: user.id,
       email: user.email,
@@ -96,7 +126,6 @@ serve(async (req) => {
 
     if (upsertErr) throw upsertErr;
 
-    // Upsert company_membership
     if (invite.org_id) {
       const { error: memberErr } = await adminClient.from('company_memberships').upsert({
         user_id: user.id,
@@ -108,7 +137,6 @@ serve(async (req) => {
       if (memberErr) throw memberErr;
     }
 
-    // Mark invite accepted
     await adminClient.from('pending_invites').update({
       status: 'accepted',
       accepted_at: new Date().toISOString(),

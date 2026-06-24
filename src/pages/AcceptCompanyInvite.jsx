@@ -138,44 +138,41 @@ export default function AcceptCompanyInvite() {
     if (password !== confirmPassword) return setFormError('Passwords do not match.');
 
     setSubmitting(true);
+    setPhase('claiming');
     try {
-      await supabase.auth.signUp({
-        email: invite.email,
-        password,
-        options: { data: { full_name: fullName } },
+      // Call edge function with password — it creates the user server-side (auto-confirmed)
+      // and claims the invite in one shot, so no separate signUp + email confirmation needed.
+      const { data, error: fnError } = await supabase.functions.invoke('claim-invite', {
+        body: { token, full_name: fullName, password },
       });
 
+      if (fnError) {
+        let msg = fnError.message;
+        try { const b = await fnError.context?.json(); msg = b?.error || msg; } catch {}
+        throw new Error(msg);
+      }
+      if (data?.error === 'user_exists') {
+        setFormError('This email already has a Port 24 account. Please use Sign In instead.');
+        setPhase('creating');
+        return;
+      }
+      if (data?.error) throw new Error(data.error);
+
+      // Account created + invite claimed. Sign in now.
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: invite.email,
         password,
       });
-
       if (signInErr) {
-        setFormError(signInErr.message);
+        // Rare — account was created but sign-in failed. User can sign in manually.
+        setFormError(`Account created — please sign in with your new password.`);
         setPhase('creating');
         return;
       }
 
-      setPhase('claiming');
-      await claimInvite(token, fullName);
-
-      // Verify the users row actually exists before redirecting —
-      // guards against any edge case where the DB write hasn't committed yet.
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (currentUser) {
-        let verified = false;
-        for (let i = 0; i < 12; i++) {
-          const { data: row } = await supabase.from('users').select('id').eq('id', currentUser.id).single();
-          if (row) { verified = true; break; }
-          await new Promise(r => setTimeout(r, 400));
-        }
-        if (!verified) throw new Error('Account setup incomplete. Please refresh and try signing in again.');
-      }
-
       sessionStorage.removeItem('pending_invite_token');
       sessionStorage.removeItem('pending_invite_path');
-      setPhase('success');
-      setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
+      window.location.href = '/dashboard';
     } catch (err) {
       setFormError(err.message);
       setPhase('creating');
