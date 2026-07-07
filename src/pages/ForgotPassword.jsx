@@ -26,14 +26,12 @@ export default function ForgotPassword() {
     setError('');
     setLoading(true);
     try {
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
-        email.trim().toLowerCase(),
-        { redirectTo: `${window.location.origin}/reset-password` }
-      );
-      if (resetErr) throw resetErr;
+      await supabase.functions.invoke('send-password-reset', {
+        body: { email: email.trim().toLowerCase(), redirect_to: `${window.location.origin}/reset-password` },
+      });
+      // Always show confirmation — don't reveal whether the email exists
     } catch (err) {
       console.error('[ForgotPassword]', err);
-      // Don't reveal whether email exists — always show the confirmation screen
     } finally {
       setLoading(false);
       setSubmitted(true);
