@@ -6,6 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const COMMON_PASSWORDS = new Set([
+  'password', 'password1', 'password123', '12345678', '123456789', 'qwerty123',
+  'abc12345', 'iloveyou', 'admin123', 'letmein1', 'welcome1', 'monkey123',
+]);
+
+function validatePasswordStrength(pw: string): string | null {
+  if (!pw || pw.length < 8) return 'Password must be at least 8 characters.';
+  if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter.';
+  if (!/[a-z]/.test(pw)) return 'Password must contain at least one lowercase letter.';
+  if (!/[0-9]/.test(pw)) return 'Password must contain at least one number.';
+  if (COMMON_PASSWORDS.has(pw.toLowerCase())) return 'Password is too common. Please choose a stronger one.';
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -46,6 +60,14 @@ serve(async (req) => {
     // No authenticated user but a password was provided — create the account
     // server-side (auto-confirmed) so the client can sign in immediately.
     if (!user && password) {
+      // Server-side password strength check
+      const pwError = validatePasswordStrength(password);
+      if (pwError) {
+        return new Response(JSON.stringify({ error: 'weak_password', message: pwError }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       // Email match guard — the invite email must match what we're creating
       if (!invite.email) throw new Error('Invite has no email address.');
 

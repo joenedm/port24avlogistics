@@ -10,6 +10,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// In-memory rate limiter: max 5 reset requests per email per 10 minutes
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitMap.set(key, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
 const T = '#1FB8A0';
 const BG = '#070B11';
 
@@ -19,6 +36,14 @@ serve(async (req) => {
   try {
     const { email, redirect_to } = await req.json();
     if (!email) throw new Error('Missing email');
+
+    // Rate limit by email address (case-normalized)
+    const emailKey = email.trim().toLowerCase();
+    if (!checkRateLimit(emailKey)) {
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,

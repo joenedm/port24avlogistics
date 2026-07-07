@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { db } from '@/api/db';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -194,7 +195,7 @@ export default function CrewBookingEmailTemplate() {
               </p>
               <div
                 className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: renderPreview(form.html_body) }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderPreview(form.html_body)) }}
               />
             </div>
           </CardContent>
