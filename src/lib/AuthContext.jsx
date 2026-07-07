@@ -400,6 +400,24 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      if (event === 'PASSWORD_RECOVERY') {
+        // User clicked a password reset link — skip company routing entirely.
+        // Store a flag so ResetPassword can detect this even if it mounts after this event fires.
+        if (DEV) console.log('[Auth] PASSWORD_RECOVERY — parking on reset page, skipping profile load');
+        sessionStorage.setItem('port24_password_recovery', 'true');
+        setUser(session.user);
+        setIsAuthenticated(true);
+        setCompanyMemberships([]); // membershipsLoaded = true, clears spinner
+        setAuthError(null);
+        authDoneRef.current = true;
+        profileLoadingRef.current = false;
+        setIsLoadingAuth(false);
+        if (!window.location.pathname.startsWith('/reset-password')) {
+          window.location.href = '/reset-password';
+        }
+        return;
+      }
+
       if (profileLoadingRef.current) {
         if (DEV) console.log('[Auth] profile load already in progress — skipping duplicate event:', event);
         return;

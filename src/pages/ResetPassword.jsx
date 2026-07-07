@@ -22,10 +22,16 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Supabase processes the #access_token hash and fires PASSWORD_RECOVERY.
-    // Once that fires, updateUser() is allowed.
+    // Case 1: AuthContext already intercepted PASSWORD_RECOVERY before this component mounted.
+    if (sessionStorage.getItem('port24_password_recovery')) {
+      sessionStorage.removeItem('port24_password_recovery');
+      setReady(true);
+    }
+
+    // Case 2: Event fires after this component mounts (component beat AuthContext to the subscription).
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
+        sessionStorage.removeItem('port24_password_recovery');
         setReady(true);
       }
     });
