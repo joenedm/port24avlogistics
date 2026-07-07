@@ -739,16 +739,13 @@ export default function SignIn() {
     } catch (err) {
       setLoading(false);
       const msg = (err?.message || '').toLowerCase();
-      const isWrongPassword =
-        msg.includes('invalid login credentials') ||
-        msg.includes('invalid password') ||
-        msg.includes('wrong password') ||
-        msg.includes('user not found');
-      if (!isWrongPassword && msg.includes('email not confirmed')) {
+      // Always show a static message for credential failures — never leak raw Supabase
+      // error text that could reveal whether an email exists (user enumeration).
+      if (msg.includes('email not confirmed')) {
         setShowVerifyModal(true);
         return;
       }
-      setError(err?.message || 'Invalid email or password. Please try again.');
+      setError('Invalid email or password. Please try again.');
     }
   };
 

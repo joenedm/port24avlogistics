@@ -53,11 +53,12 @@ function parseSort(sort) {
   return { column, ascending: !descending };
 }
 
-function buildEntity(table) {
+// cols: explicit column list — omit server-side secrets from client responses
+function buildEntity(table, cols = '*') {
   return {
     // list(sort?, limit?) — fetch all rows
     async list(sort, limit) {
-      let q = supabase.from(table).select('*');
+      let q = supabase.from(table).select(cols);
       const s = parseSort(sort);
       if (s) q = q.order(s.column, { ascending: s.ascending });
       if (limit) q = q.limit(limit);
@@ -68,7 +69,7 @@ function buildEntity(table) {
 
     // filter(where, sort?) — equality filter on one or more fields
     async filter(where, sort) {
-      let q = supabase.from(table).select('*');
+      let q = supabase.from(table).select(cols);
       if (where) {
         for (const [key, value] of Object.entries(where)) {
           if (Array.isArray(value)) {
@@ -89,7 +90,7 @@ function buildEntity(table) {
 
     // read(id) / get(id) — fetch single row by primary key
     async read(id) {
-      const { data, error } = await supabase.from(table).select('*').eq('id', id).single();
+      const { data, error } = await supabase.from(table).select(cols).eq('id', id).single();
       if (error) throw error;
       return data;
     },
@@ -165,12 +166,24 @@ export const entities = {
   Alert:                       buildEntity('alerts'),
   FulfillmentCalibration:      buildEntity('fulfillment_calibrations'),
   ImportTemplate:              buildEntity('import_templates'),
-  QuickBooksConnection:        buildEntity('quickbooks_connections'),
+  // OAuth tokens (access_token, refresh_token) and SMTP password are server-side secrets
+  // and must never be returned to the browser. Explicit column lists omit them.
+  QuickBooksConnection: buildEntity(
+    'quickbooks_connections',
+    'id,org_id,realm_id,company_name,connected_at,status,' +
+    'income_account_equipment,income_account_labor,income_account_logistics,' +
+    'income_account_consumables,income_account_discounts,deposit_account,' +
+    'default_terms,sales_tax_code,default_service_item,' +
+    'auto_sync_on_invoice_send,sync_customers,sync_invoices,sync_payments,token_expires'
+  ),
   StripeAccount:               buildEntity('stripe_accounts'),
   BrandSettings:               buildEntity('brand_settings'),
   InvoiceSettings:             buildEntity('invoice_settings'),
   DocumentSettings:            buildEntity('document_settings'),
-  WorkspaceEmailSettings:      buildEntity('workspace_email_settings'),
+  WorkspaceEmailSettings: buildEntity(
+    'workspace_email_settings',
+    'id,org_id,from_name,from_email,smtp_host,smtp_port,smtp_user,resend_api_key_set'
+  ),
   CodeSettings:                buildEntity('code_settings'),
   EmailTemplate:               buildEntity('email_templates'),
   EmailFieldControl:           buildEntity('email_field_controls'),

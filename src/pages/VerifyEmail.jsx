@@ -67,7 +67,15 @@ export default function VerifyEmail() {
   // Email/password can come from navigation state (passed from SignIn) or URL param
   const params = new URLSearchParams(location.search);
   const [email, setEmail] = useState(location.state?.email || params.get('email') || '');
+  // Extract and immediately erase password from router state so it doesn't linger in
+  // browser history. We keep it only in a local ref — never re-serialized anywhere.
   const savedPassword = location.state?.password || null;
+  React.useEffect(() => {
+    if (location.state?.password) {
+      window.history.replaceState({ ...location.state, password: undefined }, '');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [digits, setDigits] = useState(Array(OTP_LENGTH).fill(''));
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
