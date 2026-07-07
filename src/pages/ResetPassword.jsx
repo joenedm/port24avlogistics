@@ -1,34 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '@/api/db';
+import { supabase } from '@/api/supabaseClient';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Lock, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
-const LOGO_URL = 'https://media.base44.com/images/public/69d5151f0495918d567d1066/ad22e0b11_ShowForgelogodesignwithsparks.png';
+const T = '#1FB8A0';
+const T_DIM = '#17907C';
+const BG = '#0E1117';
+const CARD = '#131920';
+const BORDER = 'rgba(31,184,160,0.15)';
+const BORDER_DIM = 'rgba(255,255,255,0.06)';
+const TEXT_MUTED = '#7B8EA8';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const [token, setToken] = useState('');
+  const [ready, setReady] = useState(false); // true once Supabase has established the recovery session
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const t = params.get('token');
-    if (!t) {
-      setError('Missing or invalid reset link. Please request a new one.');
-    } else {
-      setToken(t);
-    }
+    // Supabase processes the #access_token hash and fires PASSWORD_RECOVERY.
+    // Once that fires, updateUser() is allowed.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setReady(true);
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!password || password.length < 8) {
+    if (password.length < 8) {
       setError('Password must be at least 8 characters.');
       return;
     }
@@ -39,179 +47,132 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const res = await db.functions.invoke('resetPassword', {
-        token,
-        new_password: password,
-      });
-      if (res.data?.error) {
-        setError(res.data.error);
-      } else {
-        setSuccess(true);
-        setTimeout(() => navigate('/signin'), 3000);
-      }
+      const { error: updateErr } = await supabase.auth.updateUser({ password });
+      if (updateErr) throw updateErr;
+      setSuccess(true);
+      setTimeout(() => navigate('/signin'), 3000);
     } catch (err) {
-      const msg = err?.response?.data?.error;
-      if (msg && typeof msg === 'string') {
-        setError(msg);
-      } else {
-        setError('This reset link is invalid or has expired. Please request a new one.');
-      }
+      setError(err.message || 'Failed to update password. The link may have expired — request a new one.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{ backgroundColor: '#1E1B2E' }}
-    >
-      {/* Background glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl"
-          style={{ backgroundColor: 'rgba(245,158,11,0.06)' }}
-        />
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
+      style={{ backgroundColor: BG, fontFamily: 'Inter, sans-serif' }}>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] rounded-full blur-3xl"
+          style={{ backgroundColor: 'rgba(31,184,160,0.04)' }} />
       </div>
 
-      <Link
-        to="/signin"
-        className="absolute top-6 left-6 flex items-center gap-2 text-sm transition-colors"
-        style={{ color: '#A1A1AA' }}
-        onMouseEnter={e => e.currentTarget.style.color = '#F59E0B'}
-        onMouseLeave={e => e.currentTarget.style.color = '#A1A1AA'}
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Sign In
+      <Link to="/signin" className="absolute top-6 left-6 flex items-center gap-2 text-sm transition-colors"
+        style={{ color: TEXT_MUTED }}
+        onMouseEnter={e => e.currentTarget.style.color = T}
+        onMouseLeave={e => e.currentTarget.style.color = TEXT_MUTED}>
+        <ArrowLeft className="w-4 h-4" /> Back to Sign In
       </Link>
 
-      <div
-        className="relative w-full max-w-md rounded-3xl p-10 flex flex-col items-center"
-        style={{
-          backgroundColor: '#2A2540',
-          border: '1px solid rgba(245,158,11,0.15)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.4)',
-        }}
-      >
-        <img src={LOGO_URL} alt="Show Forge" className="w-16 h-16 object-contain mb-5 rounded-2xl" />
+      <div className="relative w-full max-w-sm">
+        <div className="mb-10">
+          <img src="/port24-logo.svg" alt="Port 24" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+        </div>
 
         {success ? (
-          <div className="flex flex-col items-center text-center">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center mb-5"
-              style={{ backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}
-            >
-              <CheckCircle className="w-7 h-7" style={{ color: '#F59E0B' }} />
+          <div className="flex flex-col items-start">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+              style={{ backgroundColor: 'rgba(31,184,160,0.1)', border: `1px solid rgba(31,184,160,0.2)` }}>
+              <CheckCircle className="w-6 h-6" style={{ color: T }} />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">Password updated!</h1>
-            <p className="text-sm leading-relaxed mb-8" style={{ color: '#A1A1AA' }}>
-              Your password has been changed successfully. Redirecting you to Sign In…
+            <h1 className="text-2xl font-bold text-white mb-2">Password updated!</h1>
+            <p className="text-sm mb-8" style={{ color: TEXT_MUTED }}>
+              Your password has been changed. Redirecting to sign in…
             </p>
-            <Link
-              to="/signin"
-              className="w-full flex items-center justify-center font-semibold py-3.5 rounded-xl text-base"
-              style={{ backgroundColor: '#F59E0B', color: '#1E1B2E' }}
-            >
+            <Link to="/signin"
+              className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl text-sm transition-colors"
+              style={{ backgroundColor: T, color: BG }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = T_DIM}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = T}>
               Sign In now
+            </Link>
+          </div>
+        ) : !ready ? (
+          <div className="flex flex-col items-start">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+              style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <AlertCircle className="w-6 h-6" style={{ color: '#EF4444' }} />
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">Invalid reset link</h1>
+            <p className="text-sm mb-8" style={{ color: TEXT_MUTED }}>
+              This link is invalid or has already been used. Request a new one from the sign-in page.
+            </p>
+            <Link to="/forgot-password"
+              className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl text-sm transition-colors"
+              style={{ backgroundColor: T, color: BG }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = T_DIM}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = T}>
+              Request new link
             </Link>
           </div>
         ) : (
           <>
-            <h1 className="text-2xl font-bold text-white mb-1 tracking-tight text-center">
-              Set new <span style={{ color: '#F59E0B' }}>password</span>
-            </h1>
-            <p className="text-sm mb-8 text-center" style={{ color: '#A1A1AA' }}>
-              Enter and confirm your new password below.
-            </p>
+            <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">Set new password</h1>
+            <p className="text-sm mb-8" style={{ color: TEXT_MUTED }}>Choose a new password for your account.</p>
 
-            {error && !token ? (
-              <div
-                className="w-full rounded-xl p-4 flex items-start gap-3 mb-4"
-                style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
-              >
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#EF4444' }} />
-                <div>
-                  <p className="text-sm" style={{ color: '#FCA5A5' }}>{error}</p>
-                  <Link to="/forgot-password" className="text-xs underline mt-1 block" style={{ color: '#F59E0B' }}>
-                    Request a new reset link
-                  </Link>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>New password</label>
+                <div className="relative">
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => { setPassword(e.target.value); setError(''); }}
+                    placeholder="At least 8 characters"
+                    autoFocus
+                    required
+                    className="w-full rounded-lg px-4 py-3 pr-11 text-sm text-white outline-none transition-all"
+                    style={{ backgroundColor: CARD, border: `1px solid ${BORDER_DIM}`, color: '#fff' }}
+                    onFocus={e => e.currentTarget.style.borderColor = BORDER}
+                    onBlur={e => e.currentTarget.style.borderColor = BORDER_DIM}
+                  />
+                  <button type="button" onClick={() => setShowPw(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: TEXT_MUTED }}>
+                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="w-full space-y-4">
-                {error && (
-                  <div
-                    className="w-full rounded-xl p-4 flex items-start gap-3"
-                    style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
-                  >
-                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#EF4444' }} />
-                    <div>
-                      <p className="text-sm" style={{ color: '#FCA5A5' }}>{error}</p>
-                      {(error.includes('invalid') || error.includes('expired')) && (
-                        <Link to="/forgot-password" className="text-xs underline mt-1 block" style={{ color: '#F59E0B' }}>
-                          Request a new reset link
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                )}
-                <div className="w-full">
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: '#D1D5DB' }}>
-                    New password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#6B7280' }} />
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={e => { setPassword(e.target.value); setError(''); }}
-                      placeholder="Minimum 8 characters"
-                      autoFocus
-                      className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white outline-none transition-all"
-                      style={{
-                        backgroundColor: '#1E1B2E',
-                        border: error ? '1px solid #EF4444' : '1px solid rgba(255,255,255,0.1)',
-                      }}
-                      onFocus={e => { if (!error) e.currentTarget.style.borderColor = 'rgba(245,158,11,0.5)'; }}
-                      onBlur={e => { if (!error) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-                    />
-                  </div>
-                </div>
 
-                <div className="w-full">
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: '#D1D5DB' }}>
-                    Confirm new password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#6B7280' }} />
-                    <input
-                      type="password"
-                      value={confirm}
-                      onChange={e => { setConfirm(e.target.value); setError(''); }}
-                      placeholder="Re-enter your password"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white outline-none transition-all"
-                      style={{
-                        backgroundColor: '#1E1B2E',
-                        border: error ? '1px solid #EF4444' : '1px solid rgba(255,255,255,0.1)',
-                      }}
-                      onFocus={e => { if (!error) e.currentTarget.style.borderColor = 'rgba(245,158,11,0.5)'; }}
-                      onBlur={e => { if (!error) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-                    />
-                  </div>
-                </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Confirm password</label>
+                <input
+                  type="password"
+                  value={confirm}
+                  onChange={e => { setConfirm(e.target.value); setError(''); }}
+                  placeholder="Repeat your password"
+                  required
+                  className="w-full rounded-lg px-4 py-3 text-sm text-white outline-none transition-all"
+                  style={{ backgroundColor: CARD, border: `1px solid ${BORDER_DIM}`, color: '#fff' }}
+                  onFocus={e => e.currentTarget.style.borderColor = BORDER}
+                  onBlur={e => e.currentTarget.style.borderColor = BORDER_DIM}
+                />
+              </div>
 
-                <button
-                  type="submit"
-                  disabled={loading || !token}
-                  className="w-full flex items-center justify-center gap-2 font-semibold py-3.5 rounded-xl transition-colors text-base disabled:opacity-60"
-                  style={{ backgroundColor: '#F59E0B', color: '#1E1B2E', boxShadow: '0 8px 32px rgba(245,158,11,0.2)' }}
-                  onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#D97706'; }}
-                  onMouseLeave={e => { if (!loading) e.currentTarget.style.backgroundColor = '#F59E0B'; }}
-                >
-                  {loading ? 'Saving...' : 'Save new password'}
-                </button>
-              </form>
-            )}
+              {error && (
+                <div className="rounded-lg px-4 py-3 text-xs flex items-start gap-2"
+                  style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171' }}>
+                  <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <button type="submit" disabled={loading}
+                className="w-full flex items-center justify-center gap-2 font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-60"
+                style={{ backgroundColor: T, color: BG }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = T_DIM; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = T; }}>
+                {loading ? 'Saving…' : <><Lock className="w-4 h-4" /> Save New Password</>}
+              </button>
+            </form>
           </>
         )}
       </div>
