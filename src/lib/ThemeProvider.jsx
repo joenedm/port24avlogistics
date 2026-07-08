@@ -19,7 +19,7 @@
  *   input          → same as border
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { db } from '@/api/db';
 import { useAuth } from '@/lib/AuthContext';
@@ -82,13 +82,8 @@ function clearVar(name) {
 }
 
 export default function ThemeProvider({ children }) {
-  const [isAuthed, setIsAuthed] = useState(false);
   const { userRecord } = useAuth();
   const orgId = userRecord?.org_id;
-
-  useEffect(() => {
-    db.auth.isAuthenticated().then(setIsAuthed);
-  }, []);
 
   const { data: brandList = [] } = useQuery({
     queryKey: ['brand', orgId],
@@ -96,7 +91,7 @@ export default function ThemeProvider({ children }) {
       ? db.entities.BrandSettings.filter({ org_id: orgId })
       : Promise.resolve([]),
     staleTime: 0,
-    enabled: isAuthed,
+    enabled: !!orgId,
     retry: false,
   });
 
