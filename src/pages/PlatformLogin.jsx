@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
 import { Eye, EyeOff, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
@@ -23,14 +23,6 @@ export default function PlatformLogin() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // If already logged in as platform admin, go straight to platform.
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user) return;
-      await verifyAndRoute(session.user);
-    });
-  }, []);
 
   const verifyAndRoute = async (authUser) => {
     const normalizedEmail = authUser.email?.toLowerCase() ?? '';

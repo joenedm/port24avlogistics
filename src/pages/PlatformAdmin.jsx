@@ -3,8 +3,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Users, Plus, Eye, CheckCircle, XCircle, Clock, Copy, ShieldCheck, Trash2, UserPlus } from 'lucide-react';
+import { Building2, Users, Plus, Eye, CheckCircle, XCircle, Clock, Copy, ShieldCheck, Trash2, UserPlus, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { logAdminAction } from '@/lib/adminAudit';
 
 const STATUS_COLOR = {
   active: 'text-emerald-400 bg-emerald-400/10',
@@ -243,6 +244,8 @@ export default function PlatformAdmin() {
   const [showCreate, setShowCreate] = useState(false);
   const [tab, setTab] = useState('companies');
   const [showAddStaff, setShowAddStaff] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState(null); // { orgId, orgName, newStatus, userCount }
+  const [statusChanging, setStatusChanging] = useState(false);
   const isDevAdmin = DEV_ADMIN_EMAILS.includes(userRecord?.email?.toLowerCase());
 
   const { data: orgs = [], isLoading } = useQuery({
@@ -320,11 +323,29 @@ export default function PlatformAdmin() {
     toast.success('Invite link copied!');
   };
 
-  const updateOrgStatus = async (orgId, status) => {
-    const { error } = await supabase.from('organizations').update({ status }).eq('id', orgId);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ['platform-orgs'] });
-    toast.success(`Organization ${status}`);
+  const requestStatusChange = (org) => {
+    const newStatus = org.status === 'active' ? 'suspended' : 'active';
+    const users = usersForOrg(org.id);
+    setPendingStatusChange({ orgId: org.id, orgName: org.name, newStatus, userCount: users.length });
+  };
+
+  const executeStatusChange = async () => {
+    if (!pendingStatusChange) return;
+    const { orgId, orgName, newStatus } = pendingStatusChange;
+    const oldOrg = orgs.find(o => o.id === orgId);
+    setStatusChanging(true);
+    try {
+      const { error } = await supabase.from('organizations').update({ status: newStatus }).eq('id', orgId);
+      if (error) throw error;
+      await logAdminAction({ action: 'org_status_changed', orgId, oldValue: oldOrg?.status, newValue: newStatus, metadata: { name: orgName } });
+      qc.invalidateQueries({ queryKey: ['platform-orgs'] });
+      toast.success(`${orgName} ${newStatus === 'suspended' ? 'suspended' : 'reactivated'}`);
+      setPendingStatusChange(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setStatusChanging(false);
+    }
   };
 
   const usersForOrg = (orgId) => allUsers.filter(u => u.org_id === orgId);
@@ -348,6 +369,51 @@ export default function PlatformAdmin() {
         />
       )}
       {showAddStaff && <AddPlatformStaffDialog onClose={() => setShowAddStaff(false)} />}
+
+      {/* Status change confirmation */}
+      {pendingStatusChange && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+          <div className="bg-[#131920] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+            <div className="flex items-start gap-3 mb-3">
+              {pendingStatusChange.newStatus === 'suspended' && (
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                </div>
+              )}
+              <h3 className="text-white font-bold text-lg leading-snug">
+                {pendingStatusChange.newStatus === 'suspended'
+                  ? `Suspend ${pendingStatusChange.orgName}?`
+                  : `Reactivate ${pendingStatusChange.orgName}?`}
+              </h3>
+            </div>
+            <p className="text-sm text-gray-400 mb-4 leading-relaxed">
+              {pendingStatusChange.newStatus === 'suspended'
+                ? `This will immediately block all ${pendingStatusChange.userCount} active user${pendingStatusChange.userCount !== 1 ? 's' : ''} from accessing Port 24. They will see a suspended screen on their next page load.`
+                : `${pendingStatusChange.orgName} will regain full access based on their current plan.`}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => !statusChanging && setPendingStatusChange(null)}
+                disabled={statusChanging}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:text-white transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeStatusChange}
+                disabled={statusChanging}
+                className={`flex-1 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors ${
+                  pendingStatusChange.newStatus === 'suspended'
+                    ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30'
+                    : 'bg-[#1FB8A0] text-black hover:bg-[#17907C]'
+                }`}
+              >
+                {statusChanging ? 'Please wait…' : pendingStatusChange.newStatus === 'suspended' ? 'Suspend Account' : 'Reactivate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -544,7 +610,7 @@ export default function PlatformAdmin() {
                 <div className="flex items-center gap-2">
                   {!isPort24 && (
                     <button
-                      onClick={() => updateOrgStatus(org.id, org.status === 'active' ? 'suspended' : 'active')}
+                      onClick={() => requestStatusChange(org)}
                       className="p-2 rounded-lg hover:bg-white/5 transition-colors"
                       title={org.status === 'active' ? 'Suspend' : 'Activate'}
                     >

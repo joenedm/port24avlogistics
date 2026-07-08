@@ -1,0 +1,17 @@
+{
+  "name": "Port 24",
+  "short_name": "Port 24",
+  "description": "The all-in-one platform for live production. Quotes, inventory, crew, logistics, and workflow in one system.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0E1117",
+  "theme_color": "#1FB8A0",
+  "icons": [
+    {
+      "src": "/port24-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -450,6 +450,28 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // -------------------------------------------------------------------
+  // Realtime: keep userRecord.role in sync if a platform admin changes it
+  // without requiring the user to re-login.
+  // -------------------------------------------------------------------
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`user-row-${user.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'users',
+        filter: `id=eq.${user.id}`,
+      }, (payload) => {
+        if (payload.new?.role) {
+          setUserRecord(prev => prev ? { ...prev, role: payload.new.role } : prev);
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
+  // -------------------------------------------------------------------
   // Switch workspace
   // -------------------------------------------------------------------
   const switchWorkspace = async (targetOrgId) => {

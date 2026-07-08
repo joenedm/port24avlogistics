@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   ScanBarcode, CalendarDays, Users, FileText,
   BarChart3, ArrowRight, CheckCircle, ChevronRight,
@@ -14,11 +14,11 @@ const CARD = '#111820';
 const BORDER = 'rgba(31,184,160,0.15)';
 const BORDER_DIM = 'rgba(255,255,255,0.07)';
 const TEXT_MUTED = '#6B7A92';
-const TEXT_DIM = '#3D4F63';
+const TEXT_DIM = '#6B7A92';
 
 function Port24Mark({ size = 28 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true" focusable="false">
       <path d="M4 4h10v4H8v8H4V4z" fill="#3DC9C0"/>
       <path d="M36 4h-10v4h8v8h4V4z" fill="#1FB8A0"/>
       <path d="M4 36h10v-4H8v-8H4V36z" fill="#3DC9C0"/>
@@ -350,6 +350,20 @@ export default function LandingPage() {
   return (
     <div style={{ backgroundColor: BG, color: '#fff', fontFamily: "'Inter', -apple-system, sans-serif", overflowX: 'hidden' }}>
 
+      {/* Skip to main content — keyboard / screen reader accessibility */}
+      <a
+        href="#main-content"
+        style={{
+          position: 'absolute', top: -9999, left: 8, zIndex: 9999,
+          background: T, color: BG, fontWeight: 700, fontSize: 13,
+          padding: '8px 16px', borderRadius: 6, textDecoration: 'none',
+        }}
+        onFocus={e => { e.currentTarget.style.top = '8px'; }}
+        onBlur={e => { e.currentTarget.style.top = '-9999px'; }}
+      >
+        Skip to main content
+      </a>
+
       {/* ── NAV ── */}
       <header style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
@@ -390,7 +404,14 @@ export default function LandingPage() {
               onMouseLeave={e => e.currentTarget.style.background = T}>
               Start Free Trial
             </button>
-            <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: 'none', border: 'none', color: TEXT_MUTED, cursor: 'pointer', padding: 4, display: 'none' }} className="show-mobile">
+            <button
+              onClick={() => setMobileMenuOpen(v => !v)}
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav"
+              style={{ background: 'none', border: 'none', color: TEXT_MUTED, cursor: 'pointer', padding: 4, display: 'none' }}
+              className="show-mobile"
+            >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
@@ -398,16 +419,16 @@ export default function LandingPage() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div style={{ background: SURFACE, borderBottom: `1px solid ${BORDER_DIM}`, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <nav id="mobile-nav" aria-label="Mobile navigation" style={{ background: SURFACE, borderBottom: `1px solid ${BORDER_DIM}`, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
             {navLinks.map(({ label, href }) => (
               <a key={label} href={href} onClick={() => setMobileMenuOpen(false)} style={{ color: TEXT_MUTED, fontSize: 15, textDecoration: 'none' }}>{label}</a>
             ))}
-          </div>
+          </nav>
         )}
       </header>
 
       {/* ── HERO ── */}
-      <section ref={heroRef} style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: 100, paddingBottom: 80, overflow: 'hidden' }}>
+      <section id="main-content" ref={heroRef} style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: 100, paddingBottom: 80, overflow: 'hidden' }}>
         <GridBg />
 
         {/* Ambient orb */}
@@ -645,17 +666,37 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ padding: '48px 24px', borderTop: `1px solid ${BORDER_DIM}`, background: SURFACE }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Port24Mark size={20} />
-            <span style={{ letterSpacing: '0.16em', fontWeight: 800, fontSize: '0.72rem', color: '#3DC9C0' }}>PORT <span style={{ color: T }}>24</span></span>
+      <footer style={{ padding: '48px 24px 32px', borderTop: `1px solid ${BORDER_DIM}`, background: SURFACE }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {/* Top row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Port24Mark size={20} />
+              <span style={{ letterSpacing: '0.16em', fontWeight: 800, fontSize: '0.72rem', color: '#3DC9C0' }}>PORT <span style={{ color: T }}>24</span></span>
+            </div>
+            <p style={{ color: TEXT_DIM, fontSize: 12, margin: 0 }}>The all-in-one platform for live production.</p>
+            <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+              <a href="mailto:support@port24av.com" style={{ color: TEXT_DIM, fontSize: 13, textDecoration: 'none' }}
+                onMouseEnter={e => e.target.style.color = TEXT_MUTED}
+                onMouseLeave={e => e.target.style.color = TEXT_DIM}>support@port24av.com</a>
+              <button onClick={goSignIn} style={{ color: TEXT_DIM, background: 'none', border: 'none', fontSize: 13, cursor: 'pointer' }}
+                onMouseEnter={e => e.target.style.color = TEXT_MUTED}
+                onMouseLeave={e => e.target.style.color = TEXT_DIM}>Sign In</button>
+            </div>
           </div>
-          <p style={{ color: TEXT_DIM, fontSize: 12, margin: 0 }}>The all-in-one platform for live production.</p>
-          <div style={{ display: 'flex', gap: 24 }}>
-            <button onClick={goSignIn} style={{ color: TEXT_DIM, background: 'none', border: 'none', fontSize: 13, cursor: 'pointer' }}
-              onMouseEnter={e => e.target.style.color = TEXT_MUTED}
-              onMouseLeave={e => e.target.style.color = TEXT_DIM}>Sign In</button>
+          {/* Legal row */}
+          <div style={{ borderTop: `1px solid ${BORDER_DIM}`, paddingTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <p style={{ color: TEXT_DIM, fontSize: 11, margin: 0 }}>
+              &copy; {new Date().getFullYear()} Port 24. All rights reserved.
+            </p>
+            <div style={{ display: 'flex', gap: 20 }}>
+              <Link to="/privacy" style={{ color: TEXT_DIM, fontSize: 11, textDecoration: 'none' }}
+                onMouseEnter={e => e.target.style.color = TEXT_MUTED}
+                onMouseLeave={e => e.target.style.color = TEXT_DIM}>Privacy Policy</Link>
+              <Link to="/terms" style={{ color: TEXT_DIM, fontSize: 11, textDecoration: 'none' }}
+                onMouseEnter={e => e.target.style.color = TEXT_MUTED}
+                onMouseLeave={e => e.target.style.color = TEXT_DIM}>Terms of Service</Link>
+            </div>
           </div>
         </div>
       </footer>

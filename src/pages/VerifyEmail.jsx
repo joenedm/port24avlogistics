@@ -34,7 +34,7 @@ function Port24Wordmark() {
 }
 
 // Single digit input cell
-function OtpCell({ value, inputRef, onChange, onKeyDown, onPaste }) {
+function OtpCell({ value, inputRef, onChange, onKeyDown, onPaste, index, total }) {
   return (
     <input
       ref={inputRef}
@@ -45,6 +45,7 @@ function OtpCell({ value, inputRef, onChange, onKeyDown, onPaste }) {
       onChange={onChange}
       onKeyDown={onKeyDown}
       onPaste={onPaste}
+      aria-label={`Digit ${index + 1} of ${total}`}
       className="w-12 h-14 text-center text-xl font-bold rounded-xl outline-none transition-all"
       style={{
         backgroundColor: CARD,
@@ -278,6 +279,8 @@ export default function VerifyEmail() {
               <OtpCell
                 key={i}
                 value={d}
+                index={i}
+                total={OTP_LENGTH}
                 inputRef={el => inputRefs.current[i] = el}
                 onChange={e => handleCellChange(i, e.target.value)}
                 onKeyDown={e => handleKeyDown(i, e)}

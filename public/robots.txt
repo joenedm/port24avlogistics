@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+Allow: /landing
+Allow: /signin
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /platform
+Disallow: /create-company
+Disallow: /workspace-picker
+Disallow: /assets
+Disallow: /shows
+Disallow: /quotes
+Disallow: /invoices
+Disallow: /crew
+Disallow: /scan
+Disallow: /movements
+Disallow: /categories
+Disallow: /kits
+Disallow: /alerts
+Disallow: /import
+Disallow: /branding
+Disallow: /billing
+Disallow: /qb-callback
+
+Sitemap: https://port24av.com/sitemap.xml

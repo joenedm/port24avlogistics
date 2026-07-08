@@ -1,84 +1,101 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { usePlan } from '@/lib/usePlan';
 import AppLayout from './components/layout/AppLayout';
-import WorkspacePicker from './pages/WorkspacePicker';
-import CreateCompany from './pages/CreateCompany';
-import Dashboard from './pages/Dashboard';
-import Assets from './pages/Assets';
-import Shows from './pages/Shows';
-import ShowDetail from './pages/ShowDetail';
 import { Navigate } from 'react-router-dom';
-import Scan from './pages/Scan.jsx';
-import Movements from './pages/Movements';
-import Categories from './pages/Categories';
-import Admin from './pages/Admin';
-import PlanUsage from './pages/PlanUsage';
-import Kits from './pages/Kits';
-import Alerts from './pages/Alerts';
-import ImportInventory from './pages/ImportInventory';
-import LiveProject from './pages/LiveProject';
-import Utilization from './pages/Utilization';
-import QuoteBuilder from './pages/QuoteBuilder';
-import Invoices from './pages/Invoices';
-import InvoiceDetail from './pages/InvoiceDetail';
-import BrandingSettings from './pages/BrandingSettings';
-import AvailabilityCalendar from './pages/AvailabilityCalendar';
-import AVHospital from './pages/AVHospital';
-import PrintTemplates from './pages/PrintTemplates';
-import CrewDashboard from './pages/CrewDashboard';
-import CrewBookings from './pages/CrewBookings';
-import CrewMembers from './pages/CrewMembers';
-import MyProfile from './pages/MyProfile';
-import CrewBookingDetail from './pages/CrewBookingDetail';
-import Quotes from './pages/Quotes';
-import LaborRateManager from './pages/LaborRateManager';
-import CrewBookingEmailTemplate from './pages/CrewBookingEmailTemplate';
-import CrewConfirmation from './pages/CrewConfirmation';
-import BookingConfirmation from './pages/BookingConfirmation';
-import EmailBuilder from './pages/EmailBuilder';
-import SendCrewEmail from './pages/SendCrewEmail';
-import CrewRoleManager from './pages/CrewRoleManager';
-import QuoteTemplateBuilder from './pages/QuoteTemplateBuilder';
-import QRLabelBuilder from './pages/QRLabelBuilder';
-import MissionControl from './pages/MissionControl';
-import SmartProjectBuilder from './pages/SmartProjectBuilder';
-import Roundtable from './pages/Roundtable';
-import AssignBarcode from './pages/AssignBarcode';
-import YearlyReview from './pages/YearlyReview';
-import YearlyReviewSession from './pages/YearlyReviewSession';
-import FulfillmentCalibration from './pages/FulfillmentCalibration';
-import Clients from './pages/Clients';
-import ClientDetail from './pages/ClientDetail';
-import Venues from './pages/Venues';
-import VenueDetail from './pages/VenueDetail';
-import AdminBilling from './pages/AdminBilling';
-import ClientBilling from './pages/ClientBilling';
-import LandingPage from './pages/LandingPage';
-import Containers from './pages/Containers';
-import QRCodeSettings from './pages/QRCodeSettings';
-import TruckPackBuilder from './pages/TruckPackBuilder';
-import DocumentSettings from './pages/DocumentSettings';
-import AcceptInvite from './pages/AcceptInvite';
-import AcceptCompanyInvite from './pages/AcceptCompanyInvite';
-import QuickBooksCallback from './pages/QuickBooksCallback';
-import PlatformLogin from './pages/PlatformLogin';
-import PlatformJoin from './pages/PlatformJoin';
-import PlatformAdmin from './pages/PlatformAdmin';
-import PlatformOrgDetail from './pages/PlatformOrgDetail';
-import PlatformLayout from './components/platform/PlatformLayout';
-import SignIn from './pages/SignIn';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import VerifyEmail from './pages/VerifyEmail';
 import ThemeProvider from './lib/ThemeProvider';
 import AuthDebugPanel from '@/components/dev/AuthDebugPanel';
 import SessionExpiringModal from '@/components/shared/SessionExpiringModal';
 import { supabase } from '@/api/supabaseClient';
+
+// ── Eagerly loaded (needed before auth resolves or on every page load) ──
+import LandingPage from './pages/LandingPage';
+import SignIn from './pages/SignIn';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
+import PlatformLogin from './pages/PlatformLogin';
+import PlatformJoin from './pages/PlatformJoin';
+import SuspendedPage from './pages/SuspendedPage';
+
+// ── Lazy-loaded app pages — split into separate chunks ──
+const WorkspacePicker        = lazy(() => import('./pages/WorkspacePicker'));
+const CreateCompany          = lazy(() => import('./pages/CreateCompany'));
+const Dashboard              = lazy(() => import('./pages/Dashboard'));
+const Assets                 = lazy(() => import('./pages/Assets'));
+const Shows                  = lazy(() => import('./pages/Shows'));
+const ShowDetail             = lazy(() => import('./pages/ShowDetail'));
+const Scan                   = lazy(() => import('./pages/Scan.jsx'));
+const Movements              = lazy(() => import('./pages/Movements'));
+const Categories             = lazy(() => import('./pages/Categories'));
+const Admin                  = lazy(() => import('./pages/Admin'));
+const PlanUsage              = lazy(() => import('./pages/PlanUsage'));
+const Kits                   = lazy(() => import('./pages/Kits'));
+const Alerts                 = lazy(() => import('./pages/Alerts'));
+const ImportInventory        = lazy(() => import('./pages/ImportInventory'));
+const LiveProject            = lazy(() => import('./pages/LiveProject'));
+const QuoteBuilder           = lazy(() => import('./pages/QuoteBuilder'));
+const Invoices               = lazy(() => import('./pages/Invoices'));
+const InvoiceDetail          = lazy(() => import('./pages/InvoiceDetail'));
+const BrandingSettings       = lazy(() => import('./pages/BrandingSettings'));
+const AvailabilityCalendar   = lazy(() => import('./pages/AvailabilityCalendar'));
+const AVHospital             = lazy(() => import('./pages/AVHospital'));
+const PrintTemplates         = lazy(() => import('./pages/PrintTemplates'));
+const CrewDashboard          = lazy(() => import('./pages/CrewDashboard'));
+const CrewBookings           = lazy(() => import('./pages/CrewBookings'));
+const CrewMembers            = lazy(() => import('./pages/CrewMembers'));
+const MyProfile              = lazy(() => import('./pages/MyProfile'));
+const CrewBookingDetail      = lazy(() => import('./pages/CrewBookingDetail'));
+const Quotes                 = lazy(() => import('./pages/Quotes'));
+const LaborRateManager       = lazy(() => import('./pages/LaborRateManager'));
+const CrewBookingEmailTemplate = lazy(() => import('./pages/CrewBookingEmailTemplate'));
+const CrewConfirmation       = lazy(() => import('./pages/CrewConfirmation'));
+const BookingConfirmation    = lazy(() => import('./pages/BookingConfirmation'));
+const EmailBuilder           = lazy(() => import('./pages/EmailBuilder'));
+const SendCrewEmail          = lazy(() => import('./pages/SendCrewEmail'));
+const CrewRoleManager        = lazy(() => import('./pages/CrewRoleManager'));
+const QuoteTemplateBuilder   = lazy(() => import('./pages/QuoteTemplateBuilder'));
+const QRLabelBuilder         = lazy(() => import('./pages/QRLabelBuilder'));
+const MissionControl         = lazy(() => import('./pages/MissionControl'));
+const SmartProjectBuilder    = lazy(() => import('./pages/SmartProjectBuilder'));
+const Roundtable             = lazy(() => import('./pages/Roundtable'));
+const AssignBarcode          = lazy(() => import('./pages/AssignBarcode'));
+const YearlyReview           = lazy(() => import('./pages/YearlyReview'));
+const YearlyReviewSession    = lazy(() => import('./pages/YearlyReviewSession'));
+const FulfillmentCalibration = lazy(() => import('./pages/FulfillmentCalibration'));
+const Clients                = lazy(() => import('./pages/Clients'));
+const ClientDetail           = lazy(() => import('./pages/ClientDetail'));
+const Venues                 = lazy(() => import('./pages/Venues'));
+const VenueDetail            = lazy(() => import('./pages/VenueDetail'));
+const AdminBilling           = lazy(() => import('./pages/AdminBilling'));
+const ClientBilling          = lazy(() => import('./pages/ClientBilling'));
+const Containers             = lazy(() => import('./pages/Containers'));
+const QRCodeSettings         = lazy(() => import('./pages/QRCodeSettings'));
+const TruckPackBuilder       = lazy(() => import('./pages/TruckPackBuilder'));
+const DocumentSettings       = lazy(() => import('./pages/DocumentSettings'));
+const AcceptInvite           = lazy(() => import('./pages/AcceptInvite'));
+const AcceptCompanyInvite    = lazy(() => import('./pages/AcceptCompanyInvite'));
+const QuickBooksCallback     = lazy(() => import('./pages/QuickBooksCallback'));
+const PlatformAdmin          = lazy(() => import('./pages/PlatformAdmin'));
+const PlatformOrgDetail      = lazy(() => import('./pages/PlatformOrgDetail'));
+const PlatformLayout         = lazy(() => import('./components/platform/PlatformLayout'));
+const PrivacyPolicy          = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService         = lazy(() => import('./pages/TermsOfService'));
+
+// Minimal spinner shown while a lazy chunk loads
+function PageSpinner() {
+  return (
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E1117' }}>
+      <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(31,184,160,0.2)', borderTopColor: '#1FB8A0', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
 
 const BtnStyle = (bg, fg) => ({
   padding: '0.6rem 1.25rem', backgroundColor: bg, color: fg,
@@ -182,6 +199,7 @@ const PUBLIC_PATHS = new Set([
 const AuthenticatedApp = () => {
   const location = useLocation();
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, membershipsLoaded, needsCompany, needsWorkspacePick, trialFlow, isPlatformAdmin, user, userRecord, companyMemberships } = useAuth();
+  const { isSuspended } = usePlan();
 
   if (isLoadingPublicSettings || isLoadingAuth || (isAuthenticated && !membershipsLoaded)) {
     return (
@@ -207,18 +225,19 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Platform admin redirect — always fires for users whose email is in PLATFORM_ADMIN_EMAILS.
-  // These are pure platform admins with no workspace; they always go to /platform.
-  // Users who have is_platform_admin=true via DB (e.g. joe@nedm.com) but are NOT in
-  // PLATFORM_ADMIN_EMAILS are workspace users with elevated DB flags — they skip this
-  // and land in their workspace normally.
-  // Redirect platform-admin users away from company routes → /platform.
-  // MUST skip this when already on /platform/* — returning <Navigate to="/platform">
-  // while already at /platform creates an infinite render loop that prevents
-  // PlatformAdmin from ever mounting.
+  // Platform admin redirect — fires for users whose email is in PLATFORM_ADMIN_EMAILS,
+  // but ONLY for app routes — never for the public root '/' or '/landing'.
+  // Visiting the public URL while authenticated must show the landing page, not the admin panel.
+  // MUST also skip when already on /platform/* to avoid an infinite render loop.
   const isPureAdmin = user?.email && ['port24avlogistics@gmail.com'].includes(user.email.toLowerCase());
-  if (isAuthenticated && isPureAdmin && membershipsLoaded && !location.pathname.startsWith('/platform')) {
+  const isPublicMarketingPath = location.pathname === '/' || location.pathname === '/landing';
+  if (isAuthenticated && isPureAdmin && membershipsLoaded && !location.pathname.startsWith('/platform') && !isPublicMarketingPath) {
     return <Navigate to="/platform" replace />;
+  }
+
+  // Org suspended — block access and show a support contact page.
+  if (isAuthenticated && membershipsLoaded && !isPlatformAdmin && isSuspended) {
+    return <SuspendedPage />;
   }
 
   // Authenticated but no company membership.
@@ -237,81 +256,88 @@ const AuthenticatedApp = () => {
   if (authError?.type === 'auth_required') {
     // Show public routes without sidebar; protected routes redirect to sign-in
     return (
+      <Suspense fallback={<PageSpinner />}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/landing" element={<LandingPage />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/crew-confirmation" element={<CrewConfirmation />} />
+          <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+          <Route path="/accept-invite" element={<AcceptInvite />} />
+          <Route path="/accept-company-invite" element={<AcceptCompanyInvite />} />
+          <Route path="/qb-callback" element={<QuickBooksCallback />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/platform/login" element={<PlatformLogin />} />
+          <Route path="/platform/join" element={<PlatformJoin />} />
+          <Route path="*" element={<Navigate to="/signin" replace />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
+  return (
+    <Suspense fallback={<PageSpinner />}>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        {/* / → landing for platform admins (public URL must never auto-enter admin); dashboard for workspace users */}
+        <Route path="/" element={isPureAdmin ? <LandingPage /> : <Navigate to="/dashboard" replace />} />
         <Route path="/landing" element={<LandingPage />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/workspace-picker" element={<WorkspacePicker />} />
+        <Route path="/create-company" element={<CreateCompany />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/crew-confirmation" element={<CrewConfirmation />} />
         <Route path="/booking-confirmation" element={<BookingConfirmation />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/accept-company-invite" element={<AcceptCompanyInvite />} />
         <Route path="/qb-callback" element={<QuickBooksCallback />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/platform/login" element={<PlatformLogin />} />
-        <Route path="/platform/join" element={<PlatformJoin />} />
-        <Route path="*" element={<Navigate to="/signin" replace />} />
-      </Routes>
-    );
-  }
 
-  return (
-    <Routes>
-      {/* / → dashboard for users with a workspace; /landing always shows the marketing page */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/landing" element={<LandingPage />} />
-      <Route path="/workspace-picker" element={<WorkspacePicker />} />
-      <Route path="/create-company" element={<CreateCompany />} />
-      <Route path="/signin" element={<SignIn />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/crew-confirmation" element={<CrewConfirmation />} />
-      <Route path="/booking-confirmation" element={<BookingConfirmation />} />
-      <Route path="/accept-invite" element={<AcceptInvite />} />
-      <Route path="/accept-company-invite" element={<AcceptCompanyInvite />} />
-      <Route path="/qb-callback" element={<QuickBooksCallback />} />
-
-      {/* Main app with sidebar layout */}
-      <Route element={<AppLayout />}>
-        <Route path="/dashboard" element={<RootRedirect />} />
-        <Route path="/assets" element={<Assets />} />
-        <Route path="/shows" element={<Shows />} />
-        <Route path="/shows/:id" element={<ShowDetail />} />
-        <Route path="/live/:id" element={<LiveProject />} />
-        <Route path="/quotes" element={<Quotes />} />
-        <Route path="/quotes/:id" element={<QuoteBuilder />} />
-        <Route path="/invoices" element={<Invoices />} />
-        <Route path="/invoices/new" element={<InvoiceDetail />} />
-        <Route path="/invoices/from-quote/:id" element={<InvoiceDetail />} />
-        <Route path="/invoices/:id" element={<InvoiceDetail />} />
-        <Route path="/scan" element={<Scan />} />
-        <Route path="/crew" element={<Scan />} />
-        <Route path="/movements" element={<Movements />} />
-        <Route path="/categories" element={<Categories />} />
-        <Route path="/kits" element={<Kits />} />
-        <Route path="/alerts" element={<Alerts />} />
-        <Route path="/utilization" element={<Navigate to="/mission-control" replace />} />
-        <Route path="/import" element={<ImportInventory />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/plan-usage" element={<PlanUsage />} />
-        <Route path="/branding" element={<BrandingSettings />} />
-        <Route path="/availability" element={<AvailabilityCalendar />} />
-        <Route path="/av-hospital" element={<AVHospital />} />
-        <Route path="/print-templates" element={<PrintTemplates />} />
-        <Route path="/crew-dashboard" element={<CrewDashboard />} />
-        <Route path="/crew-bookings" element={<CrewBookings />} />
-        <Route path="/crew-members" element={<CrewMembers />} />
-        <Route path="/my-profile" element={<MyProfile />} />
-        <Route path="/crew-booking/:id" element={<CrewBookingDetail />} />
-        <Route path="/labor-rates" element={<LaborRateManager />} />
-        <Route path="/crew-booking-email" element={<CrewBookingEmailTemplate />} />
-        <Route path="/email-builder" element={<EmailBuilder />} />
-        <Route path="/send-crew-email" element={<SendCrewEmail />} />
-        <Route path="/crew-roles" element={<CrewRoleManager />} />
-        <Route path="/quote-template-builder" element={<QuoteTemplateBuilder />} />
-        <Route path="/qr-label-builder" element={<QRLabelBuilder />} />
+        {/* Main app with sidebar layout */}
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<RootRedirect />} />
+          <Route path="/assets" element={<Assets />} />
+          <Route path="/shows" element={<Shows />} />
+          <Route path="/shows/:id" element={<ShowDetail />} />
+          <Route path="/live/:id" element={<LiveProject />} />
+          <Route path="/quotes" element={<Quotes />} />
+          <Route path="/quotes/:id" element={<QuoteBuilder />} />
+          <Route path="/invoices" element={<Invoices />} />
+          <Route path="/invoices/new" element={<InvoiceDetail />} />
+          <Route path="/invoices/from-quote/:id" element={<InvoiceDetail />} />
+          <Route path="/invoices/:id" element={<InvoiceDetail />} />
+          <Route path="/scan" element={<Scan />} />
+          <Route path="/crew" element={<Scan />} />
+          <Route path="/movements" element={<Movements />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/kits" element={<Kits />} />
+          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/utilization" element={<Navigate to="/mission-control" replace />} />
+          <Route path="/import" element={<ImportInventory />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/plan-usage" element={<PlanUsage />} />
+          <Route path="/branding" element={<BrandingSettings />} />
+          <Route path="/availability" element={<AvailabilityCalendar />} />
+          <Route path="/av-hospital" element={<AVHospital />} />
+          <Route path="/print-templates" element={<PrintTemplates />} />
+          <Route path="/crew-dashboard" element={<CrewDashboard />} />
+          <Route path="/crew-bookings" element={<CrewBookings />} />
+          <Route path="/crew-members" element={<CrewMembers />} />
+          <Route path="/my-profile" element={<MyProfile />} />
+          <Route path="/crew-booking/:id" element={<CrewBookingDetail />} />
+          <Route path="/labor-rates" element={<LaborRateManager />} />
+          <Route path="/crew-booking-email" element={<CrewBookingEmailTemplate />} />
+          <Route path="/email-builder" element={<EmailBuilder />} />
+          <Route path="/send-crew-email" element={<SendCrewEmail />} />
+          <Route path="/crew-roles" element={<CrewRoleManager />} />
+          <Route path="/quote-template-builder" element={<QuoteTemplateBuilder />} />
+          <Route path="/qr-label-builder" element={<QRLabelBuilder />} />
           <Route path="/mission-control" element={<MissionControl />} />
           <Route path="/smart-builder" element={<SmartProjectBuilder />} />
           <Route path="/roundtable" element={<Roundtable />} />
@@ -330,18 +356,19 @@ const AuthenticatedApp = () => {
           <Route path="/billing" element={<AdminBilling />} />
           <Route path="/client-billing" element={<ClientBilling />} />
           <Route path="/document-settings" element={<DocumentSettings />} />
-      </Route>
+        </Route>
 
-      {/* ── Platform Admin — completely separate layout + auth ── */}
-      <Route path="/platform/login" element={<PlatformLogin />} />
-      <Route path="/platform/join" element={<PlatformJoin />} />
-      <Route element={<PlatformLayout />}>
-        <Route path="/platform" element={<PlatformAdmin />} />
-        <Route path="/platform/org/:orgId" element={<PlatformOrgDetail />} />
-      </Route>
+        {/* ── Platform Admin — completely separate layout + auth ── */}
+        <Route path="/platform/login" element={<PlatformLogin />} />
+        <Route path="/platform/join" element={<PlatformJoin />} />
+        <Route element={<PlatformLayout />}>
+          <Route path="/platform" element={<PlatformAdmin />} />
+          <Route path="/platform/org/:orgId" element={<PlatformOrgDetail />} />
+        </Route>
 
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 

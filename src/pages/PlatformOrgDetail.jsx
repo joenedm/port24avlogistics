@@ -3,25 +3,89 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
-import { ArrowLeft, Building2, Users, Mail, Shield, ToggleLeft, ToggleRight, UserPlus, X, CreditCard, Clock, Copy, Link } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Mail, Clock, Copy, Link, CreditCard, UserPlus, X, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { PLANS } from '@/lib/planLimits';
+import { PLANS, FEATURE_LABELS, planTier, planHasFeature } from '@/lib/planLimits';
+import { logAdminAction } from '@/lib/adminAudit';
 
 const ROLE_COLORS = {
-  admin: 'text-blue-400 bg-blue-400/10',
+  admin:   'text-blue-400 bg-blue-400/10',
   manager: 'text-purple-400 bg-purple-400/10',
-  crew: 'text-gray-400 bg-gray-400/10',
+  crew:    'text-gray-400 bg-gray-400/10',
 };
 
+// ── Reusable confirmation modal ───────────────────────────────────────────────
+function ConfirmModal({ title, message, bullets = [], confirmLabel = 'Confirm', danger = false, loading = false, onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+      <div className="bg-[#131920] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+        <div className="flex items-start gap-3 mb-3">
+          {danger && (
+            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0 mt-0.5">
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+            </div>
+          )}
+          <h3 className="text-white font-bold text-lg leading-snug">{title}</h3>
+        </div>
+        <p className="text-sm text-gray-400 mb-3 leading-relaxed">{message}</p>
+        {bullets.length > 0 && (
+          <ul className="mb-4 space-y-1 pl-1">
+            {bullets.map((b, i) => (
+              <li key={i} className="text-sm text-red-400 flex items-center gap-2">
+                <span className="text-red-500 font-bold">×</span> {b}
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:text-white transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className={`flex-1 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors ${
+              danger
+                ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30'
+                : 'bg-[#1FB8A0] text-black hover:bg-[#17907C]'
+            }`}
+          >
+            {loading ? 'Please wait…' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Compute feature names that the current plan has but the target plan does not
+function lostFeatures(fromPlan, toPlan) {
+  const featureKeys = Object.keys(FEATURE_LABELS);
+  return featureKeys.filter(k => planHasFeature(fromPlan, k) && !planHasFeature(toPlan, k))
+    .map(k => FEATURE_LABELS[k]);
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function PlatformOrgDetail() {
   const { orgId } = useParams();
   const navigate = useNavigate();
   const { isPlatformAdmin } = useAuth();
   const qc = useQueryClient();
-  const [showInvite, setShowInvite] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'admin' });
-  const [inviting, setInviting] = useState(false);
-  const [inviteLink, setInviteLink] = useState('');
+
+  const [showInvite, setShowInvite]   = useState(false);
+  const [inviteForm, setInviteForm]   = useState({ email: '', full_name: '', role: 'admin' });
+  const [inviting, setInviting]       = useState(false);
+  const [inviteLink, setInviteLink]   = useState('');
+  const [changingPlan, setChangingPlan] = useState(false);
+  const [deleting, setDeleting]       = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Pending confirmation state: null | { type, ...payload }
+  const [pending, setPending] = useState(null);
 
   const { data: org, isLoading: orgLoading } = useQuery({
     queryKey: ['platform-org', orgId],
@@ -61,6 +125,167 @@ export default function PlatformOrgDetail() {
     },
   });
 
+  const { data: shows = [] } = useQuery({
+    queryKey: ['platform-org-shows', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('shows').select('id, name, status, created_at')
+        .eq('org_id', orgId).order('created_at', { ascending: false }).limit(10);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // ── Plan change ─────────────────────────────────────────────────────────────
+  const requestPlanChange = (newPlan) => {
+    if (!org) return;
+    const isDowngrade = planTier(newPlan) < planTier(org.plan);
+    const lost = isDowngrade ? lostFeatures(org.plan, newPlan) : [];
+    setPending({
+      type: 'plan',
+      newPlan,
+      title: isDowngrade
+        ? `Downgrade to ${PLANS[newPlan]?.label}?`
+        : `Upgrade to ${PLANS[newPlan]?.label}?`,
+      message: isDowngrade
+        ? `${org.name} will lose access to the following features immediately:`
+        : `${org.name} will gain access to ${PLANS[newPlan]?.label} features immediately.`,
+      bullets: lost,
+      danger: isDowngrade,
+      confirmLabel: isDowngrade ? 'Downgrade' : 'Upgrade',
+    });
+  };
+
+  const executePlanChange = async () => {
+    if (!pending || pending.type !== 'plan') return;
+    setActionLoading(true);
+    try {
+      const { error } = await supabase.from('organizations').update({ plan: pending.newPlan }).eq('id', orgId);
+      if (error) throw error;
+      await logAdminAction({ action: 'plan_changed', orgId, oldValue: org.plan, newValue: pending.newPlan });
+      qc.invalidateQueries({ queryKey: ['platform-org', orgId] });
+      qc.invalidateQueries({ queryKey: ['org-plan', orgId] });
+      toast.success(`Plan changed to ${PLANS[pending.newPlan]?.label}`);
+      setChangingPlan(false);
+      setPending(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ── Status toggle ───────────────────────────────────────────────────────────
+  const requestStatusToggle = () => {
+    if (!org) return;
+    const newStatus = org.status === 'active' ? 'suspended' : 'active';
+    const isSuspending = newStatus === 'suspended';
+    setPending({
+      type: 'status',
+      newStatus,
+      title: isSuspending ? `Suspend ${org.name}?` : `Reactivate ${org.name}?`,
+      message: isSuspending
+        ? `This will immediately block all ${users.length} active user${users.length !== 1 ? 's' : ''} from accessing Port 24. They will see a "suspended" screen on their next page load.`
+        : `${org.name} will regain full access based on their current plan.`,
+      danger: isSuspending,
+      confirmLabel: isSuspending ? 'Suspend Account' : 'Reactivate',
+    });
+  };
+
+  const executeStatusToggle = async () => {
+    if (!pending || pending.type !== 'status') return;
+    setActionLoading(true);
+    try {
+      const { error } = await supabase.from('organizations').update({ status: pending.newStatus }).eq('id', orgId);
+      if (error) throw error;
+      await logAdminAction({ action: 'org_status_changed', orgId, oldValue: org.status, newValue: pending.newStatus });
+      qc.invalidateQueries({ queryKey: ['platform-org', orgId] });
+      qc.invalidateQueries({ queryKey: ['platform-orgs'] });
+      toast.success(`Company ${pending.newStatus === 'active' ? 'reactivated' : 'suspended'}`);
+      setPending(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ── Role change ─────────────────────────────────────────────────────────────
+  const requestRoleChange = (userId, userName, currentRole, newRole) => {
+    if (currentRole === newRole) return;
+    const isRoleDemotion = ['admin', 'manager', 'crew'].indexOf(newRole) > ['admin', 'manager', 'crew'].indexOf(currentRole);
+    setPending({
+      type: 'role',
+      userId,
+      newRole,
+      title: `Change role for ${userName || 'this user'}?`,
+      message: `Their role will change from ${currentRole} to ${newRole}. This takes effect immediately — no re-login required.`,
+      danger: isRoleDemotion,
+      confirmLabel: 'Change Role',
+    });
+  };
+
+  const executeRoleChange = async () => {
+    if (!pending || pending.type !== 'role') return;
+    setActionLoading(true);
+    try {
+      const target = users.find(u => u.id === pending.userId);
+      const { error } = await supabase.from('users').update({ role: pending.newRole }).eq('id', pending.userId);
+      if (error) throw error;
+      await logAdminAction({
+        action: 'user_role_changed',
+        orgId,
+        userId: pending.userId,
+        oldValue: target?.role,
+        newValue: pending.newRole,
+      });
+      qc.invalidateQueries({ queryKey: ['platform-org-users', orgId] });
+      toast.success('Role updated');
+      setPending(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ── Delete org ──────────────────────────────────────────────────────────────
+  const handleDeleteOrg = async () => {
+    if (!confirm(`PERMANENTLY DELETE ${org?.name}?\n\nThis will remove all users, data, and the company account.\n\nType OK to confirm.`)) return;
+    setDeleting(true);
+    const { data, error } = await supabase.functions.invoke('delete-organization', { body: { org_id: orgId } });
+    if (error || data?.error) {
+      let msg = data?.error || error?.message || 'Failed to delete company';
+      if (!data?.error && error) {
+        try { const b = await error.context?.json(); msg = b?.error || msg; } catch {}
+      }
+      toast.error(msg);
+      setDeleting(false);
+      return;
+    }
+    await logAdminAction({ action: 'org_deleted', orgId, metadata: { name: org?.name } });
+    toast.success(`${org?.name} has been deleted`);
+    qc.removeQueries({ queryKey: ['platform-orgs'] });
+    navigate('/platform');
+  };
+
+  // ── Remove user ─────────────────────────────────────────────────────────────
+  const removeUser = async (userId, userEmail) => {
+    if (!confirm(`Permanently delete ${userEmail}? This removes their account entirely and cannot be undone.`)) return;
+    const { data, error } = await supabase.functions.invoke('delete-user', { body: { user_id: userId } });
+    if (error || data?.error) {
+      let msg = data?.error || error?.message || 'Failed to delete user';
+      if (!data?.error && error) {
+        try { const b = await error.context?.json(); msg = b?.error || msg; } catch {}
+      }
+      return toast.error(msg);
+    }
+    await logAdminAction({ action: 'user_deleted', orgId, userId, metadata: { email: userEmail } });
+    qc.invalidateQueries({ queryKey: ['platform-org-users', orgId] });
+    toast.success('User deleted');
+  };
+
+  // ── Invite ──────────────────────────────────────────────────────────────────
   const revokeInvite = async (inviteId) => {
     const { error } = await supabase.from('pending_invites').update({ status: 'expired' }).eq('id', inviteId);
     if (error) return toast.error(error.message);
@@ -74,52 +299,6 @@ export default function PlatformOrgDetail() {
     toast.success('Invite link copied');
   };
 
-  const { data: shows = [] } = useQuery({
-    queryKey: ['platform-org-shows', orgId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('shows').select('id, name, status, created_at').eq('org_id', orgId).order('created_at', { ascending: false }).limit(10);
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const [deleting, setDeleting] = useState(false);
-  const [changingPlan, setChangingPlan] = useState(false);
-
-  const handlePlanChange = async (newPlan) => {
-    const { error } = await supabase.from('organizations').update({ plan: newPlan }).eq('id', orgId);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ['platform-org', orgId] });
-    toast.success(`Plan changed to ${PLANS[newPlan]?.label}`);
-    setChangingPlan(false);
-  };
-
-  const handleStatusToggle = async () => {
-    const newStatus = org.status === 'active' ? 'suspended' : 'active';
-    const { error } = await supabase.from('organizations').update({ status: newStatus }).eq('id', orgId);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ['platform-org', orgId] });
-    toast.success(`Company ${newStatus === 'active' ? 'activated' : 'suspended'}`);
-  };
-
-  const handleDeleteOrg = async () => {
-    if (!confirm(`PERMANENTLY DELETE ${org?.name}?\n\nThis will remove all users, data, and the company account. They will need to contact Port 24 to reactivate.\n\nType the company name to confirm.`) ) return;
-    setDeleting(true);
-    const { data, error } = await supabase.functions.invoke('delete-organization', { body: { org_id: orgId } });
-    if (error || data?.error) {
-      let msg = data?.error || error?.message || 'Failed to delete company';
-      if (!data?.error && error) {
-        try { const b = await error.context?.json(); msg = b?.error || msg; } catch {}
-      }
-      toast.error(msg);
-      setDeleting(false);
-      return;
-    }
-    toast.success(`${org?.name} has been deleted`);
-    qc.removeQueries({ queryKey: ['platform-orgs'] });
-    navigate('/platform');
-  };
-
   const handleInvite = async (e) => {
     e.preventDefault();
     setInviting(true);
@@ -131,11 +310,10 @@ export default function PlatformOrgDetail() {
       if (invErr) throw invErr;
 
       const link = `${window.location.origin}/accept-invite?token=${invite.token}`;
-      const { error: fnErr, data: fnData } = await supabase.functions.invoke('send-invite-email', {
+      const { error: fnErr } = await supabase.functions.invoke('send-invite-email', {
         body: { to_email: inviteForm.email.trim().toLowerCase(), to_name: inviteForm.full_name || null, invite_link: link, org_name: org?.name || '', role: inviteForm.role, invited_by_name: 'Port 24 Admin' },
       });
       if (fnErr) console.error('Email error:', fnErr);
-      else console.log('Email sent:', fnData);
 
       setInviteLink(link);
       qc.invalidateQueries({ queryKey: ['platform-org-users', orgId] });
@@ -147,33 +325,36 @@ export default function PlatformOrgDetail() {
     }
   };
 
-  const updateUserRole = async (userId, role) => {
-    const { error } = await supabase.from('users').update({ role }).eq('id', userId);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ['platform-org-users', orgId] });
-    toast.success('Role updated');
+  // ── Dispatch confirmation result ────────────────────────────────────────────
+  const handleConfirm = () => {
+    if (!pending) return;
+    if (pending.type === 'plan')   return executePlanChange();
+    if (pending.type === 'status') return executeStatusToggle();
+    if (pending.type === 'role')   return executeRoleChange();
   };
 
-  const removeUser = async (userId, userEmail) => {
-    if (!confirm(`Permanently delete ${userEmail}? This removes their account entirely and cannot be undone.`)) return;
-    const { data, error } = await supabase.functions.invoke('delete-user', { body: { user_id: userId } });
-    if (error || data?.error) {
-      let msg = data?.error || error?.message || 'Failed to delete user';
-      if (!data?.error && error) {
-        try { const b = await error.context?.json(); msg = b?.error || msg; } catch {}
-      }
-      return toast.error(msg);
-    }
-    qc.invalidateQueries({ queryKey: ['platform-org-users', orgId] });
-    toast.success('User deleted');
-  };
-
+  // ── Guards ──────────────────────────────────────────────────────────────────
   if (!isPlatformAdmin) return <div className="flex items-center justify-center h-64"><p className="text-gray-500">Access denied.</p></div>;
   if (orgLoading) return <div className="text-center py-20 text-gray-500">Loading…</div>;
   if (!org) return <div className="text-center py-20 text-gray-500">Organization not found.</div>;
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+
+      {/* Confirmation modal */}
+      {pending && (
+        <ConfirmModal
+          title={pending.title}
+          message={pending.message}
+          bullets={pending.bullets}
+          danger={pending.danger}
+          confirmLabel={pending.confirmLabel}
+          loading={actionLoading}
+          onConfirm={handleConfirm}
+          onCancel={() => !actionLoading && setPending(null)}
+        />
+      )}
+
       {/* Back */}
       <button onClick={() => navigate('/platform')} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to all companies
@@ -189,7 +370,7 @@ export default function PlatformOrgDetail() {
             <h1 className="text-2xl font-bold text-white">{org.name}</h1>
             <div className="flex items-center gap-3 mt-1">
               <span className="text-xs text-gray-500 capitalize">{org.plan} plan</span>
-              <span className="text-xs text-gray-500 capitalize">{org.status}</span>
+              <span className={`text-xs capitalize font-medium ${org.status === 'active' ? 'text-green-400' : org.status === 'suspended' ? 'text-red-400' : 'text-yellow-400'}`}>{org.status}</span>
               {org.created_at && <span className="text-xs text-gray-600">Created {new Date(org.created_at).toLocaleDateString()}</span>}
             </div>
           </div>
@@ -217,7 +398,10 @@ export default function PlatformOrgDetail() {
             <p className="text-xs text-gray-500">Status</p>
             <p className={`text-sm font-bold capitalize ${org.status === 'active' ? 'text-green-400' : org.status === 'suspended' ? 'text-red-400' : 'text-yellow-400'}`}>{org.status}</p>
           </div>
-          <button onClick={handleStatusToggle} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${org.status === 'active' ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : 'border-green-500/30 text-green-400 hover:bg-green-500/10'}`}>
+          <button
+            onClick={requestStatusToggle}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${org.status === 'active' ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : 'border-green-500/30 text-green-400 hover:bg-green-500/10'}`}
+          >
             {org.status === 'active' ? 'Suspend' : 'Activate'}
           </button>
         </div>
@@ -225,8 +409,11 @@ export default function PlatformOrgDetail() {
           {changingPlan ? (
             <div className="flex items-center gap-2 flex-wrap">
               {Object.entries(PLANS).map(([key, p]) => (
-                <button key={key} onClick={() => handlePlanChange(key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${org.plan === key ? 'border-[#1FB8A0] text-[#1FB8A0] bg-[#1FB8A0]/10' : 'border-white/10 text-gray-300 hover:border-white/30'}`}>
+                <button
+                  key={key}
+                  onClick={() => requestPlanChange(key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${org.plan === key ? 'border-[#1FB8A0] text-[#1FB8A0] bg-[#1FB8A0]/10' : 'border-white/10 text-gray-300 hover:border-white/30'}`}
+                >
                   {p.label} {p.price}
                 </button>
               ))}
@@ -243,10 +430,10 @@ export default function PlatformOrgDetail() {
       {/* Plan limits overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         {[
-          { label: 'Max Users', value: PLANS[org.plan]?.maxUsers ?? '∞' },
-          { label: 'Max Assets', value: PLANS[org.plan]?.maxAssets ?? '∞' },
-          { label: 'Max Shows', value: PLANS[org.plan]?.maxShows ?? '∞' },
-          { label: 'Branding', value: PLANS[org.plan]?.branding === 'full' ? 'Full' : PLANS[org.plan]?.branding === 'logo' ? 'Logo only' : 'None' },
+          { label: 'Max Users',  value: PLANS[org.plan]?.users_limit  ?? '∞' },
+          { label: 'Max Assets', value: PLANS[org.plan]?.assets_limit ?? '∞' },
+          { label: 'Max Shows',  value: PLANS[org.plan]?.shows_limit  ?? '∞' },
+          { label: 'Branding',   value: PLANS[org.plan]?.branding === 'full' ? 'Full' : PLANS[org.plan]?.branding === 'logo_only' ? 'Logo only' : 'None' },
         ].map(({ label, value }) => (
           <div key={label} className="bg-[#131920] border border-white/5 rounded-xl p-4 text-center">
             <p className="text-xs text-gray-500 mb-1">{label}</p>
@@ -257,9 +444,9 @@ export default function PlatformOrgDetail() {
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Users', value: users.length },
+          { label: 'Users',        value: users.length },
           { label: 'Recent Shows', value: shows.length },
-          { label: 'Plan', value: org.plan?.charAt(0).toUpperCase() + org.plan?.slice(1) },
+          { label: 'Plan',         value: org.plan?.charAt(0).toUpperCase() + org.plan?.slice(1) },
         ].map(({ label, value }) => (
           <div key={label} className="bg-[#131920] border border-white/5 rounded-xl p-4">
             <p className="text-xs text-gray-500 mb-1">{label}</p>
@@ -316,7 +503,6 @@ export default function PlatformOrgDetail() {
           <p className="text-gray-500 text-sm">No users yet. Use the Invite User button above to add the first user.</p>
         ) : (
           <div className="space-y-2">
-            {/* Active users */}
             {users.map(u => (
               <div key={u.id} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
                 <div>
@@ -327,7 +513,7 @@ export default function PlatformOrgDetail() {
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${ROLE_COLORS[u.role] || ROLE_COLORS.crew}`}>{u.role}</span>
                   <select
                     value={u.role || 'crew'}
-                    onChange={e => updateUserRole(u.id, e.target.value)}
+                    onChange={e => requestRoleChange(u.id, u.full_name || u.email, u.role, e.target.value)}
                     className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs text-gray-300 outline-none"
                   >
                     <option value="admin">Admin</option>
@@ -341,7 +527,6 @@ export default function PlatformOrgDetail() {
               </div>
             ))}
 
-            {/* Pending invites */}
             {pendingInvites.map(inv => (
               <div key={inv.id} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
                 <div>
