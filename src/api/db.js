@@ -37,8 +37,9 @@ export const db = {
       return { data: null };
     },
     async invoke(name, args) {
-      console.warn(`db.functions.invoke('${name}') not yet migrated`);
-      return { data: null };
+      const { data, error } = await supabase.functions.invoke(name, { body: args });
+      if (error) throw error;
+      return { data };
     },
   },
 
