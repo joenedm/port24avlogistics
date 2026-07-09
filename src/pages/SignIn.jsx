@@ -690,8 +690,6 @@ export default function SignIn() {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [noAccountEmail, setNoAccountEmail] = useState(null);
   const navigate = useNavigate();
-  const { checkAppState } = useAuth();
-
   const urlParams = new URLSearchParams(window.location.search);
   const justVerified = urlParams.get('verified') === '1';
 

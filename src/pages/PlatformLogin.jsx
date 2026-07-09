@@ -24,26 +24,6 @@ export default function PlatformLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const verifyAndRoute = async (authUser) => {
-    const normalizedEmail = authUser.email?.toLowerCase() ?? '';
-    if (PLATFORM_ADMIN_EMAILS.includes(normalizedEmail)) {
-      // Mark as platform admin and force org_id=null so they can never be accidentally
-      // routed into a company workspace (e.g. NEDM) via a stale org_id in the DB.
-      await supabase.from('users').upsert(
-        { id: authUser.id, email: authUser.email, is_platform_admin: true, role: 'admin', org_id: null },
-        { onConflict: 'id' }
-      );
-      sessionStorage.removeItem('port24_login_source'); // consumed — clear so it doesn't affect future logins
-      navigate('/platform', { replace: true });
-      return;
-    }
-    // Not a platform admin — sign them out and show an error on this page
-    await supabase.auth.signOut();
-    sessionStorage.removeItem('port24_login_source'); // clear so normal company login works after denial
-    setOAuthChecking(false);
-    setError('Access denied. This portal is for Port 24 staff only.');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
