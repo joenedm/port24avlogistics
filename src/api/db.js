@@ -38,7 +38,15 @@ export const db = {
     },
     async invoke(name, args) {
       const { data, error } = await supabase.functions.invoke(name, { body: args });
-      if (error) throw error;
+      if (error) {
+        // If the function doesn't exist yet, return null gracefully rather than crashing
+        const status = error?.context?.status ?? error?.status;
+        if (status === 404 || error?.message?.includes('not found') || error?.message?.includes('Failed to send')) {
+          console.warn(`[db.functions.invoke] '${name}' not found — returning null`);
+          return { data: null };
+        }
+        throw error;
+      }
       return { data };
     },
   },
