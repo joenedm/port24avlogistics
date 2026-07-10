@@ -744,15 +744,15 @@ export default function SignIn() {
     try {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: actualEmail, password: actualPassword });
       if (signInErr) throw signInErr;
-      // Hard redirect — localStorage keeps the session across a full page load.
+      // SPA navigation — keeps the Supabase session in memory without needing localStorage.
       const pendingToken = sessionStorage.getItem('pending_invite_token');
       if (pendingToken) {
         const invitePath = sessionStorage.getItem('pending_invite_path') || '/accept-invite';
         sessionStorage.removeItem('pending_invite_path');
-        window.location.href = `${invitePath}?token=${pendingToken}`;
+        navigate(`${invitePath}?token=${pendingToken}`, { replace: true });
         return;
       }
-      window.location.href = '/dashboard';
+      navigate('/dashboard', { replace: true });
       return;
     } catch (err) {
       setLoading(false);
