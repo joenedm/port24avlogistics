@@ -709,13 +709,18 @@ export default function SignIn() {
 
       // Show any error stored by a previous failed loadProfile attempt
       try {
+        const steps = JSON.parse(localStorage.getItem('port24_auth_steps') || '[]');
+        localStorage.removeItem('port24_auth_steps');
         const dbg = localStorage.getItem('port24_auth_debug');
+        localStorage.removeItem('port24_auth_debug');
         if (dbg) {
           const e = JSON.parse(dbg);
           if (Date.now() - e.ts < 120_000) {
-            setError(`Sign-in error (send this to support): ${e.msg || 'unknown'}`);
+            const stepStr = steps.length ? `\nSteps: ${steps.join(' → ')}` : '';
+            setError(`Auth error: ${e.msg || 'unknown'}${stepStr}`);
           }
-          localStorage.removeItem('port24_auth_debug');
+        } else if (steps.length) {
+          setError(`Auth trace (no error captured): ${steps.join(' → ')}`);
         }
       } catch {}
 

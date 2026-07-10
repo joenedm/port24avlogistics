@@ -118,6 +118,17 @@ export const AuthProvider = ({ children }) => {
     const DEV = import.meta.env.DEV;
     if (DEV) console.log('[Auth] loadProfile start — uid:', authUser.id, 'email:', authUser.email, 'loginSource:', loginSourceRef.current);
 
+    const _log = (msg) => {
+      console.log('[Auth]', msg);
+      try {
+        const prev = JSON.parse(localStorage.getItem('port24_auth_steps') || '[]');
+        prev.push(`${new Date().toISOString().slice(11,19)} ${msg}`);
+        localStorage.setItem('port24_auth_steps', JSON.stringify(prev.slice(-10)));
+      } catch {}
+    };
+
+    _log(`loadProfile uid=${authUser.id.slice(0,8)} email=${authUser.email}`);
+
     // 1. Fetch user row by UUID
     const { data: profileByUUID, error: profileErr } = await supabase
       .from('users')
@@ -125,7 +136,7 @@ export const AuthProvider = ({ children }) => {
       .eq('id', authUser.id)
       .single();
 
-    console.log('[Auth] profile by UUID:', profileByUUID ? 'found' : 'not found', profileErr ? `error: ${profileErr.message} (${profileErr.code})` : '');
+    _log(`users query: ${profileByUUID ? 'found' : 'NOT FOUND'}${profileErr ? ` ERR=${profileErr.message}(${profileErr.code})` : ''}`);
 
     let profile = profileByUUID;
 
@@ -302,11 +313,18 @@ export const AuthProvider = ({ children }) => {
   // -------------------------------------------------------------------
   const loadMemberships = async (userId, profile) => {
     const DEV = import.meta.env.DEV;
-    const { data: memberships } = await supabase
+    const { data: memberships, error: membErr } = await supabase
       .from('company_memberships')
       .select('*, organizations(*)')
       .eq('user_id', userId)
       .eq('status', 'active');
+
+    console.log('[Auth] memberships query:', memberships?.length ?? 0, 'rows', membErr ? `ERR=${membErr.message}(${membErr.code})` : '');
+    try {
+      const prev = JSON.parse(localStorage.getItem('port24_auth_steps') || '[]');
+      prev.push(`${new Date().toISOString().slice(11,19)} memberships=${memberships?.length ?? 0}${membErr ? ` ERR=${membErr.message}` : ''}`);
+      localStorage.setItem('port24_auth_steps', JSON.stringify(prev.slice(-10)));
+    } catch {}
 
     let list = memberships ?? [];
 
@@ -359,6 +377,11 @@ export const AuthProvider = ({ children }) => {
         setRoutingSource('workspace_picker');
       }
     }
+    try {
+      const prev = JSON.parse(localStorage.getItem('port24_auth_steps') || '[]');
+      prev.push(`${new Date().toISOString().slice(11,19)} loadMemberships DONE`);
+      localStorage.setItem('port24_auth_steps', JSON.stringify(prev.slice(-10)));
+    } catch {}
   };
 
   // -------------------------------------------------------------------
