@@ -289,7 +289,7 @@ const AuthenticatedApp = () => {
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/workspace-picker" element={<WorkspacePicker />} />
         <Route path="/create-company" element={<CreateCompany />} />
-        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signin" element={<Navigate to="/dashboard" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
