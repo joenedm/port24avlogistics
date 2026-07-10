@@ -1,7 +1,6 @@
 import React from 'react';
 import PageHeader from '@/components/shared/PageHeader';
 import InvoiceBillingDashboard from '@/components/billing/InvoiceBillingDashboard';
-import StripeConnectCard from '@/components/billing/StripeConnectCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export default function AdminBilling() {
@@ -20,8 +19,6 @@ export default function AdminBilling() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <StripeConnectCard />
-          
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Billing System</CardTitle>
