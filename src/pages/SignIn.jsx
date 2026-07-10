@@ -733,10 +733,13 @@ export default function SignIn() {
       if (pendingToken) {
         const invitePath = sessionStorage.getItem('pending_invite_path') || '/accept-invite';
         sessionStorage.removeItem('pending_invite_path');
-        window.location.href = `${invitePath}?token=${pendingToken}`;
+        // Use SPA navigation so the session stays in memory (no sessionStorage round-trip)
+        navigate(invitePath + '?token=' + pendingToken, { replace: true });
         return;
       }
-      window.location.href = '/dashboard';
+      // SPA navigation keeps the React tree alive so the session set by signInWithPassword
+      // is used directly — avoids a full reload that must re-read sessionStorage
+      navigate('/dashboard', { replace: true });
       return;
     } catch (err) {
       setLoading(false);
