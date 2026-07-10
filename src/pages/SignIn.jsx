@@ -703,10 +703,21 @@ export default function SignIn() {
         const params = new URLSearchParams(hash.replace(/^#/, ''));
         const desc = params.get('error_description') || params.get('error') || 'Google sign-in failed.';
         setError(decodeURIComponent(desc.replace(/\+/g, ' ')));
-        // Clear the hash so it doesn't persist on refresh
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
         return;
       }
+
+      // Show any error stored by a previous failed loadProfile attempt
+      try {
+        const dbg = localStorage.getItem('port24_auth_debug');
+        if (dbg) {
+          const e = JSON.parse(dbg);
+          if (Date.now() - e.ts < 120_000) {
+            setError(`Sign-in error (send this to support): ${e.msg || 'unknown'}`);
+          }
+          localStorage.removeItem('port24_auth_debug');
+        }
+      } catch {}
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -728,18 +739,15 @@ export default function SignIn() {
     try {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: actualEmail, password: actualPassword });
       if (signInErr) throw signInErr;
-      // If a pending invite token was preserved, resume the invite flow.
+      // Hard redirect — localStorage keeps the session across a full page load.
       const pendingToken = sessionStorage.getItem('pending_invite_token');
       if (pendingToken) {
         const invitePath = sessionStorage.getItem('pending_invite_path') || '/accept-invite';
         sessionStorage.removeItem('pending_invite_path');
-        // Use SPA navigation so the session stays in memory (no sessionStorage round-trip)
-        navigate(invitePath + '?token=' + pendingToken, { replace: true });
+        window.location.href = `${invitePath}?token=${pendingToken}`;
         return;
       }
-      // SPA navigation keeps the React tree alive so the session set by signInWithPassword
-      // is used directly — avoids a full reload that must re-read sessionStorage
-      navigate('/dashboard', { replace: true });
+      window.location.href = '/dashboard';
       return;
     } catch (err) {
       setLoading(false);

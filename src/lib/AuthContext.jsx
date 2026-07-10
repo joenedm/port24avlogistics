@@ -119,13 +119,13 @@ export const AuthProvider = ({ children }) => {
     if (DEV) console.log('[Auth] loadProfile start — uid:', authUser.id, 'email:', authUser.email, 'loginSource:', loginSourceRef.current);
 
     // 1. Fetch user row by UUID
-    const { data: profileByUUID } = await supabase
+    const { data: profileByUUID, error: profileErr } = await supabase
       .from('users')
       .select('*')
       .eq('id', authUser.id)
       .single();
 
-    if (DEV) console.log('[Auth] profile by UUID:', profileByUUID ? 'found' : 'not found');
+    console.log('[Auth] profile by UUID:', profileByUUID ? 'found' : 'not found', profileErr ? `error: ${profileErr.message} (${profileErr.code})` : '');
 
     let profile = profileByUUID;
 
@@ -433,7 +433,8 @@ export const AuthProvider = ({ children }) => {
       try {
         await loadProfile(session.user);
       } catch (err) {
-        if (DEV) console.error('[Auth] loadProfile threw:', err);
+        console.error('[Auth] loadProfile threw:', err?.message || err, 'uid:', session.user?.id);
+        try { localStorage.setItem('port24_auth_debug', JSON.stringify({ msg: err?.message || String(err), uid: session.user?.id, email: session.user?.email, ts: Date.now() })); } catch {}
         setUser(null);
         setUserRecord(null);
         setCompanyMemberships([]);
