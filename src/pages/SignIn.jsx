@@ -682,16 +682,16 @@ function NoAccountModal({ userEmail, onClose }) {
 }
 
 export default function SignIn() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // email/password are uncontrolled — refs read the actual DOM value at submit time,
+  // which correctly captures browser autofill that controlled inputs would override.
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [noAccountEmail, setNoAccountEmail] = useState(null);
   const navigate = useNavigate();
-  const passwordRef = useRef(null);
-  const emailRef = useRef(null);
   const urlParams = new URLSearchParams(window.location.search);
   const justVerified = urlParams.get('verified') === '1';
 
@@ -723,9 +723,8 @@ export default function SignIn() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    // Read DOM values directly to handle browser autofill, which may not trigger onChange
-    const actualEmail = emailRef.current?.value || email;
-    const actualPassword = passwordRef.current?.value || password;
+    const actualEmail = emailRef.current?.value?.trim() || '';
+    const actualPassword = passwordRef.current?.value || '';
     try {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: actualEmail, password: actualPassword });
       if (signInErr) throw signInErr;
@@ -777,8 +776,8 @@ export default function SignIn() {
       {/* Verify Email Modal */}
       {showVerifyModal && (
         <VerifyModal
-          email={email}
-          password={password}
+          email={emailRef.current?.value?.trim() || ''}
+          password={passwordRef.current?.value || ''}
           onClose={() => setShowVerifyModal(false)}
           onVerified={handleVerified}
         />
@@ -831,9 +830,6 @@ export default function SignIn() {
               <input
                 ref={emailRef}
                 type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
                 autoComplete="email"
                 placeholder="you@company.com"
                 className="w-full rounded-lg px-4 py-3 text-sm text-white placeholder-opacity-40 outline-none transition-all"
@@ -867,9 +863,6 @@ export default function SignIn() {
                 <input
                   ref={passwordRef}
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
                   autoComplete="current-password"
                   placeholder="••••••••"
                   className="w-full rounded-lg px-4 py-3 pr-11 text-sm text-white outline-none transition-all"
@@ -911,7 +904,7 @@ export default function SignIn() {
                 style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171' }}
               >
                 {error}
-                {email && (
+                {emailRef.current?.value && (
                   <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(239,68,68,0.2)' }}>
                     New user or need to verify?{' '}
                     <button
