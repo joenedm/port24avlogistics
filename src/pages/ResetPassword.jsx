@@ -13,7 +13,17 @@ const TEXT_MUTED = '#7B8EA8';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const [ready, setReady] = useState(false); // true once Supabase has established the recovery session
+  // Initialise synchronously so we capture URL params before Supabase cleans the hash.
+  const [ready, setReady] = useState(() => {
+    if (sessionStorage.getItem('port24_password_recovery')) {
+      sessionStorage.removeItem('port24_password_recovery');
+      return true;
+    }
+    return (
+      window.location.hash.includes('type=recovery') ||
+      window.location.search.includes('type=recovery')
+    );
+  });
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -22,21 +32,21 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Case 1: AuthContext already intercepted PASSWORD_RECOVERY before this component mounted.
-    if (sessionStorage.getItem('port24_password_recovery')) {
-      sessionStorage.removeItem('port24_password_recovery');
-      setReady(true);
-    }
+    if (ready) return; // already set via URL params or sessionStorage
 
-    // Case 2: Event fires after this component mounts (component beat AuthContext to the subscription).
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+    // Fallback: catch PASSWORD_RECOVERY if it fires after mount, or INITIAL_SESSION
+    // when Supabase resolved the recovery token before any subscriber was registered.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        event === 'PASSWORD_RECOVERY' ||
+        (event === 'INITIAL_SESSION' && session?.user)
+      ) {
         sessionStorage.removeItem('port24_password_recovery');
         setReady(true);
       }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [ready]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
